@@ -55,7 +55,7 @@ export function MetricCard({
         <>
           <div
             className={cn(
-              "text-2xl font-semibold tabular-nums",
+              "text-2xl font-medium tabular-nums",
               variant === "income" && "text-income",
               variant === "expense" && "text-expense",
               variant === "default" && value < 0 && "text-expense",

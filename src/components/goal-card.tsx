@@ -93,7 +93,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
         <div className="absolute top-3 right-3 flex flex-col items-center">
           <div className="relative flex items-center justify-center">
             <CircleProgress percentage={percentage} />
-            <span className="absolute text-[10px] font-bold text-white font-mono">
+            <span className="absolute text-[10px] font-medium text-white font-mono">
               {percentage}%
             </span>
           </div>
@@ -116,7 +116,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
 
         {/* Nombre de la meta — bottom left */}
         <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/60 to-transparent">
-          <h3 className="text-sm font-semibold text-white leading-tight">
+          <h3 className="text-sm font-medium text-white leading-tight">
             {goal.name}
           </h3>
           {isComplete && (
@@ -133,7 +133,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
             <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
               Ahorrado
             </p>
-            <p className="text-xl font-bold font-mono text-income">
+            <p className="text-xl font-medium font-mono text-income">
               $<NumberFlow value={goal.currentAmount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
             </p>
           </div>
@@ -141,7 +141,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
             <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
               Objetivo
             </p>
-            <p className="text-base font-semibold font-mono text-muted-foreground">
+            <p className="text-base font-medium font-mono text-muted-foreground">
               $<NumberFlow value={goal.targetAmount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
             </p>
           </div>

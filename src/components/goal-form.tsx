@@ -124,7 +124,7 @@ export function GoalForm({ onSuccess }: GoalFormProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && canProceed && goNext()}
-                className="w-full text-center text-xl font-semibold bg-transparent border-none outline-none placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:text-lg"
+                className="w-full text-center text-xl font-medium bg-transparent border-none outline-none placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:text-lg"
               />
 
               {/* Sugerencias */}
@@ -163,14 +163,14 @@ export function GoalForm({ onSuccess }: GoalFormProps) {
               className="space-y-4"
             >
               <div className="text-center space-y-1">
-                <p className="text-sm font-semibold text-foreground">{name}</p>
+                <p className="text-sm font-medium text-foreground">{name}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
                   ¿Cuánto necesitás?
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-2">
-                <span className="text-4xl font-bold text-muted-foreground">$</span>
+                <span className="text-4xl font-medium text-muted-foreground">$</span>
                 <input
                   ref={amountInputRef}
                   type="number"
@@ -180,7 +180,7 @@ export function GoalForm({ onSuccess }: GoalFormProps) {
                   value={targetAmount}
                   onChange={(e) => setTargetAmount(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && canProceed && goNext()}
-                  className="text-5xl font-bold bg-transparent border-none outline-none w-48 text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="text-5xl font-medium bg-transparent border-none outline-none w-48 text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               </div>
 
@@ -227,7 +227,7 @@ export function GoalForm({ onSuccess }: GoalFormProps) {
               className="space-y-4"
             >
               <div className="text-center space-y-1">
-                <p className="text-sm font-semibold">{name}</p>
+                <p className="text-sm font-medium">{name}</p>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono">
                   Detalles (opcional)
                 </p>
@@ -275,17 +275,17 @@ export function GoalForm({ onSuccess }: GoalFormProps) {
               <div className="bg-muted/40 rounded-xl p-3 border border-border">
                 <div className="flex justify-between text-xs">
                   <span className="text-muted-foreground">Objetivo</span>
-                  <span className="font-mono font-semibold">${parsedTarget.toLocaleString("es-AR")}</span>
+                  <span className="font-mono font-medium">${parsedTarget.toLocaleString("es-AR")}</span>
                 </div>
                 {parsedCurrent > 0 && (
                   <div className="flex justify-between text-xs mt-1">
                     <span className="text-muted-foreground">Ya ahorrado</span>
-                    <span className="font-mono font-semibold text-income">${parsedCurrent.toLocaleString("es-AR")}</span>
+                    <span className="font-mono font-medium text-income">${parsedCurrent.toLocaleString("es-AR")}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-xs mt-1">
                   <span className="text-muted-foreground">Falta</span>
-                  <span className="font-mono font-semibold">${Math.max(parsedTarget - parsedCurrent, 0).toLocaleString("es-AR")}</span>
+                  <span className="font-mono font-medium">${Math.max(parsedTarget - parsedCurrent, 0).toLocaleString("es-AR")}</span>
                 </div>
               </div>
             </motion.div>

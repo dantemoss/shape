@@ -25,16 +25,16 @@ export default function TransactionsPage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="border-b border-border px-8 py-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Movimientos</h1>
-          <div className="flex items-center gap-4 mt-1">
+      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium">Movimientos</h1>
+          <div className="flex items-center gap-3">
             <span className="text-sm text-income font-mono font-medium">
-              +${totalIncome.toLocaleString("es-AR")} ingresos
+              +${totalIncome.toLocaleString("es-AR")}
             </span>
-            <span className="text-muted-foreground text-sm">·</span>
+            <span className="text-muted-foreground text-xs">·</span>
             <span className="text-sm text-expense font-mono font-medium">
-              -${totalExpenses.toLocaleString("es-AR")} gastos
+              -${totalExpenses.toLocaleString("es-AR")}
             </span>
           </div>
         </div>

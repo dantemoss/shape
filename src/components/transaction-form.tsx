@@ -171,7 +171,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                     type="button"
                     onClick={() => setType(t)}
                     className={cn(
-                      "flex-1 py-2.5 text-sm font-semibold transition-all duration-200",
+                      "flex-1 py-2.5 text-sm font-medium transition-all duration-200",
                       type === t && t === "expense" && "bg-expense text-expense-foreground shadow-sm",
                       type === t && t === "income" && "bg-income text-income-foreground shadow-sm",
                       type !== t && "text-muted-foreground hover:text-foreground"
@@ -189,7 +189,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                 </p>
                 <div className="flex items-center justify-center gap-2">
                   <span className={cn(
-                    "text-4xl font-bold transition-colors",
+                    "text-4xl font-medium transition-colors",
                     type === "income" ? "text-income" : "text-expense"
                   )}>$</span>
                   <input
@@ -202,7 +202,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                     onChange={(e) => setRawAmount(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && canProceed && goNext()}
                     className={cn(
-                      "text-5xl font-bold bg-transparent border-none outline-none w-48 text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                      "text-5xl font-medium bg-transparent border-none outline-none w-48 text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                       type === "income" ? "text-income" : "text-expense"
                     )}
                   />

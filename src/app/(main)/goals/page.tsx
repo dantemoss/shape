@@ -25,15 +25,14 @@ export default function GoalsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-8 py-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Metas</h1>
+      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium">Metas</h1>
           {goals.length > 0 && (
-            <p className="text-sm text-muted-foreground mt-1">
-              <span className="text-income font-mono font-medium">${totalSaved.toLocaleString("es-AR")}</span>
-              {" "}ahorrado de{" "}
-              <span className="font-mono">${totalTarget.toLocaleString("es-AR")}</span>
-            </p>
+            <span className="text-sm text-muted-foreground font-mono">
+              <span className="text-income">${totalSaved.toLocaleString("es-AR")}</span>
+              {" / $"}{totalTarget.toLocaleString("es-AR")}
+            </span>
           )}
         </div>
         <Dialog open={open} onOpenChange={setOpen}>

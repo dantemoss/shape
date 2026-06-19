@@ -148,7 +148,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
 
           {/* Monto — grande, hacia abajo */}
           <div className="mb-8">
-            <p className="text-[3.25rem] font-bold tracking-tight leading-none">
+            <p className="text-[3.25rem] font-medium tracking-tight leading-none">
               $<NumberFlow
                 value={config.amount}
                 locales="es-AR"
@@ -164,7 +164,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
               <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
                 Próximo cobro
               </p>
-              <p className="text-2xl font-bold leading-none capitalize">
+              <p className="text-2xl font-medium leading-none capitalize">
                 {format(next.date, "d 'de' MMM", { locale: es })}
               </p>
             </div>
@@ -174,7 +174,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
                 {next.isToday ? "¡Es hoy!" : "Días restantes"}
               </p>
               <p className={cn(
-                "text-2xl font-bold font-mono tabular-nums leading-none",
+                "text-2xl font-medium font-mono tabular-nums leading-none",
                 next.isToday || next.daysLeft <= 3 ? "text-income" : "text-foreground"
               )}>
                 {next.isToday ? "🎉" : <NumberFlow value={next.daysLeft} />}
@@ -188,7 +188,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
               <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
                 Período
               </p>
-              <p className="text-2xl font-bold font-mono tabular-nums leading-none">
+              <p className="text-2xl font-medium font-mono tabular-nums leading-none">
                 <NumberFlow value={Math.round(progress)} />
                 <span className="text-sm font-normal text-muted-foreground ml-0.5">%</span>
               </p>
@@ -203,7 +203,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
       {/* ── Formulario de registro ── */}
       {registerOpen && (
         <div className="w-full border border-border rounded-2xl p-6 bg-card">
-          <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
             <Plus size={14} />
             Registrar cobro
           </h3>

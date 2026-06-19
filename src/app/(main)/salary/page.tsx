@@ -14,12 +14,12 @@ export default function SalaryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-8 py-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sueldo</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {salaryConfig ? salaryConfig.label : "Configurá tu sueldo para empezar"}
-          </p>
+      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-medium">Sueldo</h1>
+          <span className="text-sm text-muted-foreground">
+            {salaryConfig ? salaryConfig.label : "Sin configurar"}
+          </span>
         </div>
         {salaryConfig && !editing && (
           <Button variant="ghost" size="icon-sm" className="text-muted-foreground" onClick={() => setEditing(true)}>

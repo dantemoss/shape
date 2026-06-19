@@ -49,7 +49,7 @@ export function SalaryHistory() {
               </p>
             </div>
 
-            <span className="text-sm font-mono font-semibold shrink-0">
+            <span className="text-sm font-mono font-medium shrink-0">
               +$<NumberFlow value={payment.amount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
             </span>
 

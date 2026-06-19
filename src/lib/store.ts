@@ -2,13 +2,29 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Transaction, Goal, SalaryConfig, SalaryPayment } from "./types";
+import { Transaction, Goal, SalaryConfig, SalaryPayment, CreditCard, CardInstallment } from "./types";
+
+export interface UserProfile {
+  name: string;
+  avatar: string | null; // base64 data URL
+}
 
 interface ShapeStore {
+  userProfile: UserProfile | null;
   transactions: Transaction[];
   goals: Goal[];
   salaryConfig: SalaryConfig | null;
   salaryPayments: SalaryPayment[];
+  creditCards: CreditCard[];
+  cardInstallments: CardInstallment[];
+  setUserProfile: (profile: UserProfile) => void;
+  clearUserProfile: () => void;
+  addCreditCard: (card: Omit<CreditCard, "id" | "createdAt">) => void;
+  updateCreditCard: (id: string, updates: Partial<CreditCard>) => void;
+  removeCreditCard: (id: string) => void;
+  addCardInstallment: (inst: Omit<CardInstallment, "id">) => void;
+  payInstallment: (id: string) => void;
+  removeCardInstallment: (id: string) => void;
   addTransaction: (tx: Omit<Transaction, "id" | "createdAt">) => void;
   removeTransaction: (id: string) => void;
   addGoal: (goal: Omit<Goal, "id" | "createdAt">) => void;
@@ -27,10 +43,58 @@ function generateId(): string {
 export const useShapeStore = create<ShapeStore>()(
   persist(
     (set) => ({
+      userProfile: null,
       transactions: [],
       goals: [],
       salaryConfig: null,
       salaryPayments: [],
+
+      setUserProfile: (profile) => set({ userProfile: profile }),
+      clearUserProfile: () => set({ userProfile: null }),
+
+      creditCards: [],
+      cardInstallments: [],
+
+      addCreditCard: (card) =>
+        set((state) => ({
+          creditCards: [
+            { ...card, id: generateId(), createdAt: new Date().toISOString() },
+            ...state.creditCards,
+          ],
+        })),
+
+      updateCreditCard: (id, updates) =>
+        set((state) => ({
+          creditCards: state.creditCards.map((c) => c.id === id ? { ...c, ...updates } : c),
+        })),
+
+      removeCreditCard: (id) =>
+        set((state) => ({
+          creditCards: state.creditCards.filter((c) => c.id !== id),
+          cardInstallments: state.cardInstallments.filter((i) => i.cardId !== id),
+        })),
+
+      addCardInstallment: (inst) =>
+        set((state) => ({
+          cardInstallments: [
+            { ...inst, id: generateId() },
+            ...state.cardInstallments,
+          ],
+        })),
+
+      payInstallment: (id) =>
+        set((state) => ({
+          cardInstallments: state.cardInstallments.map((i) =>
+            i.id === id && i.paidInstallments < i.totalInstallments
+              ? { ...i, paidInstallments: i.paidInstallments + 1 }
+              : i
+          ),
+        })),
+
+      removeCardInstallment: (id) =>
+        set((state) => ({
+          cardInstallments: state.cardInstallments.filter((i) => i.id !== id),
+        })),
 
       addTransaction: (tx) =>
         set((state) => ({
