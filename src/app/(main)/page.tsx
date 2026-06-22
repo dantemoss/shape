@@ -172,7 +172,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Top bar ── */}
-      <header className="flex items-center justify-between px-8 py-4 border-b border-border bg-background sticky top-0 z-10">
+      <header className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-border bg-background sticky top-0 z-10">
         <div>
           <h1 className="text-lg font-medium">
             {userProfile ? getGreeting(userProfile.name) : "Dashboard"}
@@ -198,7 +198,7 @@ export default function DashboardPage() {
       {/* ── Content ── */}
       <div className="flex flex-1">
         {/* ── Main ── */}
-        <div className="flex-1 p-6 space-y-5 min-w-0">
+        <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-5 min-w-0">
 
           {/* ── Wallet Card ── */}
           <div className="border border-border rounded-2xl p-5 bg-card">
@@ -233,7 +233,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* 3 métricas */}
-                <div className="grid grid-cols-3 divide-x divide-border">
+                <div className="grid grid-cols-3 divide-x divide-border sm:grid-cols-3">
                   <div className="pr-4">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">Balance</p>
                     <p className={cn("text-base font-medium tabular-nums font-mono", balance >= 0 ? "" : "text-expense")}>
@@ -284,9 +284,9 @@ export default function DashboardPage() {
           </div>
 
           {/* ── Gráficos: Cash Flow + Categorías ── */}
-          <div className="grid grid-cols-5 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
             {/* Cash Flow (barras dobles) */}
-            <div className="col-span-3 border border-border rounded-2xl p-5 bg-card">
+            <div className="col-span-1 lg:col-span-3 border border-border rounded-2xl p-4 sm:p-5 bg-card">
               {/* Fila 1: título + monto */}
               <div className="mb-3">
                 <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Cash Flow</p>
@@ -299,7 +299,7 @@ export default function DashboardPage() {
               </div>
 
               {/* Fila 2: período selector — fila propia con todo el ancho */}
-              <div className="flex items-center gap-1.5 bg-muted/50 rounded-xl p-1 border border-border mb-4 w-fit">
+              <div className="flex items-center gap-1 sm:gap-1.5 bg-muted/50 rounded-xl p-1 border border-border mb-4 w-fit overflow-x-auto">
                 {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
                   <button
                     key={p}
@@ -356,7 +356,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Breakdown categorías */}
-            <div className="col-span-2 border border-border rounded-2xl p-5 bg-card flex flex-col">
+            <div className="col-span-1 lg:col-span-2 border border-border rounded-2xl p-4 sm:p-5 bg-card flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Por categoría</p>
                 <Link href="/health" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors font-mono">
@@ -472,8 +472,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Right Panel ── */}
-        <div className="w-[268px] shrink-0 border-l border-border p-4 space-y-4 sticky top-[61px] h-[calc(100vh-61px)] overflow-y-auto">
+        {/* ── Right Panel (hidden on mobile) ── */}
+        <div className="hidden lg:block w-[268px] shrink-0 border-l border-border p-4 space-y-4 sticky top-[61px] h-[calc(100vh-61px)] overflow-y-auto">
 
           {/* Próximo cobro */}
           {salaryConfig && nextPayment ? (

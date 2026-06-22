@@ -10,30 +10,77 @@ import { cn } from "@/lib/utils";
 import { useShapeStore } from "@/lib/store";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
   { href: "/transactions", label: "Movimientos", icon: ArrowLeftRight },
-  { href: "/salary", label: "Sueldo", icon: Banknote },
-  { href: "/cards", label: "Tarjetas", icon: CreditCard },
-  { href: "/goals", label: "Metas", icon: Target },
-  { href: "/health", label: "Higiene", icon: HeartPulse },
+  { href: "/salary",       label: "Sueldo",      icon: Banknote },
+  { href: "/cards",        label: "Tarjetas",    icon: CreditCard },
+  { href: "/goals",        label: "Metas",       icon: Target },
+  { href: "/health",       label: "Higiene",     icon: HeartPulse },
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname    = usePathname();
   const userProfile = useShapeStore((s) => s.userProfile);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-52 border-r border-border flex flex-col py-5 bg-sidebar z-10">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 mb-7">
-        <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center shrink-0">
-          <span className="text-background text-xs font-medium">S</span>
+    <>
+      {/* ── Desktop sidebar (hidden on mobile) ── */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen w-52 border-r border-border flex-col py-5 bg-sidebar z-20">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 px-5 mb-7">
+          <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center shrink-0">
+            <span className="text-background text-xs font-medium">S</span>
+          </div>
+          <span className="font-medium text-sm tracking-tight">Shape</span>
         </div>
-        <span className="font-medium text-sm tracking-tight">Shape</span>
-      </div>
 
-      {/* Nav */}
-      <nav className="flex flex-col gap-0.5 flex-1 px-3">
+        {/* Nav */}
+        <nav className="flex flex-col gap-0.5 flex-1 px-3">
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
+                  active
+                    ? "bg-income/10 text-income font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                )}
+              >
+                <Icon size={15} strokeWidth={active ? 2 : 1.6} className={active ? "text-income" : ""} />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User */}
+        <div className="px-3 mt-4 border-t border-border pt-4">
+          <Link
+            href="/profile"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
+              pathname === "/profile"
+                ? "bg-income/10 text-income font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+            )}
+          >
+            {userProfile?.avatar ? (
+              <img src={userProfile.avatar} alt={userProfile.name} className="w-6 h-6 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <User size={13} />
+              </div>
+            )}
+            <span className="truncate">{userProfile?.name ?? "Perfil"}</span>
+          </Link>
+        </div>
+      </aside>
+
+      {/* ── Mobile bottom nav (hidden on desktop) ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20 bg-background border-t border-border flex items-center">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -41,48 +88,31 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
-                active
-                  ? "bg-income/10 text-income font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+                "flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors",
+                active ? "text-income" : "text-muted-foreground"
               )}
             >
-              <Icon
-                size={15}
-                strokeWidth={active ? 2 : 1.6}
-                className={active ? "text-income" : ""}
-              />
-              {label}
+              <Icon size={18} strokeWidth={active ? 2.2 : 1.6} />
+              <span className="text-[9px] font-medium leading-none">{label}</span>
             </Link>
           );
         })}
-      </nav>
-
-      {/* User profile */}
-      <div className="px-3 mt-4 border-t border-border pt-4">
+        {/* Profile */}
         <Link
           href="/profile"
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
-            pathname === "/profile"
-              ? "bg-income/10 text-income font-medium"
-              : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+            "flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors",
+            pathname === "/profile" ? "text-income" : "text-muted-foreground"
           )}
         >
           {userProfile?.avatar ? (
-            <img
-              src={userProfile.avatar}
-              alt={userProfile.name}
-              className="w-6 h-6 rounded-full object-cover shrink-0"
-            />
+            <img src={userProfile.avatar} alt="" className="w-[18px] h-[18px] rounded-full object-cover" />
           ) : (
-            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
-              <User size={13} />
-            </div>
+            <User size={18} strokeWidth={pathname === "/profile" ? 2.2 : 1.6} />
           )}
-          <span className="truncate">{userProfile?.name ?? "Perfil"}</span>
+          <span className="text-[9px] font-medium leading-none">Perfil</span>
         </Link>
-      </div>
-    </aside>
+      </nav>
+    </>
   );
 }

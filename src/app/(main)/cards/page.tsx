@@ -43,7 +43,7 @@ export default function CardsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-medium">Tarjetas</h1>
           {creditCards.length > 0 && (
@@ -88,9 +88,9 @@ export default function CardsPage() {
           </Dialog>
         </div>
       ) : (
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0">
           {/* ── Sidebar de tarjetas ── */}
-          <div className="w-72 shrink-0 border-r border-border p-4 space-y-3 overflow-y-auto">
+          <div className="md:w-72 shrink-0 border-b md:border-b-0 md:border-r border-border p-4 space-y-3 overflow-y-auto">
             {/* Resumen global */}
             <div className="border border-border rounded-xl p-3.5 bg-card space-y-2">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">Resumen global</p>
@@ -149,7 +149,7 @@ export default function CardsPage() {
 
           {/* ── Detalle de tarjeta ── */}
           {selectedCard && (
-            <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
               <div className="max-w-md mx-auto space-y-6">
                 {/* Card visual */}
                 <CreditCardVisual

@@ -42,11 +42,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
         <h1 className="text-lg font-medium">Mi perfil</h1>
       </div>
 
-      <div className="px-8 py-8 max-w-sm">
+      <div className="px-4 sm:px-8 py-6 sm:py-8 max-w-sm">
         <form onSubmit={handleSave} className="space-y-6">
           {/* Avatar */}
           <div className="flex flex-col items-start gap-3">

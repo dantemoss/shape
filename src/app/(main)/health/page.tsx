@@ -119,15 +119,15 @@ export default function HealthPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-8 py-4 flex items-center gap-4 sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center gap-4 sticky top-0 bg-background z-10">
         <h1 className="text-lg font-medium">Higiene Financiera</h1>
         <span className="text-sm text-muted-foreground">Análisis de hábitos</span>
       </div>
 
-      <div className="flex-1 p-6 space-y-5">
+      <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-5">
 
         {/* ── Fila 1: 4 KPIs ── */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
 
           {/* Score */}
           <div className="border border-border rounded-2xl p-5 bg-card">
@@ -204,7 +204,7 @@ export default function HealthPage() {
         </div>
 
         {/* ── Fila 3: Bar chart + Insights ── */}
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 
           {/* Bar chart — categorías */}
           {catBarData.length > 0 && (
@@ -258,7 +258,7 @@ export default function HealthPage() {
                 <RefreshCw size={11} />{recurring.length} detectados
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {recurring.slice(0, 6).map((r, i) => (
                 <div key={i} className="flex items-center gap-2.5 p-3 rounded-xl border border-border">
                   <RefreshCw size={12} className="text-muted-foreground shrink-0" />

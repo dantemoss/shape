@@ -14,7 +14,7 @@ export default function SalaryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-medium">Sueldo</h1>
           <span className="text-sm text-muted-foreground">
@@ -31,7 +31,7 @@ export default function SalaryPage() {
         )}
       </div>
 
-      <div className="px-8 py-8 flex flex-col items-center space-y-6">
+      <div className="px-4 sm:px-8 py-6 sm:py-8 flex flex-col items-center space-y-6">
         {(!salaryConfig || editing) ? (
           <div className="w-full max-w-sm">
             <SalarySetup onSave={() => setEditing(false)} />

@@ -25,7 +25,7 @@ export default function GoalsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-medium">Metas</h1>
           {goals.length > 0 && (
@@ -49,7 +49,7 @@ export default function GoalsPage() {
         </Dialog>
       </div>
 
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-8 py-4 sm:py-6">
         {goals.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground border border-dashed border-border rounded-2xl">
             <p className="text-4xl mb-4">🎯</p>
@@ -57,7 +57,7 @@ export default function GoalsPage() {
             <p className="text-xs mt-1">Creá una para empezar a ahorrar para lo que querés</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4 max-w-3xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
             {goals.map((goal, i) => (
               <GoalCard
                 key={goal.id}
