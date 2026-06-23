@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Goal } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,24 +10,24 @@ import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
-// ── Backgrounds de header ────────────────────────────────────────────────────
-// Las primeras dos metas usan las imágenes reales; el resto cicla gradientes
-const IMAGE_HEADERS = [
-  "linear-gradient(rgba(0,0,0,0.25),rgba(0,0,0,0.55)), url('/goal-header.jpg')",
-  "linear-gradient(rgba(0,0,0,0.25),rgba(0,0,0,0.55)), url('/goal2.png')",
+const Silk = dynamic(() => import("@/components/silk"), { ssr: false });
+
+// Paleta de colores que cicla automáticamente por índice de meta
+const SILK_COLORS = [
+  "#2F48A1", // brand blue
+  "#7C3AED", // violet
+  "#E11D48", // rose
+  "#059669", // emerald
+  "#B45309", // amber
+  "#0891B2", // cyan
+  "#DB2777", // pink
+  "#C2410C", // orange
+  "#374151", // slate
+  "#065F46", // dark green
 ];
 
-const GRADIENT_HEADERS = [
-  "linear-gradient(135deg, #0f0c29, #302b63, #24243e)",
-  "linear-gradient(135deg, #1a0000, #3d0000, #6b0000)",
-  "linear-gradient(135deg, #000d1a, #003d3d, #005c35)",
-  "linear-gradient(135deg, #0d001a, #2d006b, #4a008b)",
-  "linear-gradient(135deg, #1a1000, #3d2800, #6b4500)",
-];
-
-function getHeaderBg(index: number): string {
-  if (index < IMAGE_HEADERS.length) return IMAGE_HEADERS[index];
-  return GRADIENT_HEADERS[(index - IMAGE_HEADERS.length) % GRADIENT_HEADERS.length];
+function getSilkColor(index: number): string {
+  return SILK_COLORS[index % SILK_COLORS.length];
 }
 
 // ── Radial SVG para el progreso circular ────────────────────────────────────
@@ -65,7 +66,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
   const percentage = Math.min(Math.round((goal.currentAmount / goal.targetAmount) * 100), 100);
   const remaining = goal.targetAmount - goal.currentAmount;
   const isComplete = goal.currentAmount >= goal.targetAmount;
-  const headerBg = getHeaderBg(index);
+  const silkColor = getSilkColor(index);
 
   function handleAddAmount(e: React.FormEvent) {
     e.preventDefault();
@@ -82,12 +83,13 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
       isComplete && "border-income/40"
     )}>
       {/* ── Header visual ── */}
-      <div
-        className="relative h-32 overflow-hidden"
-        style={{ background: headerBg, backgroundSize: "cover", backgroundPosition: "center" }}
-      >
+      <div className="relative h-32 overflow-hidden">
+        {/* Silk background */}
+        <div className="absolute inset-0">
+          <Silk color={silkColor} speed={4} scale={1.2} noiseIntensity={1.5} rotation={0} />
+        </div>
         {/* Overlay sutil */}
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/30" />
 
         {/* Progress circle — top right */}
         <div className="absolute top-3 right-3 flex flex-col items-center">

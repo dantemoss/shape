@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Transaction, Goal, SalaryConfig, SalaryPayment, CreditCard, CardInstallment } from "./types";
+import { Transaction, Goal, SalaryConfig, SalaryPayment, CreditCard, CardInstallment, Subscription } from "./types";
 
 export interface UserProfile {
   name: string;
@@ -17,6 +17,7 @@ interface ShapeStore {
   salaryPayments: SalaryPayment[];
   creditCards: CreditCard[];
   cardInstallments: CardInstallment[];
+  subscriptions: Subscription[];
   setUserProfile: (profile: UserProfile) => void;
   clearUserProfile: () => void;
   addCreditCard: (card: Omit<CreditCard, "id" | "createdAt">) => void;
@@ -34,6 +35,9 @@ interface ShapeStore {
   clearSalaryConfig: () => void;
   addSalaryPayment: (payment: Omit<SalaryPayment, "id">) => void;
   removeSalaryPayment: (id: string) => void;
+  addSubscription: (sub: Omit<Subscription, "id" | "createdAt">) => void;
+  updateSubscription: (id: string, updates: Partial<Subscription>) => void;
+  removeSubscription: (id: string) => void;
 }
 
 function generateId(): string {
@@ -48,6 +52,7 @@ export const useShapeStore = create<ShapeStore>()(
       goals: [],
       salaryConfig: null,
       salaryPayments: [],
+      subscriptions: [],
 
       setUserProfile: (profile) => set({ userProfile: profile }),
       clearUserProfile: () => set({ userProfile: null }),
@@ -157,6 +162,24 @@ export const useShapeStore = create<ShapeStore>()(
       removeSalaryPayment: (id) =>
         set((state) => ({
           salaryPayments: state.salaryPayments.filter((p) => p.id !== id),
+        })),
+
+      addSubscription: (sub) =>
+        set((state) => ({
+          subscriptions: [
+            { ...sub, id: generateId(), createdAt: new Date().toISOString() },
+            ...state.subscriptions,
+          ],
+        })),
+
+      updateSubscription: (id, updates) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.map((s) => s.id === id ? { ...s, ...updates } : s),
+        })),
+
+      removeSubscription: (id) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.filter((s) => s.id !== id),
         })),
     }),
     {

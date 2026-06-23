@@ -4,18 +4,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, ArrowLeftRight, Target,
-  Banknote, HeartPulse, User, CreditCard,
+  Banknote, HeartPulse, User, CreditCard, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShapeStore } from "@/lib/store";
 
 const NAV_ITEMS = [
-  { href: "/",             label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/transactions", label: "Movimientos", icon: ArrowLeftRight },
-  { href: "/salary",       label: "Sueldo",      icon: Banknote },
-  { href: "/cards",        label: "Tarjetas",    icon: CreditCard },
-  { href: "/goals",        label: "Metas",       icon: Target },
-  { href: "/health",       label: "Higiene",     icon: HeartPulse },
+  { href: "/",              label: "Dashboard",     icon: LayoutDashboard },
+  { href: "/transactions",  label: "Movimientos",   icon: ArrowLeftRight },
+  { href: "/salary",        label: "Sueldo",        icon: Banknote },
+  { href: "/cards",         label: "Tarjetas",      icon: CreditCard },
+  { href: "/subscriptions", label: "Suscripciones", icon: RefreshCw },
+  { href: "/goals",         label: "Metas",         icon: Target },
+  { href: "/health",        label: "Higiene",       icon: HeartPulse },
 ];
 
 export function Sidebar() {
@@ -28,8 +29,8 @@ export function Sidebar() {
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-52 border-r border-border flex-col py-5 bg-sidebar z-20">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-5 mb-7">
-          <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center shrink-0">
-            <span className="text-background text-xs font-medium">S</span>
+          <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center shrink-0">
+            <span className="text-brand-foreground text-xs font-medium">S</span>
           </div>
           <span className="font-medium text-sm tracking-tight">Shape</span>
         </div>
@@ -45,11 +46,11 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
                   active
-                    ? "bg-income/10 text-income font-medium"
+                    ? "bg-brand/10 text-brand font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                 )}
               >
-                <Icon size={15} strokeWidth={active ? 2 : 1.6} className={active ? "text-income" : ""} />
+                <Icon size={15} strokeWidth={active ? 2 : 1.6} className={active ? "text-brand" : ""} />
                 {label}
               </Link>
             );
@@ -63,7 +64,7 @@ export function Sidebar() {
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
               pathname === "/profile"
-                ? "bg-income/10 text-income font-medium"
+                ? "bg-brand/10 text-brand font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
             )}
           >
@@ -89,7 +90,7 @@ export function Sidebar() {
               href={href}
               className={cn(
                 "flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors",
-                active ? "text-income" : "text-muted-foreground"
+                active ? "text-brand" : "text-muted-foreground"
               )}
             >
               <Icon size={18} strokeWidth={active ? 2.2 : 1.6} />
@@ -102,7 +103,7 @@ export function Sidebar() {
           href="/profile"
           className={cn(
             "flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors",
-            pathname === "/profile" ? "text-income" : "text-muted-foreground"
+            pathname === "/profile" ? "text-brand" : "text-muted-foreground"
           )}
         >
           {userProfile?.avatar ? (

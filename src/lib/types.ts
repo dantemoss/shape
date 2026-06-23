@@ -120,6 +120,71 @@ export interface IssuerInfo {
   domain: string;
 }
 
+/* ═══════════════════════════════════════════
+   SUBSCRIPTIONS
+═══════════════════════════════════════════ */
+export type SubPeriod   = "monthly" | "yearly" | "weekly";
+export type SubCurrency = "ARS" | "USD";
+export type SubCategory = "streaming" | "productivity" | "food" | "music" | "storage" | "gaming" | "other";
+
+export const SUB_PERIOD_LABELS: Record<SubPeriod, string> = {
+  monthly: "Mensual",
+  yearly:  "Anual",
+  weekly:  "Semanal",
+};
+
+export const SUB_CATEGORY_LABELS: Record<SubCategory, string> = {
+  streaming:    "Streaming",
+  productivity: "Productividad",
+  food:         "Comida",
+  music:        "Música",
+  storage:      "Almacenamiento",
+  gaming:       "Gaming",
+  other:        "Otro",
+};
+
+export interface Subscription {
+  id:         string;
+  name:       string;
+  domain:     string;   // para logo.dev (puede estar vacío)
+  price:      number;
+  currency:   SubCurrency;
+  period:     SubPeriod;
+  startDate:  string;   // ISO date — usada para calcular próxima renovación
+  active:     boolean;
+  category:   SubCategory;
+  createdAt:  string;
+}
+
+/** Servicios populares con dominio pre-cargado */
+export interface PopularService {
+  name:     string;
+  domain:   string;
+  category: SubCategory;
+  currency: SubCurrency;
+}
+
+export const POPULAR_SERVICES: PopularService[] = [
+  { name: "YouTube Premium",    domain: "youtube.com",       category: "streaming",    currency: "ARS" },
+  { name: "Netflix",            domain: "netflix.com",       category: "streaming",    currency: "ARS" },
+  { name: "Spotify",            domain: "spotify.com",       category: "music",        currency: "ARS" },
+  { name: "Disney+",            domain: "disneyplus.com",    category: "streaming",    currency: "ARS" },
+  { name: "HBO Max",            domain: "max.com",           category: "streaming",    currency: "ARS" },
+  { name: "Amazon Prime",       domain: "amazon.com",        category: "streaming",    currency: "USD" },
+  { name: "Apple TV+",          domain: "apple.com",         category: "streaming",    currency: "USD" },
+  { name: "PedidosYa Plus",     domain: "pedidosya.com",     category: "food",         currency: "ARS" },
+  { name: "Rappi Prime",        domain: "rappi.com",         category: "food",         currency: "ARS" },
+  { name: "Cursor AI",          domain: "cursor.com",        category: "productivity", currency: "USD" },
+  { name: "Google Gemini",      domain: "google.com",        category: "productivity", currency: "USD" },
+  { name: "ChatGPT Plus",       domain: "openai.com",        category: "productivity", currency: "USD" },
+  { name: "Notion",             domain: "notion.so",         category: "productivity", currency: "USD" },
+  { name: "GitHub Copilot",     domain: "github.com",        category: "productivity", currency: "USD" },
+  { name: "iCloud+",            domain: "apple.com",         category: "storage",      currency: "USD" },
+  { name: "Google One",         domain: "one.google.com",    category: "storage",      currency: "ARS" },
+  { name: "Xbox Game Pass",     domain: "xbox.com",          category: "gaming",       currency: "USD" },
+  { name: "PlayStation Plus",   domain: "playstation.com",   category: "gaming",       currency: "USD" },
+];
+
 export const ISSUERS: Record<string, IssuerInfo> = {
   santander:   { name: "Santander",       color: "#EC0000", textColor: "#fff", abbr: "S",  type: "bank",    domain: "santander.com.ar" },
   bbva:        { name: "BBVA",            color: "#004481", textColor: "#fff", abbr: "B",  type: "bank",    domain: "bbva.com.ar" },

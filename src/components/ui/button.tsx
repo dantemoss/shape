@@ -9,7 +9,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-foreground text-background shadow-[0_1px_2px_rgba(0,0,0,0.2),0_0_0_1px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.08)] hover:opacity-90 active:opacity-80",
+          "bg-brand text-brand-foreground shadow-[0_1px_2px_rgba(47,72,161,0.3),0_0_0_1px_rgba(47,72,161,0.15),inset_0_1px_0_rgba(255,255,255,0.12)] hover:opacity-90 active:opacity-80",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
@@ -19,7 +19,7 @@ const buttonVariants = cva(
         destructive:
           "bg-expense/10 text-expense border-expense/20 hover:bg-expense/20 focus-visible:ring-expense/20",
         income:
-          "bg-income text-income-foreground shadow-[0_1px_2px_rgba(0,0,0,0.15),inset_0_1px_0_rgba(255,255,255,0.15)] hover:opacity-90 active:opacity-80",
+          "bg-brand text-brand-foreground shadow-[0_1px_2px_rgba(47,72,161,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] hover:opacity-90 active:opacity-80",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

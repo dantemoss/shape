@@ -43,6 +43,8 @@
   --color-income-foreground: var(--income-foreground);
   --color-expense: var(--expense);
   --color-expense-foreground: var(--expense-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -93,6 +95,9 @@
   /* Red expense */
   --expense: oklch(0.577 0.245 27.325);
   --expense-foreground: oklch(0.97 0.02 27);
+  /* Brand blue #2F48A1 */
+  --brand: #2F48A1;
+  --brand-foreground: #ffffff;
   --chart-income: oklch(0.55 0.15 162);
   --chart-expense: oklch(0.577 0.245 27.325);
   --chart-3: oklch(0.439 0 0);
