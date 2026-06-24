@@ -36,7 +36,7 @@ export default function GoalsPage() {
           )}
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button size="sm" className="gap-2" />}>
+          <DialogTrigger render={<Button className="gap-2" />}>
             <Plus size={14} />
             Nueva meta
           </DialogTrigger>

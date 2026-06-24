@@ -105,10 +105,9 @@ export default function SubscriptionsPage() {
         <div className="flex items-center justify-between px-4 sm:px-8 pt-4 pb-2">
           <h1 className="text-lg font-medium">Suscripciones</h1>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button size="sm" className="gap-1.5" />}>
+            <DialogTrigger render={<Button className="gap-2" />}>
               <Plus size={14} />
-              <span className="hidden sm:inline">Nueva</span>
-              <span className="sm:hidden">Agregar</span>
+              Nueva suscripción
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -164,7 +163,7 @@ export default function SubscriptionsPage() {
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger render={<Button className="gap-2 mt-2" />}>
                 <Plus size={14} />
-                Agregar primera suscripción
+                Nueva suscripción
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
                 <DialogHeader><DialogTitle>Agregar suscripción</DialogTitle></DialogHeader>
@@ -262,17 +261,19 @@ function SubscriptionRow({
   return (
     <div className="flex items-center gap-3.5 px-4 py-3.5 group transition-colors hover:bg-muted/20">
       {/* Logo */}
-      <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center overflow-hidden shrink-0 border border-border/50">
+      <div className="w-9 h-9 flex items-center justify-center shrink-0">
         {sub.domain ? (
           <img
             src={logoUrl(sub.domain, 64)}
             alt={sub.name}
-            className="w-7 h-7 object-contain"
+            className="w-9 h-9 object-contain logo-light dark:logo-dark"
           />
         ) : (
-          <span className="text-sm font-medium text-muted-foreground">
-            {sub.name[0]}
-          </span>
+          <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
+            <span className="text-sm font-medium text-muted-foreground">
+              {sub.name[0]}
+            </span>
+          </div>
         )}
       </div>
 

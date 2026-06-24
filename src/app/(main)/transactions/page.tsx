@@ -31,11 +31,10 @@ export default function TransactionsPage() {
           <h1 className="text-lg font-medium">Movimientos</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={
-              <Button size="sm" className="gap-1.5" />
+              <Button className="gap-2" />
             }>
               <Plus size={14} />
-              <span className="hidden sm:inline">Nuevo</span>
-              <span className="sm:hidden">Agregar</span>
+              Nuevo movimiento
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>

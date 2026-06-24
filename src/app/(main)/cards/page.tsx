@@ -53,7 +53,7 @@ export default function CardsPage() {
           )}
         </div>
         <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
-          <DialogTrigger render={<Button size="sm" className="gap-2" />}>
+          <DialogTrigger render={<Button className="gap-2" />}>
             <Plus size={14} />
             Nueva tarjeta
           </DialogTrigger>
