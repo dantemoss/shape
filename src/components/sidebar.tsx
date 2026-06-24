@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useShapeStore } from "@/lib/store";
+import { ShapeLogo } from "@/components/shape-logo";
 
 const NAV_ITEMS = [
   { href: "/",              label: "Dashboard",     icon: LayoutDashboard },
@@ -29,9 +30,7 @@ export function Sidebar() {
       <aside className="hidden md:flex fixed left-0 top-0 h-screen w-52 border-r border-border flex-col py-5 bg-sidebar z-20">
         {/* Brand */}
         <div className="flex items-center gap-2.5 px-5 mb-7">
-          <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center shrink-0">
-            <span className="text-brand-foreground text-xs font-medium">S</span>
-          </div>
+          <ShapeLogo size={28} />
           <span className="font-medium text-sm tracking-tight">Shape</span>
         </div>
 

@@ -1,0 +1,27 @@
+interface ShapeLogoProps {
+  size?: number;
+  className?: string;
+}
+
+export function ShapeLogo({ size = 28, className }: ShapeLogoProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 144 144"
+      width={size}
+      height={size}
+      className={className}
+    >
+      <defs>
+        <linearGradient id="shape-logo-grad" x1="26.19" x2="117.6" y1="101" y2="32.11" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2F48A1" offset="0" />
+          <stop stopColor="#3D57B3" offset="1" />
+        </linearGradient>
+      </defs>
+      <path
+        fill="url(#shape-logo-grad)"
+        d="m126.8 57.6-42.5-41.1c-3.2-3.1-7.2-4.8-12.3-4.8s-9 1.4-12.2 4.4l-42.6 41.5c-3.5 3.4-5.4 7.8-5.4 13.7 0 4.7 1.8 9.2 5.2 12.6l42.2 41.8c3.4 4.4 7.5 5.8 12.8 5.8s9-1.3 12.8-5l41.9-41.9c3.6-3.2 5.6-7.9 5.6-13.1 0-5.1-2-10.5-5.5-13.9zm-12.6 20.3-7.7 6.7v-0.6c0-3.6-1.7-8-5.4-12.3l-28.7-29.3c-0.2-0.2-0.7-0.5-1.1-0.1l-8.5 8.2c-0.4 0.3-0.3 0.9 0 1.2l26.1 26.6c3.3 3.4 4.9 7.3 4.9 11.6 0 4.5-1.8 8.6-4.6 11.6l-12.3 12.2c-3 2.9-7.5 3.5-10.8 0.2l-35.1-35c-2.7-2.7-3.8-4.3-3.8-7 0-2.1 1-4.3 2.7-6l7.1-8.3c0 2.4 0.6 8 5.8 13.8l28.3 29c0.8 0.9 1.1 0.7 1.5 0.3l8.1-8.2c0.6-0.5 0.8-1 0.1-1.7l-25.6-26.5c-3.1-3.3-5.3-7.2-5.3-12.2 0-4.4 1.7-8.1 4.5-11l12.2-12.1c2.8-3 7.3-4.2 10.6-0.9l36.4 35.8c2.4 2.3 3.2 3.1 3.8 4.2 1.7 2.8-0.4 7.2-3.2 9.8z"
+      />
+    </svg>
+  );
+}

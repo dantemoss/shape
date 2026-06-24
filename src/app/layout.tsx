@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Shape — Finanzas",
   description: "Tu gestor de finanzas personal",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export const viewport: Viewport = {
