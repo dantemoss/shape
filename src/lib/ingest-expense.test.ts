@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  SHAPE_EXPENSE_CATEGORIES,
   buildExpenseInsert,
   formatArgentinaDate,
+  handleCategories,
   handleIngest,
   parseAmount,
   type ExpenseInsert,
@@ -87,12 +89,62 @@ test("la medianoche UTC cae en el día anterior de Argentina", () => {
   assert.equal(formatArgentinaDate(new Date("2026-10-22T02:30:00.000Z")), "2026-10-21");
 });
 
-test("rechaza categoría, fecha y cuerpo sin comercio", () => {
-  assert.equal(buildExpenseInsert({ amount: 10, merchant: "X", category: "viaje" }, userId, now).ok, false);
+test("acepta las secciones de Shape y rechaza Delivery y Servicios", () => {
+  for (const category of SHAPE_EXPENSE_CATEGORIES) {
+    const byLabel = buildExpenseInsert(
+      { amount: 10, merchant: "X", category: category.label },
+      userId,
+      now
+    );
+    assert.equal(byLabel.ok, true);
+    if (byLabel.ok) assert.equal(byLabel.row.category, category.id);
+  }
+
+  const ocio = buildExpenseInsert({ amount: 10, merchant: "X", category: "Entretenimiento" }, userId, now);
+  assert.equal(ocio.ok, true);
+  if (ocio.ok) assert.equal(ocio.row.category, "entertainment");
+
+  const delivery = buildExpenseInsert({ amount: 10, merchant: "Rappi", category: "Delivery" }, userId, now);
+  assert.equal(delivery.ok, false);
+  if (!delivery.ok) assert.match(delivery.error, /Comida/);
+
+  const servicios = buildExpenseInsert({ amount: 10, merchant: "Edenor", category: "Servicios" }, userId, now);
+  assert.equal(servicios.ok, false);
+  if (!servicios.ok) assert.match(servicios.error, /Vivienda/);
+
+  const unknown = buildExpenseInsert({ amount: 10, merchant: "X", category: "viaje" }, userId, now);
+  assert.equal(unknown.ok, false);
+  if (!unknown.ok) assert.match(unknown.error, /Transporte/);
+});
+
+test("rechaza fecha y cuerpo sin comercio", () => {
   assert.equal(buildExpenseInsert({ amount: 10, merchant: "X", date: "32/01/2026" }, userId, now).ok, false);
   const missing = buildExpenseInsert({ amount: 10 }, userId, now);
   assert.equal(missing.ok, false);
   if (!missing.ok) assert.match(missing.error, /comercio/);
+});
+
+test("GET /api/categorias devuelve las secciones reales con el mismo token", async () => {
+  const ok = await handleCategories(get("/api/categorias"), { env });
+  assert.equal(ok.status, 200);
+  const body = (await ok.json()) as { labels: string[]; categories: { id: string; label: string }[] };
+  assert.deepEqual(
+    body.labels,
+    SHAPE_EXPENSE_CATEGORIES.map((category) => category.label)
+  );
+  assert.equal(body.labels[0], "Transporte");
+  assert.equal(body.labels.includes("Delivery"), false);
+  assert.equal(body.labels.includes("Servicios"), false);
+  assert.equal(body.categories[0]?.id, "transport");
+
+  const missing = await handleCategories(get("/api/categorias", ""), { env });
+  assert.equal(missing.status, 401);
+
+  const wrong = await handleCategories(get("/api/categorias", "otro"), { env });
+  assert.equal(wrong.status, 401);
+
+  const unconfigured = await handleCategories(get("/api/categorias"), { env: { ...env, token: null } });
+  assert.equal(unconfigured.status, 500);
 });
 
 test("el endpoint exige el token y devuelve JSON", async () => {
@@ -140,6 +192,12 @@ test("el endpoint exige el token y devuelve JSON", async () => {
   const unconfiguredBody = (await unconfigured.json()) as { error: string };
   assert.match(unconfiguredBody.error, /SHAPE_INGEST_TOKEN/);
 });
+
+function get(path: string, token = "secreto"): Request {
+  const headers = new Headers();
+  if (token) headers.set("authorization", `Bearer ${token}`);
+  return new Request(`https://shape-coral.vercel.app${path}`, { method: "GET", headers });
+}
 
 function post(body: unknown, token = "secreto"): Request {
   const headers = new Headers({ "content-type": "application/json" });

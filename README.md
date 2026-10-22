@@ -136,7 +136,30 @@ Obligatorios: `amount` y al menos uno de `merchant` o `description`. El resto es
 | `category` | `other` |
 | `external_id` | vacío. Si lo repetís, la segunda vez responde 409 y no duplica el gasto. |
 
-El monto puede ser un número (`12345.67`) o un texto argentino (`$ 12.345,67`, `12,50`, `12.345`). También acepta `monto`, `comercio`, `descripcion`, `categoria`, `fecha`, `moneda` y `origen` como nombres de campo. Categorías: `housing`, `food`, `transport`, `entertainment`, `health`, `education`, `subscriptions`, `clothing`, `savings`, `other` (o el nombre en español, como `comida`).
+El monto puede ser un número (`12345.67`) o un texto argentino (`$ 12.345,67`, `12,50`, `12.345`). También acepta `monto`, `comercio`, `descripcion`, `categoria`, `fecha`, `moneda` y `origen` como nombres de campo.
+
+`category` tiene que ser una sección que Shape ya usa. Si mandás otra, responde 400 y el `error` lista las válidas. Delivery y Servicios no son secciones: el endpoint no las inventa y responde que van como Comida y Vivienda.
+
+Lista, con Transporte primero:
+
+| En el atajo | Se guarda como |
+| --- | --- |
+| Transporte | `transport` |
+| Comida | `food` |
+| Suscripciones | `subscriptions` |
+| Ocio | `entertainment` (también acepta Entretenimiento, que es como se ve en Movimientos) |
+| Vivienda | `housing` |
+| Salud | `health` |
+| Ropa | `clothing` |
+| Educación | `education` |
+| Ahorro | `savings` |
+| Otro | `other` |
+
+Para leer esa lista desde el iPhone, con el mismo token:
+
+`GET https://shape-coral.vercel.app/api/categorias`
+
+Responde `{ "labels": ["Transporte", "Comida", ...], "categories": [{ "id": "transport", "label": "Transporte" }, ...] }`. Sin Bearer válido responde 401. Si falta `SHAPE_INGEST_TOKEN`, 500.
 
 Respuestas JSON:
 
@@ -151,27 +174,53 @@ Respuestas JSON:
 
 El atajo solo guarda `SHAPE_INGEST_TOKEN`. La service role y el UUID se quedan en Vercel.
 
+El uso de todos los días es el atajo a mano: el pago sale de la cuenta por QR o transferencia, y Wallet no avisa. La automatización de Cartera queda al final, como opción.
+
 ### Atajo para cargar un gasto a mano
 
 1. Abrí **Atajos** y tocá **+**.
 2. Tocá el nombre y renombralo a **Cargar gasto**.
 3. **Agregar acción** → buscá **Pedir entrada**. Pregunta: `¿Cuánto?`. Tipo: **Texto** (así podés escribir `12.345,67`). Tocá **Entrada proporcionada**, elegí **Renombrar** y poné `Monto`.
 4. Otra **Pedir entrada**. Pregunta: `¿Dónde?`. Tipo: **Texto**. Renombrá la salida a `Comercio`.
-5. **Agregar acción** → buscá **Obtener contenido de URL** (en un iPhone en inglés: *Get Contents of URL*).
-6. En URL pegá `https://shape-coral.vercel.app/api/gastos`.
-7. Tocá la flecha de la acción para abrir el detalle.
-8. **Método**: POST.
-9. **Encabezados** → **Agregar nuevo encabezado**.
-   - Clave: `Authorization`
-   - Valor: `Bearer ` y, pegado, el valor de `SHAPE_INGEST_TOKEN`. Tiene que haber un espacio después de `Bearer`. Ejemplo: `Bearer mi-token-largo`.
-10. **Cuerpo de la solicitud**: JSON.
-11. **Agregar nuevo campo**:
+5. **Agregar acción** → buscá **Elegir de la lista** (*Choose from List*).
+6. Título de la pregunta: `Categoría`.
+7. En la lista, cargá exactamente estas opciones, en este orden. Transporte va primero. No agregues Delivery ni Servicios: Shape no tiene esas secciones.
+
+   `Transporte`, `Comida`, `Suscripciones`, `Ocio`, `Vivienda`, `Salud`, `Ropa`, `Educación`, `Ahorro`, `Otro`
+
+8. Tocá **Lista elegida**, elegí **Renombrar** y poné `Categoría`.
+9. **Agregar acción** → buscá **Obtener contenido de URL** (en un iPhone en inglés: *Get Contents of URL*).
+10. En URL pegá `https://shape-coral.vercel.app/api/gastos`.
+11. Tocá la flecha de la acción para abrir el detalle.
+12. **Método**: POST.
+13. **Encabezados** → **Agregar nuevo encabezado**.
+    - Clave: `Authorization`
+    - Valor: `Bearer ` y, pegado, el valor de `SHAPE_INGEST_TOKEN`. Tiene que haber un espacio después de `Bearer`. Ejemplo: `Bearer mi-token-largo`.
+14. **Cuerpo de la solicitud**: JSON.
+15. **Agregar nuevo campo**:
     - Clave `amount`. En el valor, tocá y elegí la variable **Monto**.
     - Clave `merchant`. En el valor, elegí **Comercio**.
-12. Opcional, para no duplicar si lo corrés dos veces: agregá una acción **Texto** antes del POST, con `Comercio-Monto-Fecha` (insertá las variables), renombrala `Referencia`, y en el JSON sumá la clave `external_id` con esa variable.
-13. Opcional: al final, **Mostrar resultado** con el contenido de la URL. Si salió bien ves `"id"`. Si falló ves `"error"`.
+    - Clave `category`. En el valor, elegí **Categoría**. Tiene que ir el texto de la lista, tal cual.
+16. Opcional, para no duplicar si lo corrés dos veces: agregá una acción **Texto** antes del POST, con `Comercio-Monto-Fecha` (insertá las variables), renombrala `Referencia`, y en el JSON sumá la clave `external_id` con esa variable.
+17. Opcional: al final, **Mostrar resultado** con el contenido de la URL. Si salió bien ves `"id"`. Si falló ves `"error"`.
 
-### Automatización de Cartera (Wallet)
+Un delivery (Rappi, PedidosYa) se elige como **Comida**. Una factura de luz, gas o internet se elige como **Vivienda**.
+
+#### Lista traída de Shape
+
+Si preferís no tipear las diez opciones, el atajo puede pedirlas antes de elegir:
+
+1. Antes de **Elegir de la lista**, agregá **Obtener contenido de URL**.
+2. URL: `https://shape-coral.vercel.app/api/categorias`. Método: GET.
+3. El mismo encabezado: `Authorization` = `Bearer <SHAPE_INGEST_TOKEN>`.
+4. **Agregar acción** → **Obtener valor del diccionario** (*Get Dictionary Value*). Diccionario: el contenido de la URL. Clave: `labels`.
+5. En **Elegir de la lista**, tocá la lista fija y reemplazala por la variable **Valor del diccionario**.
+
+La lista que vuelve es la misma de arriba, con Transporte primero, y sin Delivery ni Servicios.
+
+### Automatización de Cartera (Wallet), opcional
+
+Esto solo sirve si el pago pasa por Apple Pay o por una tarjeta de Wallet. Un QR o una transferencia de Mercado Pago no dispara esta automatización, así que el atajo de arriba es el que hay que usar.
 
 Cuando pagás con Apple Pay o con una tarjeta de Wallet, iOS puede disparar el atajo con el monto y el comercio de la transacción.
 
@@ -183,11 +232,13 @@ Cuando pagás con Apple Pay o con una tarjeta de Wallet, iOS puede disparar el a
 6. **Agregar acción** → **Obtener detalles de Transacciones** (*Get Details of Transactions*). Detalle: **Monto**.
 7. Otra igual, con detalle **Comercio**.
 8. Si el detalle **Fecha** está en la lista, agregalo también.
-9. **Obtener contenido de URL**, igual que en el atajo de arriba: POST, encabezado `Authorization: Bearer <token>`, cuerpo JSON.
-10. En el JSON:
+9. **Elegir de la lista**, con las mismas diez secciones del atajo a mano. Renombrá la salida a `Categoría`.
+10. **Obtener contenido de URL**, igual que en el atajo de arriba: POST, encabezado `Authorization: Bearer <token>`, cuerpo JSON.
+11. En el JSON:
     - `amount` → el detalle **Monto**
     - `merchant` → el detalle **Comercio**
+    - `category` → **Categoría**
     - `date` → el detalle **Fecha**, solo si lo agregaste. Si no, Shape usa el día de hoy en Argentina.
-11. Recomendado: una acción **Texto** con `Comercio-Monto-Fecha` y mandala como `external_id`, para que la misma transacción no se cargue dos veces.
+12. Recomendado: una acción **Texto** con `Comercio-Monto-Fecha` y mandala como `external_id`, para que la misma transacción no se cargue dos veces.
 
 No hace falta pedir el monto a mano: Wallet ya lo trae. Si el atajo responde 409, ese pago ya estaba en Shape.

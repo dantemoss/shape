@@ -3,20 +3,25 @@ import { createHash, timingSafeEqual } from "node:crypto";
 export const EXPENSE_SOURCES = ["manual", "mercadopago", "shortcut"] as const;
 export type ExpenseSource = (typeof EXPENSE_SOURCES)[number];
 
-const CATEGORIES = [
-  "housing",
-  "food",
-  "transport",
-  "entertainment",
-  "health",
-  "education",
-  "subscriptions",
-  "clothing",
-  "savings",
-  "other",
+/**
+ * Secciones de gasto que Shape ya usa al cargar un movimiento.
+ * Transporte va primero: es la única de Delivery, Transporte y Servicios
+ * que existe como categoría. Delivery y Servicios no se agregan acá.
+ */
+export const SHAPE_EXPENSE_CATEGORIES = [
+  { id: "transport", label: "Transporte" },
+  { id: "food", label: "Comida" },
+  { id: "subscriptions", label: "Suscripciones" },
+  { id: "entertainment", label: "Ocio" },
+  { id: "housing", label: "Vivienda" },
+  { id: "health", label: "Salud" },
+  { id: "clothing", label: "Ropa" },
+  { id: "education", label: "Educación" },
+  { id: "savings", label: "Ahorro" },
+  { id: "other", label: "Otro" },
 ] as const;
 
-export type ExpenseCategoryId = (typeof CATEGORIES)[number];
+export type ExpenseCategoryId = (typeof SHAPE_EXPENSE_CATEGORIES)[number]["id"];
 
 const CATEGORY_ALIASES: Record<string, ExpenseCategoryId> = {
   housing: "housing",
@@ -41,6 +46,12 @@ const CATEGORY_ALIASES: Record<string, ExpenseCategoryId> = {
   ahorro: "savings",
   other: "other",
   otro: "other",
+};
+
+const NOT_A_SECTION: Record<string, string> = {
+  delivery: "Delivery no es una categoría de Shape. Cargalo como Comida.",
+  servicios: "Servicios no es una categoría de Shape. Cargalo como Vivienda.",
+  servicio: "Servicios no es una categoría de Shape. Cargalo como Vivienda.",
 };
 
 const SOURCE_ALIASES: Record<string, ExpenseSource> = {
@@ -308,18 +319,48 @@ export function formatArgentinaDate(instant: Date): string {
   }).format(instant);
 }
 
+function categoryList(): string {
+  return SHAPE_EXPENSE_CATEGORIES.map((category) => category.label).join(", ");
+}
+
 function parseCategory(
   value: unknown
 ): { ok: true; value: ExpenseCategoryId } | { ok: false; error: string } {
   if (value == null || value === "") return { ok: true, value: "other" };
   if (typeof value !== "string") {
-    return { ok: false, error: `La categoría tiene que ser una de: ${CATEGORIES.join(", ")}.` };
+    return { ok: false, error: `La categoría tiene que ser una de: ${categoryList()}.` };
   }
-  const match = CATEGORY_ALIASES[fold(value)];
+  const folded = fold(value);
+  const missing = NOT_A_SECTION[folded];
+  if (missing) return { ok: false, error: missing };
+  const match = CATEGORY_ALIASES[folded];
   if (!match) {
-    return { ok: false, error: `Categoría desconocida. Usá una de: ${CATEGORIES.join(", ")}.` };
+    return { ok: false, error: `Categoría desconocida. Usá una de: ${categoryList()}.` };
   }
   return { ok: true, value: match };
+}
+
+export function handleCategories(request: Request, options: { env: IngestEnv }): Response {
+  if (request.method !== "GET") {
+    return jsonError(405, "Este endpoint solo acepta GET.");
+  }
+  if (!options.env.token) {
+    return jsonError(500, "Falta configurar SHAPE_INGEST_TOKEN en el servidor.");
+  }
+
+  const provided = readBearer(request);
+  if (!provided) {
+    return jsonError(401, "Falta el encabezado Authorization: Bearer <token>.");
+  }
+  if (!tokensMatch(provided, options.env.token)) {
+    return jsonError(401, "Token inválido.");
+  }
+
+  const categories = SHAPE_EXPENSE_CATEGORIES.map(({ id, label }) => ({ id, label }));
+  return Response.json(
+    { categories, labels: categories.map((category) => category.label) },
+    { status: 200, headers: { "cache-control": "no-store" } }
+  );
 }
 
 function parseSource(value: unknown): { ok: true; value: ExpenseSource } | { ok: false; error: string } {
