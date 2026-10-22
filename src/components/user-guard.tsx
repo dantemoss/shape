@@ -1,33 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useShapeStore } from "@/lib/store";
+import { isSupabaseConfigured } from "@/lib/supabase/env";
+import { ConfigMissing, LoadingScreen } from "@/components/loading-screen";
 
 export function UserGuard({ children }: { children: React.ReactNode }) {
-  const userProfile = useShapeStore((s) => s.userProfile);
+  const authStatus = useShapeStore((s) => s.authStatus);
+  const ready = useShapeStore((s) => s.ready);
   const router = useRouter();
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated && !userProfile) {
+    if (isSupabaseConfigured() && authStatus === "anonymous") {
       router.replace("/login");
     }
-  }, [hydrated, userProfile, router]);
+  }, [authStatus, router]);
 
-  if (!hydrated) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="w-5 h-5 rounded-full border-2 border-income border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
-  if (!userProfile) return null;
+  if (!isSupabaseConfigured()) return <ConfigMissing />;
+  if (authStatus === "loading" || !ready) return <LoadingScreen />;
+  if (authStatus !== "authenticated") return null;
 
   return <>{children}</>;
 }

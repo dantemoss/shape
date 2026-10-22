@@ -74,7 +74,7 @@ export function Sidebar() {
                 <User size={13} />
               </div>
             )}
-            <span className="truncate">{userProfile?.name ?? "Perfil"}</span>
+            <span className="truncate">{userProfile?.name || "Perfil"}</span>
           </Link>
         </div>
       </aside>

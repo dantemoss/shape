@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth";
+import { invalidateSession, retryLegacyImport } from "@/lib/session";
 import { useShapeStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +13,8 @@ import { Camera, LogOut, User } from "lucide-react";
 export default function ProfilePage() {
   const userProfile = useShapeStore((s) => s.userProfile);
   const setUserProfile = useShapeStore((s) => s.setUserProfile);
-  const clearUserProfile = useShapeStore((s) => s.clearUserProfile);
+  const legacyPending = useShapeStore((s) => s.legacyPending);
+  const importingLegacy = useShapeStore((s) => s.importingLegacy);
   const router = useRouter();
 
   const [name, setName] = useState(userProfile?.name ?? "");
@@ -27,17 +30,25 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    setUserProfile({ name: name.trim(), avatar });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      await setUserProfile({ name: name.trim(), avatar });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      // El aviso de la pantalla muestra el error.
+    }
   }
 
-  function handleLogout() {
-    clearUserProfile();
-    router.replace("/login");
+  async function handleLogout() {
+    try {
+      await signOut();
+    } finally {
+      invalidateSession();
+      router.replace("/login");
+    }
   }
 
   return (
@@ -95,6 +106,23 @@ export default function ProfilePage() {
             </Button>
           </div>
         </form>
+
+        {legacyPending && (
+          <div className="mt-10 pt-6 border-t border-border space-y-3">
+            <h2 className="text-sm font-medium">Datos de este navegador</h2>
+            <p className="text-sm text-muted-foreground">
+              Encontramos datos guardados en este navegador, de antes de usar la cuenta. Podés traerlos sin borrarlos de acá.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={importingLegacy}
+              onClick={() => void retryLegacyImport()}
+            >
+              {importingLegacy ? "Importando…" : "Importar datos locales"}
+            </Button>
+          </div>
+        )}
 
         {/* Logout */}
         <div className="mt-10 pt-6 border-t border-border">
