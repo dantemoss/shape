@@ -1,3 +1,8 @@
+export interface UserProfile {
+  name: string;
+  avatar: string | null;
+}
+
 export type TransactionType = "income" | "expense";
 
 export type ExpenseCategory =

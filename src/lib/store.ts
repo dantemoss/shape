@@ -1,25 +1,65 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { Transaction, Goal, SalaryConfig, SalaryPayment, CreditCard, CardInstallment, Subscription } from "./types";
+import type { ShapeData } from "./db";
+import type {
+  CardInstallment,
+  CreditCard,
+  Goal,
+  SalaryConfig,
+  SalaryPayment,
+  Subscription,
+  Transaction,
+  UserProfile,
+} from "./types";
+import {
+  deleteCardInstallment,
+  deleteCreditCard,
+  deleteGoal,
+  deleteSalaryConfig,
+  deleteSalaryPayment,
+  deleteSubscription,
+  deleteTransaction,
+  insertCardInstallment,
+  insertCreditCard,
+  insertGoal,
+  insertSalaryPayment,
+  insertSubscription,
+  insertTransaction,
+  loadAll,
+  updateCreditCard as updateCreditCardRow,
+  updateGoalCurrentAmount,
+  updateInstallmentPaid,
+  updateProfile,
+  updateSubscriptionRow,
+  upsertSalaryConfig,
+} from "./db";
 
-export interface UserProfile {
-  name: string;
-  avatar: string | null; // base64 data URL
-}
+export type { UserProfile };
 
-interface ShapeStore {
-  userProfile: UserProfile | null;
-  transactions: Transaction[];
-  goals: Goal[];
-  salaryConfig: SalaryConfig | null;
-  salaryPayments: SalaryPayment[];
-  creditCards: CreditCard[];
-  cardInstallments: CardInstallment[];
-  subscriptions: Subscription[];
-  setUserProfile: (profile: UserProfile) => void;
-  clearUserProfile: () => void;
+export type AuthStatus = "loading" | "anonymous" | "authenticated";
+
+export type ImportNotice =
+  | { kind: "imported"; summary: string }
+  | { kind: "error"; message: string };
+
+const SYNC_ERROR = "No se pudo guardar el cambio. Revisá tu conexión.";
+
+interface ShapeStore extends ShapeData {
+  userId: string | null;
+  authStatus: AuthStatus;
+  ready: boolean;
+  syncError: string | null;
+  importNotice: ImportNotice | null;
+  legacyPending: boolean;
+  importingLegacy: boolean;
+  beginSession: (userId: string) => void;
+  applyRemote: (data: ShapeData, notice: ImportNotice | null, legacyPending: boolean) => void;
+  failSession: (message: string) => void;
+  resetSession: () => void;
+  dismissImportNotice: () => void;
+  dismissSyncError: () => void;
+  setUserProfile: (profile: UserProfile) => Promise<void>;
   addCreditCard: (card: Omit<CreditCard, "id" | "createdAt">) => void;
   updateCreditCard: (id: string, updates: Partial<CreditCard>) => void;
   removeCreditCard: (id: string) => void;
@@ -40,153 +80,256 @@ interface ShapeStore {
   removeSubscription: (id: string) => void;
 }
 
-function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2);
+const emptyData: ShapeData = {
+  userProfile: null,
+  transactions: [],
+  goals: [],
+  salaryConfig: null,
+  salaryPayments: [],
+  creditCards: [],
+  cardInstallments: [],
+  subscriptions: [],
+};
+
+function createId(): string {
+  return crypto.randomUUID();
 }
 
-export const useShapeStore = create<ShapeStore>()(
-  persist(
-    (set) => ({
-      userProfile: null,
-      transactions: [],
-      goals: [],
-      salaryConfig: null,
-      salaryPayments: [],
-      subscriptions: [],
+function snapshotData(state: ShapeStore): ShapeData {
+  return {
+    userProfile: state.userProfile,
+    transactions: state.transactions,
+    goals: state.goals,
+    salaryConfig: state.salaryConfig,
+    salaryPayments: state.salaryPayments,
+    creditCards: state.creditCards,
+    cardInstallments: state.cardInstallments,
+    subscriptions: state.subscriptions,
+  };
+}
 
-      setUserProfile: (profile) => set({ userProfile: profile }),
-      clearUserProfile: () => set({ userProfile: null }),
-
-      creditCards: [],
-      cardInstallments: [],
-
-      addCreditCard: (card) =>
-        set((state) => ({
-          creditCards: [
-            { ...card, id: generateId(), createdAt: new Date().toISOString() },
-            ...state.creditCards,
-          ],
-        })),
-
-      updateCreditCard: (id, updates) =>
-        set((state) => ({
-          creditCards: state.creditCards.map((c) => c.id === id ? { ...c, ...updates } : c),
-        })),
-
-      removeCreditCard: (id) =>
-        set((state) => ({
-          creditCards: state.creditCards.filter((c) => c.id !== id),
-          cardInstallments: state.cardInstallments.filter((i) => i.cardId !== id),
-        })),
-
-      addCardInstallment: (inst) =>
-        set((state) => ({
-          cardInstallments: [
-            { ...inst, id: generateId() },
-            ...state.cardInstallments,
-          ],
-        })),
-
-      payInstallment: (id) =>
-        set((state) => ({
-          cardInstallments: state.cardInstallments.map((i) =>
-            i.id === id && i.paidInstallments < i.totalInstallments
-              ? { ...i, paidInstallments: i.paidInstallments + 1 }
-              : i
-          ),
-        })),
-
-      removeCardInstallment: (id) =>
-        set((state) => ({
-          cardInstallments: state.cardInstallments.filter((i) => i.id !== id),
-        })),
-
-      addTransaction: (tx) =>
-        set((state) => ({
-          transactions: [
-            {
-              ...tx,
-              id: generateId(),
-              createdAt: new Date().toISOString(),
-            },
-            ...state.transactions,
-          ],
-        })),
-
-      removeTransaction: (id) =>
-        set((state) => ({
-          transactions: state.transactions.filter((t) => t.id !== id),
-        })),
-
-      addGoal: (goal) =>
-        set((state) => ({
-          goals: [
-            {
-              ...goal,
-              id: generateId(),
-              createdAt: new Date().toISOString(),
-            },
-            ...state.goals,
-          ],
-        })),
-
-      updateGoalAmount: (id, amount) =>
-        set((state) => ({
-          goals: state.goals.map((g) =>
-            g.id === id
-              ? { ...g, currentAmount: Math.min(g.currentAmount + amount, g.targetAmount) }
-              : g
-          ),
-        })),
-
-      removeGoal: (id) =>
-        set((state) => ({
-          goals: state.goals.filter((g) => g.id !== id),
-        })),
-
-      setSalaryConfig: (config) => set({ salaryConfig: config }),
-
-      clearSalaryConfig: () => set({ salaryConfig: null }),
-
-      addSalaryPayment: (payment) =>
-        set((state) => ({
-          salaryPayments: [
-            {
-              ...payment,
-              id: generateId(),
-            },
-            ...state.salaryPayments,
-          ],
-        })),
-
-      removeSalaryPayment: (id) =>
-        set((state) => ({
-          salaryPayments: state.salaryPayments.filter((p) => p.id !== id),
-        })),
-
-      addSubscription: (sub) =>
-        set((state) => ({
-          subscriptions: [
-            { ...sub, id: generateId(), createdAt: new Date().toISOString() },
-            ...state.subscriptions,
-          ],
-        })),
-
-      updateSubscription: (id, updates) =>
-        set((state) => ({
-          subscriptions: state.subscriptions.map((s) => s.id === id ? { ...s, ...updates } : s),
-        })),
-
-      removeSubscription: (id) =>
-        set((state) => ({
-          subscriptions: state.subscriptions.filter((s) => s.id !== id),
-        })),
-    }),
-    {
-      name: "shape-storage",
+function commit(
+  set: (partial: Partial<ShapeStore>) => void,
+  get: () => ShapeStore,
+  optimistic: Partial<ShapeStore>,
+  write: (userId: string) => Promise<void>
+) {
+  const before = snapshotData(get());
+  const userId = get().userId;
+  if (!userId) {
+    set({ syncError: "No hay una sesión activa." });
+    return;
+  }
+  set({ ...optimistic, syncError: null });
+  void write(userId).catch(async () => {
+    try {
+      const fresh = await loadAll(userId);
+      set({ ...fresh, syncError: SYNC_ERROR });
+    } catch {
+      set({ ...before, syncError: SYNC_ERROR });
     }
-  )
-);
+  });
+}
+
+export const useShapeStore = create<ShapeStore>()((set, get) => ({
+  ...emptyData,
+  userId: null,
+  authStatus: "loading",
+  ready: false,
+  syncError: null,
+  importNotice: null,
+  legacyPending: false,
+  importingLegacy: false,
+
+  beginSession: (userId) => set({ userId, authStatus: "authenticated", ready: false }),
+
+  applyRemote: (data, notice, legacyPending) =>
+    set({
+      ...data,
+      ready: true,
+      authStatus: "authenticated",
+      importNotice: notice,
+      legacyPending,
+      importingLegacy: false,
+      syncError: null,
+    }),
+
+  failSession: (message) =>
+    set({
+      authStatus: "authenticated",
+      ready: true,
+      importingLegacy: false,
+      syncError: message,
+    }),
+
+  resetSession: () =>
+    set({
+      ...emptyData,
+      userId: null,
+      authStatus: "anonymous",
+      ready: true,
+      syncError: null,
+      importNotice: null,
+      legacyPending: false,
+      importingLegacy: false,
+    }),
+
+  dismissImportNotice: () => set({ importNotice: null }),
+  dismissSyncError: () => set({ syncError: null }),
+
+  setUserProfile: async (profile) => {
+    const before = snapshotData(get());
+    const userId = get().userId;
+    if (!userId) {
+      set({ syncError: "No hay una sesión activa." });
+      throw new Error("No hay una sesión activa.");
+    }
+    set({ userProfile: profile, syncError: null });
+    try {
+      await updateProfile(userId, profile);
+    } catch {
+      set({ ...before, syncError: SYNC_ERROR });
+      throw new Error(SYNC_ERROR);
+    }
+  },
+
+  addCreditCard: (card) => {
+    const full: CreditCard = { ...card, id: createId(), createdAt: new Date().toISOString() };
+    commit(set, get, { creditCards: [full, ...get().creditCards] }, (userId) => insertCreditCard(userId, full));
+  },
+
+  updateCreditCard: (id, updates) => {
+    const creditCards = get().creditCards.map((card) => (card.id === id ? { ...card, ...updates } : card));
+    commit(set, get, { creditCards }, (userId) => updateCreditCardRow(userId, id, updates));
+  },
+
+  removeCreditCard: (id) => {
+    commit(
+      set,
+      get,
+      {
+        creditCards: get().creditCards.filter((card) => card.id !== id),
+        cardInstallments: get().cardInstallments.filter((installment) => installment.cardId !== id),
+      },
+      (userId) => deleteCreditCard(userId, id)
+    );
+  },
+
+  addCardInstallment: (inst) => {
+    const full: CardInstallment = { ...inst, id: createId() };
+    commit(
+      set,
+      get,
+      { cardInstallments: [full, ...get().cardInstallments] },
+      (userId) => insertCardInstallment(userId, full)
+    );
+  },
+
+  payInstallment: (id) => {
+    const current = get().cardInstallments.find((installment) => installment.id === id);
+    if (!current || current.paidInstallments >= current.totalInstallments) return;
+    const paidInstallments = current.paidInstallments + 1;
+    const cardInstallments = get().cardInstallments.map((installment) =>
+      installment.id === id ? { ...installment, paidInstallments } : installment
+    );
+    commit(set, get, { cardInstallments }, (userId) => updateInstallmentPaid(userId, id, paidInstallments));
+  },
+
+  removeCardInstallment: (id) => {
+    commit(
+      set,
+      get,
+      { cardInstallments: get().cardInstallments.filter((installment) => installment.id !== id) },
+      (userId) => deleteCardInstallment(userId, id)
+    );
+  },
+
+  addTransaction: (tx) => {
+    const full: Transaction = { ...tx, id: createId(), createdAt: new Date().toISOString() };
+    commit(set, get, { transactions: [full, ...get().transactions] }, (userId) => insertTransaction(userId, full));
+  },
+
+  removeTransaction: (id) => {
+    const tx = get().transactions.find((item) => item.id === id);
+    if (!tx) return;
+    commit(
+      set,
+      get,
+      { transactions: get().transactions.filter((item) => item.id !== id) },
+      (userId) => deleteTransaction(userId, tx)
+    );
+  },
+
+  addGoal: (goal) => {
+    const full: Goal = { ...goal, id: createId(), createdAt: new Date().toISOString() };
+    commit(set, get, { goals: [full, ...get().goals] }, (userId) => insertGoal(userId, full));
+  },
+
+  updateGoalAmount: (id, amount) => {
+    const goal = get().goals.find((item) => item.id === id);
+    if (!goal) return;
+    const currentAmount = Math.min(goal.currentAmount + amount, goal.targetAmount);
+    const goals = get().goals.map((item) => (item.id === id ? { ...item, currentAmount } : item));
+    commit(set, get, { goals }, (userId) => updateGoalCurrentAmount(userId, id, currentAmount));
+  },
+
+  removeGoal: (id) => {
+    commit(set, get, { goals: get().goals.filter((goal) => goal.id !== id) }, (userId) => deleteGoal(userId, id));
+  },
+
+  setSalaryConfig: (config) => {
+    commit(set, get, { salaryConfig: config }, (userId) => upsertSalaryConfig(userId, config));
+  },
+
+  clearSalaryConfig: () => {
+    commit(set, get, { salaryConfig: null }, (userId) => deleteSalaryConfig(userId));
+  },
+
+  addSalaryPayment: (payment) => {
+    const full: SalaryPayment = { ...payment, id: createId() };
+    commit(
+      set,
+      get,
+      { salaryPayments: [full, ...get().salaryPayments] },
+      (userId) => insertSalaryPayment(userId, full)
+    );
+  },
+
+  removeSalaryPayment: (id) => {
+    commit(
+      set,
+      get,
+      { salaryPayments: get().salaryPayments.filter((payment) => payment.id !== id) },
+      (userId) => deleteSalaryPayment(userId, id)
+    );
+  },
+
+  addSubscription: (sub) => {
+    const full: Subscription = { ...sub, id: createId(), createdAt: new Date().toISOString() };
+    commit(
+      set,
+      get,
+      { subscriptions: [full, ...get().subscriptions] },
+      (userId) => insertSubscription(userId, full)
+    );
+  },
+
+  updateSubscription: (id, updates) => {
+    const subscriptions = get().subscriptions.map((subscription) =>
+      subscription.id === id ? { ...subscription, ...updates } : subscription
+    );
+    commit(set, get, { subscriptions }, (userId) => updateSubscriptionRow(userId, id, updates));
+  },
+
+  removeSubscription: (id) => {
+    commit(
+      set,
+      get,
+      { subscriptions: get().subscriptions.filter((subscription) => subscription.id !== id) },
+      (userId) => deleteSubscription(userId, id)
+    );
+  },
+}));
 
 export function useFinancialSummary() {
   const transactions = useShapeStore((s) => s.transactions);
@@ -200,7 +343,6 @@ export function useFinancialSummary() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const balance = totalIncome - totalExpenses;
-
   const monthlyData = buildMonthlyData(transactions);
   const categoryData = buildCategoryData(transactions);
 

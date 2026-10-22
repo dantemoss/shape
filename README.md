@@ -1,36 +1,244 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shape
 
-## Getting Started
+Finanzas personales: sueldo, gastos, tarjetas, suscripciones y metas.
 
-First, run the development server:
+Los datos viven en [Supabase](https://supabase.com). Cada cuenta solo ve sus filas (Row Level Security con `auth.uid()`). La app en producción está en [shape-coral.vercel.app](https://shape-coral.vercel.app/).
+
+## Por qué Supabase Auth
+
+Es una app de una sola persona, pero las políticas de RLS necesitan un `user_id`. Con email y contraseña de Supabase Auth, cada fila queda atada a `auth.uid()` y el navegador solo usa la clave anónima (pública). La clave `service_role` no va al cliente: la usa después el proceso que va a insertar gastos de Mercado Pago, porque esa clave omite RLS.
+
+El ingreso de la app pide email y contraseña. El nombre y la foto siguen en el perfil. Los gastos que llegan desde el iPhone entran por `POST /api/gastos`: el atajo manda un token propio y el servidor escribe en `expenses` con la service role, en la cuenta indicada por `SHAPE_OWNER_USER_ID`.
+
+## 1. Crear el proyecto de Supabase
+
+1. Entrá a [supabase.com/dashboard](https://supabase.com/dashboard) y creá un proyecto.
+2. Abrí **SQL Editor → New query**.
+3. Pegá y ejecutá, en este orden:
+   - `supabase/migrations/20261022160000_init_schema.sql`
+   - `supabase/migrations/20261022180000_expense_source_shortcut.sql`
+
+   Si ya habías corrido la primera, alcanza con la segunda. Esa segunda habilita el origen `shortcut` para los gastos del atajo.
+4. En **Project Settings → API** copiá:
+   - Project URL
+   - `anon` `public` key
+5. En **Authentication → Providers → Email**, dejá el proveedor habilitado.
+6. Para entrar apenas creás la cuenta, desactivá **Confirm email** en **Authentication → Sign In / Providers** (o **Email → Confirm email**). Si lo dejás activo, Shape pide confirmar el mail y después ingresar. La URL del sitio tiene que ser `https://shape-coral.vercel.app` (**Authentication → URL Configuration → Site URL**). Sumá `http://localhost:3000` en **Redirect URLs** si vas a probar en local.
+
+El usuario se crea desde la pantalla de Shape (**Crear cuenta**). El UUID queda en **Authentication → Users** y es el `user_id` que va a necesitar el insert de Mercado Pago.
+
+## 2. Variables de entorno
+
+Copiá `.env.example` a `.env.local`:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variable | Dónde | Para qué |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Navegador y servidor | URL del proyecto. Next.js la incrusta en el build del cliente. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Navegador | Clave anónima. RLS impide leer filas de otro usuario. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Solo servidor | La usa `POST /api/gastos` para insertar en `expenses`. Omite RLS. No lleva prefijo `NEXT_PUBLIC_`. |
+| `SHAPE_INGEST_TOKEN` | Solo servidor | Contraseña del atajo. El iPhone la manda como `Authorization: Bearer <token>`. |
+| `SHAPE_OWNER_USER_ID` | Solo servidor | UUID de tu usuario (Authentication → Users). Los gastos del atajo se guardan en esa cuenta. |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+En Vercel: **Project → Settings → Environment Variables**. Cargá las cinco para Production (y Preview si hace falta) y volvé a desplegar. Las `NEXT_PUBLIC_` quedan fijas en el build del cliente; las otras tres las lee el endpoint en el servidor. Cambiarlas sin un deploy nuevo no alcanza.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No subas claves reales. `.env.local` está en `.gitignore`. `.env.example` solo tiene placeholders.
 
-## Learn More
+## 3. Desarrollo
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm install
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Abrí [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Datos que ya estaban en el navegador
 
-## Deploy on Vercel
+Antes, Zustand guardaba todo en `localStorage` bajo la clave `shape-storage`. La primera vez que entrás con tu cuenta en ese navegador, Shape copia esos datos a Supabase (movimientos, sueldo, tarjetas, cuotas, suscripciones, metas y, si el perfil nuevo está vacío, nombre y foto).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+La copia usa el id viejo (`legacy_id`) para no duplicar si se reintenta. El `localStorage` original no se borra. Si la importación falla, el perfil muestra **Importar datos locales**.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Esquema
+
+| Tabla | Qué guarda | Columnas principales |
+| --- | --- | --- |
+| `profiles` | Nombre y foto | `id` (= `auth.users.id`), `name`, `avatar` |
+| `expense_categories` | Categorías fijas de la app | `id` (`food`, `housing`, …), `label` |
+| `expenses` | Gastos manuales, del atajo y de Mercado Pago | `user_id`, `amount`, `currency`, `date`, `description`, `merchant`, `category`, `source` (`manual` \| `mercadopago` \| `shortcut`), `external_id`, `recurrence`, cuotas, `legacy_id` |
+| `incomes` | Ingresos cargados a mano (incluido el cobro de sueldo) | `user_id`, `amount`, `currency`, `date`, `description`, `category`, `recurrence` |
+| `salary_configs` | Un sueldo por usuario | `user_id`, `amount`, `frequency`, `pay_day`, `pay_day_2`, `label` |
+| `salary_payments` | Historial de cobros | `user_id`, `amount`, `date`, `note` |
+| `goals` | Metas | `name`, `target_amount`, `current_amount`, `deadline` |
+| `credit_cards` | Tarjetas | `label`, `network`, `issuer_key`, `credit_limit`, `used_amount`, `last_four_digits` |
+| `card_installments` | Planes de cuotas | `card_id`, `description`, `total_amount`, `total_installments`, `paid_installments`, `start_date` |
+| `subscriptions` | Suscripciones | `name`, `domain`, `price`, `currency`, `period`, `start_date`, `active`, `category` |
+
+`external_id` es único junto con `user_id` y puede ser null. Varios gastos manuales con `external_id` vacío conviven. Para no duplicar un pago importado:
+
+```sql
+insert into public.expenses (
+  user_id, amount, currency, date, merchant, description, category, source, external_id
+) values (
+  '<uuid del usuario>',
+  1500,
+  'ARS',
+  '2026-10-22',
+  'Nombre del comercio',
+  'Nombre del comercio',
+  'other',
+  'mercadopago',
+  'id-del-pago'
+)
+on conflict (user_id, external_id) do nothing;
+```
+
+Ese insert va con la **service role** (omite RLS) y tiene que incluir `user_id`. Si `description` viene vacío, la app muestra `merchant`. `category` tiene que existir en `expense_categories` (`other` sirve de respaldo). `currency` es un código de 3 letras; el default es `ARS`. El atajo de iOS no escribe SQL: usa el endpoint de abajo, que ya manda `user_id` y `source: shortcut`.
+
+## Cargar gastos desde el iPhone
+
+El endpoint es:
+
+`POST https://shape-coral.vercel.app/api/gastos`
+
+Encabezado obligatorio:
+
+```http
+Authorization: Bearer <SHAPE_INGEST_TOKEN>
+Content-Type: application/json
+```
+
+Cuerpo:
+
+```json
+{
+  "amount": "$ 12.345,67",
+  "merchant": "YPF",
+  "description": "Nafta",
+  "category": "transport",
+  "date": "2026-10-22",
+  "currency": "ARS",
+  "source": "shortcut",
+  "external_id": "ypf-2026-10-22-12345"
+}
+```
+
+Obligatorios: `amount` y al menos uno de `merchant` o `description`. El resto es opcional.
+
+| Campo | Si no lo mandás |
+| --- | --- |
+| `currency` | `ARS` |
+| `date` | Hoy en Argentina |
+| `source` | `shortcut` |
+| `category` | `other` |
+| `external_id` | vacío. Si lo repetís, la segunda vez responde 409 y no duplica el gasto. |
+
+El monto puede ser un número (`12345.67`) o un texto argentino (`$ 12.345,67`, `12,50`, `12.345`). También acepta `monto`, `comercio`, `descripcion`, `categoria`, `fecha`, `moneda` y `origen` como nombres de campo.
+
+`category` tiene que ser una sección que Shape ya usa. Si mandás otra, responde 400 y el `error` lista las válidas. Delivery y Servicios no son secciones: el endpoint no las inventa y responde que van como Comida y Vivienda.
+
+Lista, con Transporte primero:
+
+| En el atajo | Se guarda como |
+| --- | --- |
+| Transporte | `transport` |
+| Comida | `food` |
+| Suscripciones | `subscriptions` |
+| Ocio | `entertainment` (también acepta Entretenimiento, que es como se ve en Movimientos) |
+| Vivienda | `housing` |
+| Salud | `health` |
+| Ropa | `clothing` |
+| Educación | `education` |
+| Ahorro | `savings` |
+| Otro | `other` |
+
+Para leer esa lista desde el iPhone, con el mismo token:
+
+`GET https://shape-coral.vercel.app/api/categorias`
+
+Responde `{ "labels": ["Transporte", "Comida", ...], "categories": [{ "id": "transport", "label": "Transporte" }, ...] }`. Sin Bearer válido responde 401. Si falta `SHAPE_INGEST_TOKEN`, 500.
+
+Respuestas JSON:
+
+| Código | Cuándo |
+| --- | --- |
+| 201 | Gasto guardado. El cuerpo incluye `id`, `amount`, `merchant` y el resto. |
+| 400 | JSON, monto, fecha o categoría que no se puede leer. `error` dice qué falló. |
+| 401 | Falta el Bearer o el token no coincide. |
+| 409 | Ese `external_id` ya estaba cargado. |
+| 500 | Falta una variable de servidor. |
+| 502 | Supabase no pudo guardar el gasto. |
+
+El atajo solo guarda `SHAPE_INGEST_TOKEN`. La service role y el UUID se quedan en Vercel.
+
+El uso de todos los días es el atajo a mano: el pago sale de la cuenta por QR o transferencia, y Wallet no avisa. La automatización de Cartera queda al final, como opción.
+
+### Atajo para cargar un gasto a mano
+
+1. Abrí **Atajos** y tocá **+**.
+2. Tocá el nombre y renombralo a **Cargar gasto**.
+3. **Agregar acción** → buscá **Pedir entrada**. Pregunta: `¿Cuánto?`. Tipo: **Texto** (así podés escribir `12.345,67`). Tocá **Entrada proporcionada**, elegí **Renombrar** y poné `Monto`.
+4. Otra **Pedir entrada**. Pregunta: `¿Dónde?`. Tipo: **Texto**. Renombrá la salida a `Comercio`.
+5. **Agregar acción** → buscá **Elegir de la lista** (*Choose from List*).
+6. Título de la pregunta: `Categoría`.
+7. En la lista, cargá exactamente estas opciones, en este orden. Transporte va primero. No agregues Delivery ni Servicios: Shape no tiene esas secciones.
+
+   `Transporte`, `Comida`, `Suscripciones`, `Ocio`, `Vivienda`, `Salud`, `Ropa`, `Educación`, `Ahorro`, `Otro`
+
+8. Tocá **Lista elegida**, elegí **Renombrar** y poné `Categoría`.
+9. **Agregar acción** → buscá **Obtener contenido de URL** (en un iPhone en inglés: *Get Contents of URL*).
+10. En URL pegá `https://shape-coral.vercel.app/api/gastos`.
+11. Tocá la flecha de la acción para abrir el detalle.
+12. **Método**: POST.
+13. **Encabezados** → **Agregar nuevo encabezado**.
+    - Clave: `Authorization`
+    - Valor: `Bearer ` y, pegado, el valor de `SHAPE_INGEST_TOKEN`. Tiene que haber un espacio después de `Bearer`. Ejemplo: `Bearer mi-token-largo`.
+14. **Cuerpo de la solicitud**: JSON.
+15. **Agregar nuevo campo**:
+    - Clave `amount`. En el valor, tocá y elegí la variable **Monto**.
+    - Clave `merchant`. En el valor, elegí **Comercio**.
+    - Clave `category`. En el valor, elegí **Categoría**. Tiene que ir el texto de la lista, tal cual.
+16. Opcional, para no duplicar si lo corrés dos veces: agregá una acción **Texto** antes del POST, con `Comercio-Monto-Fecha` (insertá las variables), renombrala `Referencia`, y en el JSON sumá la clave `external_id` con esa variable.
+17. Opcional: al final, **Mostrar resultado** con el contenido de la URL. Si salió bien ves `"id"`. Si falló ves `"error"`.
+
+Un delivery (Rappi, PedidosYa) se elige como **Comida**. Una factura de luz, gas o internet se elige como **Vivienda**.
+
+#### Lista traída de Shape
+
+Si preferís no tipear las diez opciones, el atajo puede pedirlas antes de elegir:
+
+1. Antes de **Elegir de la lista**, agregá **Obtener contenido de URL**.
+2. URL: `https://shape-coral.vercel.app/api/categorias`. Método: GET.
+3. El mismo encabezado: `Authorization` = `Bearer <SHAPE_INGEST_TOKEN>`.
+4. **Agregar acción** → **Obtener valor del diccionario** (*Get Dictionary Value*). Diccionario: el contenido de la URL. Clave: `labels`.
+5. En **Elegir de la lista**, tocá la lista fija y reemplazala por la variable **Valor del diccionario**.
+
+La lista que vuelve es la misma de arriba, con Transporte primero, y sin Delivery ni Servicios.
+
+### Automatización de Cartera (Wallet), opcional
+
+Esto solo sirve si el pago pasa por Apple Pay o por una tarjeta de Wallet. Un QR o una transferencia de Mercado Pago no dispara esta automatización, así que el atajo de arriba es el que hay que usar.
+
+Cuando pagás con Apple Pay o con una tarjeta de Wallet, iOS puede disparar el atajo con el monto y el comercio de la transacción.
+
+1. En **Atajos**, abrí la pestaña **Automatización** → **+** → **Crear automatización personal**.
+2. Buscá **Transacción** (en inglés: *Transaction*). Está entre las de Cartera.
+3. Elegí las tarjetas y que corra cuando hay un gasto.
+4. Elegí **Ejecutar inmediatamente**. Si aparece **Preguntar antes de ejecutar**, desactivalo. iOS a veces igual pide confirmación la primera vez que un atajo manda datos afuera; es un límite del sistema.
+5. En el atajo que se abre, la entrada es la **Transacción**.
+6. **Agregar acción** → **Obtener detalles de Transacciones** (*Get Details of Transactions*). Detalle: **Monto**.
+7. Otra igual, con detalle **Comercio**.
+8. Si el detalle **Fecha** está en la lista, agregalo también.
+9. **Elegir de la lista**, con las mismas diez secciones del atajo a mano. Renombrá la salida a `Categoría`.
+10. **Obtener contenido de URL**, igual que en el atajo de arriba: POST, encabezado `Authorization: Bearer <token>`, cuerpo JSON.
+11. En el JSON:
+    - `amount` → el detalle **Monto**
+    - `merchant` → el detalle **Comercio**
+    - `category` → **Categoría**
+    - `date` → el detalle **Fecha**, solo si lo agregaste. Si no, Shape usa el día de hoy en Argentina.
+12. Recomendado: una acción **Texto** con `Comercio-Monto-Fecha` y mandala como `external_id`, para que la misma transacción no se cargue dos veces.
+
+No hace falta pedir el monto a mano: Wallet ya lo trae. Si el atajo responde 409, ese pago ya estaba en Shape.
