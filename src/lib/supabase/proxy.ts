@@ -15,6 +15,11 @@ function copyCookies(from: NextResponse, to: NextResponse) {
 }
 
 export async function updateSession(request: NextRequest) {
+  // El atajo de iOS autentica con bearer token, no con la sesión del navegador.
+  if (request.nextUrl.pathname === "/api/gastos") {
+    return NextResponse.next();
+  }
+
   const env = getSupabaseEnv();
   if (!env) return NextResponse.next({ request });
 
