@@ -5,7 +5,7 @@ import { useShapeStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { format } from "date-fns";
+import { todayISO } from "@/lib/dates";
 
 interface InstallmentFormProps {
   cardId: string;
@@ -19,7 +19,7 @@ export function InstallmentForm({ cardId, onSuccess }: InstallmentFormProps) {
   const [total, setTotal] = useState("");
   const [totalInst, setTotalInst] = useState("12");
   const [paid, setPaid] = useState("0");
-  const [startDate, setStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [startDate, setStartDate] = useState(todayISO());
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

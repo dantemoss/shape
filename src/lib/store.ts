@@ -2,8 +2,13 @@
 
 import { create } from "zustand";
 import type { ShapeData } from "./db";
+import { monthKey, todayISO } from "./dates";
+import { adjustmentForTarget, buildMoneySnapshot, computeAccountBalance, isArs, roundMoney } from "./money";
+import { planSalaryRegistration } from "./salary-utils";
 import type {
+  BalanceAdjustment,
   CardInstallment,
+  CashAccount,
   CreditCard,
   Goal,
   SalaryConfig,
@@ -20,13 +25,18 @@ import {
   deleteSalaryPayment,
   deleteSubscription,
   deleteTransaction,
+  insertAccount,
+  insertBalanceAdjustment,
   insertCardInstallment,
   insertCreditCard,
   insertGoal,
-  insertSalaryPayment,
+  insertSalaryWithIncome,
   insertSubscription,
   insertTransaction,
+  linkSalaryPair,
   loadAll,
+  setIncomeCountsInBalance as setIncomeCountsInBalanceRow,
+  updateAccount,
   updateCreditCard as updateCreditCardRow,
   updateGoalCurrentAmount,
   updateInstallmentPaid,
@@ -73,8 +83,14 @@ interface ShapeStore extends ShapeData {
   removeGoal: (id: string) => void;
   setSalaryConfig: (config: SalaryConfig) => void;
   clearSalaryConfig: () => void;
-  addSalaryPayment: (payment: Omit<SalaryPayment, "id">) => void;
+  addSalaryPayment: (payment: { amount: number; date: string; note?: string }) => void;
   removeSalaryPayment: (id: string) => void;
+  linkSalaryIncome: (paymentId: string, incomeId: string) => void;
+  attachSalaryIncome: (paymentId: string) => void;
+  setIncomeCountsInBalance: (incomeId: string, counts: boolean) => void;
+  saveAccount: (input: { name: string; startingBalance: number; startingDate: string }) => void;
+  reconcileAccount: (targetBalance: number, note?: string) => void;
+  localOnly: boolean;
   addSubscription: (sub: Omit<Subscription, "id" | "createdAt">) => void;
   updateSubscription: (id: string, updates: Partial<Subscription>) => void;
   removeSubscription: (id: string) => void;
@@ -89,6 +105,9 @@ const emptyData: ShapeData = {
   creditCards: [],
   cardInstallments: [],
   subscriptions: [],
+  account: null,
+  adjustments: [],
+  ledgerReady: true,
 };
 
 function createId(): string {
@@ -105,6 +124,9 @@ function snapshotData(state: ShapeStore): ShapeData {
     creditCards: state.creditCards,
     cardInstallments: state.cardInstallments,
     subscriptions: state.subscriptions,
+    account: state.account,
+    adjustments: state.adjustments,
+    ledgerReady: state.ledgerReady,
   };
 }
 
@@ -121,6 +143,7 @@ function commit(
     return;
   }
   set({ ...optimistic, syncError: null });
+  if (get().localOnly) return;
   void write(userId).catch(async () => {
     try {
       const fresh = await loadAll(userId);
@@ -140,6 +163,7 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
   importNotice: null,
   legacyPending: false,
   importingLegacy: false,
+  localOnly: false,
 
   beginSession: (userId) => set({ userId, authStatus: "authenticated", ready: false }),
 
@@ -172,6 +196,7 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
       importNotice: null,
       legacyPending: false,
       importingLegacy: false,
+      localOnly: false,
     }),
 
   dismissImportNotice: () => set({ importNotice: null }),
@@ -245,7 +270,15 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
   },
 
   addTransaction: (tx) => {
-    const full: Transaction = { ...tx, id: createId(), createdAt: new Date().toISOString() };
+    const full: Transaction = {
+      ...tx,
+      id: createId(),
+      createdAt: new Date().toISOString(),
+      currency: tx.currency ?? "ARS",
+      kind: tx.kind ?? "regular",
+      source: tx.source ?? (tx.type === "expense" ? "manual" : undefined),
+      countsInBalance: tx.countsInBalance !== false,
+    };
     commit(set, get, { transactions: [full, ...get().transactions] }, (userId) => insertTransaction(userId, full));
   },
 
@@ -255,7 +288,12 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
     commit(
       set,
       get,
-      { transactions: get().transactions.filter((item) => item.id !== id) },
+      {
+        transactions: get().transactions.filter((item) => item.id !== id),
+        salaryPayments: get().salaryPayments.filter(
+          (payment) => payment.id !== tx.salaryPaymentId && payment.incomeId !== id
+        ),
+      },
       (userId) => deleteTransaction(userId, tx)
     );
   },
@@ -285,22 +323,209 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
     commit(set, get, { salaryConfig: null }, (userId) => deleteSalaryConfig(userId));
   },
 
-  addSalaryPayment: (payment) => {
-    const full: SalaryPayment = { ...payment, id: createId() };
+  addSalaryPayment: ({ amount, date, note }) => {
+    const state = get();
+    const config = state.salaryConfig;
+    if (!config) {
+      set({ syncError: "Primero configurá el sueldo." });
+      return;
+    }
+    if (!state.ledgerReady && !state.localOnly) {
+      set({ syncError: "Falta correr la migración de saldos en Supabase." });
+      return;
+    }
+    const plan = planSalaryRegistration(config, state.salaryPayments, date);
+    if (!plan.ok) {
+      set({ syncError: plan.reason });
+      return;
+    }
+    const incomeId = createId();
+    const paymentId = createId();
+    const description = note?.trim() || config.label;
+    const income: Transaction = {
+      id: incomeId,
+      type: "income",
+      amount,
+      description,
+      category: "other",
+      recurrence: "once",
+      date,
+      hasInstallments: false,
+      createdAt: new Date().toISOString(),
+      currency: "ARS",
+      kind: "salary",
+      countsInBalance: true,
+      salaryPaymentId: paymentId,
+    };
+    const payment: SalaryPayment = {
+      id: paymentId,
+      amount,
+      date,
+      note: note?.trim() || undefined,
+      incomeId,
+      periodKey: plan.periodKey,
+    };
     commit(
       set,
       get,
-      { salaryPayments: [full, ...get().salaryPayments] },
-      (userId) => insertSalaryPayment(userId, full)
+      {
+        transactions: [income, ...state.transactions],
+        salaryPayments: [payment, ...state.salaryPayments],
+      },
+      (userId) => insertSalaryWithIncome(userId, payment, income)
     );
   },
 
   removeSalaryPayment: (id) => {
+    const payment = get().salaryPayments.find((item) => item.id === id);
+    if (!payment) return;
     commit(
       set,
       get,
-      { salaryPayments: get().salaryPayments.filter((payment) => payment.id !== id) },
+      {
+        salaryPayments: get().salaryPayments.filter((item) => item.id !== id),
+        transactions: get().transactions.filter(
+          (tx) => tx.id !== payment.incomeId && tx.salaryPaymentId !== id
+        ),
+      },
       (userId) => deleteSalaryPayment(userId, id)
+    );
+  },
+
+  linkSalaryIncome: (paymentId, incomeId) => {
+    commit(
+      set,
+      get,
+      {
+        salaryPayments: get().salaryPayments.map((payment) =>
+          payment.id === paymentId ? { ...payment, incomeId } : payment
+        ),
+        transactions: get().transactions.map((tx) =>
+          tx.id === incomeId
+            ? { ...tx, salaryPaymentId: paymentId, kind: "salary", countsInBalance: true }
+            : tx
+        ),
+      },
+      (userId) => linkSalaryPair(userId, paymentId, incomeId)
+    );
+  },
+
+  attachSalaryIncome: (paymentId) => {
+    const payment = get().salaryPayments.find((item) => item.id === paymentId);
+    if (!payment || payment.incomeId) return;
+    const incomeId = createId();
+    const income: Transaction = {
+      id: incomeId,
+      type: "income",
+      amount: payment.amount,
+      description: payment.note?.trim() || get().salaryConfig?.label || "Sueldo",
+      category: "other",
+      recurrence: "once",
+      date: payment.date,
+      hasInstallments: false,
+      createdAt: new Date().toISOString(),
+      currency: "ARS",
+      kind: "salary",
+      countsInBalance: true,
+      salaryPaymentId: paymentId,
+    };
+    commit(
+      set,
+      get,
+      {
+        transactions: [income, ...get().transactions],
+        salaryPayments: get().salaryPayments.map((item) =>
+          item.id === paymentId ? { ...item, incomeId } : item
+        ),
+      },
+      async (userId) => {
+        await insertTransaction(userId, { ...income, salaryPaymentId: undefined });
+        try {
+          await linkSalaryPair(userId, paymentId, incomeId);
+        } catch (error) {
+          await deleteTransaction(userId, income).catch(() => undefined);
+          throw error;
+        }
+      }
+    );
+  },
+
+  setIncomeCountsInBalance: (incomeId, counts) => {
+    const tx = get().transactions.find((item) => item.id === incomeId);
+    if (!tx || tx.type !== "income") return;
+    commit(
+      set,
+      get,
+      {
+        transactions: get().transactions.map((item) =>
+          item.id === incomeId ? { ...item, countsInBalance: counts } : item
+        ),
+      },
+      (userId) => setIncomeCountsInBalanceRow(userId, incomeId, counts)
+    );
+  },
+
+  saveAccount: ({ name, startingBalance, startingDate }) => {
+    if (!get().ledgerReady && !get().localOnly) {
+      set({ syncError: "Falta correr la migración de saldos en Supabase." });
+      return;
+    }
+    const current = get().account;
+    const next: CashAccount = {
+      id: current?.id ?? createId(),
+      name: name.trim() || "Mercado Pago",
+      currency: "ARS",
+      startingBalance,
+      startingDate,
+    };
+    commit(
+      set,
+      get,
+      { account: next },
+      (userId) =>
+        current
+          ? updateAccount(userId, current.id, {
+              name: next.name,
+              startingBalance,
+              startingDate,
+            })
+          : insertAccount(userId, next)
+    );
+  },
+
+  reconcileAccount: (targetBalance, note) => {
+    const state = get();
+    if (!state.account) {
+      set({ syncError: "Primero cargá el saldo inicial." });
+      return;
+    }
+    const today = todayISO();
+    const current = computeAccountBalance(
+      { startingBalance: state.account.startingBalance, startingDate: state.account.startingDate },
+      state.transactions,
+      state.adjustments,
+      today
+    );
+    const delta = adjustmentForTarget(current.balance, targetBalance);
+    if (delta == null) {
+      set({ syncError: "El saldo calculado ya coincide con el que escribiste." });
+      return;
+    }
+    const adjustment: BalanceAdjustment = {
+      id: createId(),
+      accountId: state.account.id,
+      amount: delta,
+      date: today,
+      note: note?.trim() || "Ajuste al saldo real",
+      balanceBefore: current.balance,
+      balanceAfter: roundMoney(current.balance + delta),
+      createdAt: new Date().toISOString(),
+    };
+    commit(
+      set,
+      get,
+      { adjustments: [adjustment, ...state.adjustments] },
+      (userId) => insertBalanceAdjustment(userId, adjustment)
     );
   },
 
@@ -333,28 +558,38 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
 
 export function useFinancialSummary() {
   const transactions = useShapeStore((s) => s.transactions);
+  const adjustments = useShapeStore((s) => s.adjustments);
+  const account = useShapeStore((s) => s.account);
+  const salaryConfig = useShapeStore((s) => s.salaryConfig);
+  const salaryPayments = useShapeStore((s) => s.salaryPayments);
+  const snapshot = buildMoneySnapshot({
+    account: account
+      ? { startingBalance: account.startingBalance, startingDate: account.startingDate }
+      : null,
+    transactions,
+    adjustments,
+    salaryConfig,
+    salaryPayments,
+  });
 
-  const totalIncome = transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const balance = totalIncome - totalExpenses;
+  const totalIncome = snapshot.allTimeArs.income;
+  const totalExpenses = snapshot.allTimeArs.expense;
+  const balance = snapshot.account.hasBaseline
+    ? snapshot.account.balance
+    : roundMoney(totalIncome - totalExpenses);
   const monthlyData = buildMonthlyData(transactions);
   const categoryData = buildCategoryData(transactions);
 
-  return { totalIncome, totalExpenses, balance, monthlyData, categoryData };
+  return { totalIncome, totalExpenses, balance, monthlyData, categoryData, snapshot };
 }
 
 function buildMonthlyData(transactions: Transaction[]) {
   const months: Record<string, { income: number; expenses: number }> = {};
 
   transactions.forEach((t) => {
-    const date = new Date(t.date);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    if (!isArs(t.currency) || t.countsInBalance === false) return;
+    const key = monthKey(t.date);
+    if (!key) return;
     if (!months[key]) months[key] = { income: 0, expenses: 0 };
     if (t.type === "income") months[key].income += t.amount;
     else months[key].expenses += t.amount;
@@ -373,7 +608,7 @@ function buildCategoryData(transactions: Transaction[]) {
   const categories: Record<string, number> = {};
 
   transactions
-    .filter((t) => t.type === "expense")
+    .filter((t) => t.type === "expense" && isArs(t.currency) && t.countsInBalance !== false)
     .forEach((t) => {
       if (!categories[t.category]) categories[t.category] = 0;
       categories[t.category] += t.amount;

@@ -5,6 +5,7 @@ import { useShapeStore } from "@/lib/store";
 import { SalarySetup } from "@/components/salary-setup";
 import { SalaryCountdown } from "@/components/salary-countdown";
 import { SalaryHistory } from "@/components/salary-history";
+import { SalaryReview } from "@/components/salary-review";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 
@@ -39,6 +40,7 @@ export default function SalaryPage() {
         ) : (
           <div className="w-full max-w-xl space-y-6">
             <SalaryCountdown config={salaryConfig} />
+            <SalaryReview />
             <SalaryHistory />
           </div>
         )}

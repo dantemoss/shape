@@ -1,5 +1,8 @@
+import { normalizeCurrency } from "./money";
 import type {
+  BalanceAdjustment,
   CardInstallment,
+  CashAccount,
   CreditCard,
   Goal,
   SalaryConfig,
@@ -21,12 +24,25 @@ export interface ShapeData {
   creditCards: CreditCard[];
   cardInstallments: CardInstallment[];
   subscriptions: Subscription[];
+  account: CashAccount | null;
+  adjustments: BalanceAdjustment[];
+  /** false si todavía no corriste la migración de saldo real. */
+  ledgerReady: boolean;
 }
 
 type Row = Record<string, unknown>;
 
-function assertNoError(error: { message: string } | null): void {
-  if (error) throw new Error(error.message);
+function assertNoError(error: { message: string; code?: string } | null): void {
+  if (!error) return;
+  if (isMissingSchema(error)) {
+    throw new Error("Falta correr la migración de saldos en el SQL Editor de Supabase.");
+  }
+  throw new Error(error.message);
+}
+
+function isMissingSchema(error: { message: string; code?: string }): boolean {
+  const code = error.code ?? "";
+  return code === "42P01" || code === "PGRST205" || /does not exist|schema cache|could not find the table/i.test(error.message);
 }
 
 function asRows(data: unknown): Row[] {
@@ -71,11 +87,12 @@ function mapExpense(row: Row): Transaction {
   const category = str(row, "category");
   const recurrence = str(row, "recurrence");
   const hasInstallments = bool(row, "has_installments");
+  const merchant = optionalStr(row, "merchant");
   return {
     id: str(row, "id"),
     type: "expense",
     amount: num(row, "amount"),
-    description: str(row, "description").trim() || str(row, "merchant").trim() || "Gasto",
+    description: str(row, "description").trim() || merchant || "Gasto",
     category: isExpenseCategory(category) ? category : "other",
     recurrence: isRecurrence(recurrence) ? recurrence : "once",
     date: str(row, "date").slice(0, 10),
@@ -84,12 +101,18 @@ function mapExpense(row: Row): Transaction {
     currentInstallment: hasInstallments ? num(row, "current_installment") || undefined : undefined,
     cardName: hasInstallments ? optionalStr(row, "card_name") : undefined,
     createdAt: str(row, "created_at"),
+    currency: normalizeCurrency(optionalStr(row, "currency")),
+    merchant,
+    source: optionalStr(row, "source"),
+    kind: "regular",
+    countsInBalance: true,
   };
 }
 
 function mapIncome(row: Row): Transaction {
   const category = str(row, "category");
   const recurrence = str(row, "recurrence");
+  const kind = str(row, "kind");
   return {
     id: str(row, "id"),
     type: "income",
@@ -100,6 +123,10 @@ function mapIncome(row: Row): Transaction {
     date: str(row, "date").slice(0, 10),
     hasInstallments: false,
     createdAt: str(row, "created_at"),
+    currency: normalizeCurrency(optionalStr(row, "currency")),
+    kind: kind === "salary" ? "salary" : "regular",
+    countsInBalance: row.counts_in_balance == null ? true : bool(row, "counts_in_balance", true),
+    salaryPaymentId: optionalStr(row, "salary_payment_id"),
   };
 }
 
@@ -135,6 +162,32 @@ function mapPayment(row: Row): SalaryPayment {
     amount: num(row, "amount"),
     date: str(row, "date").slice(0, 10),
     note: optionalStr(row, "note"),
+    incomeId: optionalStr(row, "income_id"),
+    periodKey: optionalStr(row, "period_key"),
+  };
+}
+
+function mapAccount(row: Row | null): CashAccount | null {
+  if (!row || !str(row, "id")) return null;
+  return {
+    id: str(row, "id"),
+    name: str(row, "name").trim() || "Mercado Pago",
+    currency: "ARS",
+    startingBalance: num(row, "starting_balance"),
+    startingDate: str(row, "starting_date").slice(0, 10),
+  };
+}
+
+function mapAdjustment(row: Row): BalanceAdjustment {
+  return {
+    id: str(row, "id"),
+    accountId: str(row, "account_id"),
+    amount: num(row, "amount"),
+    date: str(row, "date").slice(0, 10),
+    note: optionalStr(row, "note"),
+    balanceBefore: num(row, "balance_before"),
+    balanceAfter: num(row, "balance_after"),
+    createdAt: str(row, "created_at"),
   };
 }
 
@@ -203,6 +256,8 @@ export async function loadAll(userId: string): Promise<ShapeData> {
     cardsRes,
     installmentsRes,
     subscriptionsRes,
+    accountRes,
+    adjustmentsRes,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
     supabase.from("expenses").select("*").eq("user_id", userId),
@@ -213,6 +268,8 @@ export async function loadAll(userId: string): Promise<ShapeData> {
     supabase.from("credit_cards").select("*").eq("user_id", userId),
     supabase.from("card_installments").select("*").eq("user_id", userId),
     supabase.from("subscriptions").select("*").eq("user_id", userId),
+    supabase.from("accounts").select("*").eq("user_id", userId).maybeSingle(),
+    supabase.from("balance_adjustments").select("*").eq("user_id", userId),
   ]);
 
   for (const result of [
@@ -229,6 +286,14 @@ export async function loadAll(userId: string): Promise<ShapeData> {
     assertNoError(result.error);
   }
 
+  const ledgerMissing = [accountRes.error, adjustmentsRes.error].some(
+    (error) => error && isMissingSchema(error)
+  );
+  if (!ledgerMissing) {
+    assertNoError(accountRes.error);
+    assertNoError(adjustmentsRes.error);
+  }
+
   const transactions = [
     ...asRows(expensesRes.data).map(mapExpense),
     ...asRows(incomesRes.data).map(mapIncome),
@@ -240,6 +305,9 @@ export async function loadAll(userId: string): Promise<ShapeData> {
     goals: asRows(goalsRes.data).map(mapGoal),
     salaryConfig: mapSalary((salaryRes.data as Row | null) ?? null),
     salaryPayments: asRows(paymentsRes.data).map(mapPayment),
+    account: ledgerMissing ? null : mapAccount((accountRes.data as Row | null) ?? null),
+    adjustments: ledgerMissing ? [] : asRows(adjustmentsRes.data).map(mapAdjustment),
+    ledgerReady: !ledgerMissing,
     creditCards: asRows(cardsRes.data).map(mapCard),
     cardInstallments: asRows(installmentsRes.data).map(mapInstallment),
     subscriptions: asRows(subscriptionsRes.data).map(mapSubscription),
@@ -260,11 +328,12 @@ export async function insertTransaction(userId: string, tx: Transaction): Promis
       id: tx.id,
       user_id: userId,
       amount: tx.amount,
-      currency: "ARS",
+      currency: normalizeCurrency(tx.currency),
       date: tx.date,
       description: tx.description,
+      merchant: tx.merchant ?? null,
       category: tx.category,
-      source: "manual",
+      source: tx.source ?? "manual",
       recurrence: tx.recurrence,
       has_installments: tx.hasInstallments,
       total_installments: tx.totalInstallments ?? null,
@@ -280,11 +349,14 @@ export async function insertTransaction(userId: string, tx: Transaction): Promis
     id: tx.id,
     user_id: userId,
     amount: tx.amount,
-    currency: "ARS",
+    currency: normalizeCurrency(tx.currency),
     date: tx.date,
     description: tx.description,
     category: tx.category,
     recurrence: tx.recurrence,
+    kind: tx.kind === "salary" ? "salary" : "regular",
+    counts_in_balance: tx.countsInBalance !== false,
+    salary_payment_id: tx.salaryPaymentId ?? null,
     created_at: tx.createdAt,
   });
   assertNoError(error);
@@ -352,6 +424,106 @@ export async function insertSalaryPayment(userId: string, payment: SalaryPayment
     amount: payment.amount,
     date: payment.date,
     note: payment.note ?? null,
+    income_id: payment.incomeId ?? null,
+    period_key: payment.periodKey ?? null,
+  });
+  if (error?.code === "23505") {
+    throw new Error("Ya registraste un cobro para este período.");
+  }
+  assertNoError(error);
+}
+
+export async function insertSalaryWithIncome(
+  userId: string,
+  payment: SalaryPayment,
+  income: Transaction
+): Promise<void> {
+  await insertTransaction(userId, { ...income, salaryPaymentId: undefined });
+  try {
+    await insertSalaryPayment(userId, payment);
+  } catch (error) {
+    await deleteTransaction(userId, income).catch(() => undefined);
+    throw error;
+  }
+  const { error } = await getSupabase()
+    .from("incomes")
+    .update({ salary_payment_id: payment.id, kind: "salary" })
+    .eq("id", income.id)
+    .eq("user_id", userId);
+  if (error) {
+    await deleteSalaryPayment(userId, payment.id).catch(() => undefined);
+    await deleteTransaction(userId, income).catch(() => undefined);
+    assertNoError(error);
+  }
+}
+
+export async function linkSalaryPair(userId: string, paymentId: string, incomeId: string): Promise<void> {
+  const { error: paymentError } = await getSupabase()
+    .from("salary_payments")
+    .update({ income_id: incomeId })
+    .eq("id", paymentId)
+    .eq("user_id", userId);
+  assertNoError(paymentError);
+  const { error } = await getSupabase()
+    .from("incomes")
+    .update({ salary_payment_id: paymentId, kind: "salary", counts_in_balance: true })
+    .eq("id", incomeId)
+    .eq("user_id", userId);
+  assertNoError(error);
+}
+
+export async function setIncomeCountsInBalance(userId: string, id: string, counts: boolean): Promise<void> {
+  const { error } = await getSupabase()
+    .from("incomes")
+    .update({ counts_in_balance: counts })
+    .eq("id", id)
+    .eq("user_id", userId);
+  assertNoError(error);
+}
+
+export async function insertAccount(
+  userId: string,
+  account: { id: string; name: string; startingBalance: number; startingDate: string }
+): Promise<void> {
+  const { error } = await getSupabase().from("accounts").insert({
+    id: account.id,
+    user_id: userId,
+    name: account.name,
+    currency: "ARS",
+    starting_balance: account.startingBalance,
+    starting_date: account.startingDate,
+  });
+  assertNoError(error);
+}
+
+export async function updateAccount(
+  userId: string,
+  id: string,
+  account: { name: string; startingBalance: number; startingDate: string }
+): Promise<void> {
+  const { error } = await getSupabase()
+    .from("accounts")
+    .update({
+      name: account.name,
+      starting_balance: account.startingBalance,
+      starting_date: account.startingDate,
+    })
+    .eq("id", id)
+    .eq("user_id", userId);
+  assertNoError(error);
+}
+
+export async function insertBalanceAdjustment(userId: string, adjustment: BalanceAdjustment): Promise<void> {
+  const { error } = await getSupabase().from("balance_adjustments").insert({
+    id: adjustment.id,
+    user_id: userId,
+    account_id: adjustment.accountId,
+    amount: adjustment.amount.toFixed(2),
+    date: adjustment.date,
+    note: adjustment.note ?? null,
+    balance_before: adjustment.balanceBefore.toFixed(2),
+    balance_after: adjustment.balanceAfter.toFixed(2),
+    created_at: adjustment.createdAt,
   });
   assertNoError(error);
 }

@@ -133,8 +133,9 @@ test("GET /api/categorias devuelve las secciones reales con el mismo token", asy
     SHAPE_EXPENSE_CATEGORIES.map((category) => category.label)
   );
   assert.equal(body.labels[0], "Transporte");
-  assert.equal(body.labels.includes("Delivery"), false);
-  assert.equal(body.labels.includes("Servicios"), false);
+  const labels: string[] = body.labels;
+  assert.equal(labels.includes("Delivery"), false);
+  assert.equal(labels.includes("Servicios"), false);
   assert.equal(body.categories[0]?.id, "transport");
 
   const missing = await handleCategories(get("/api/categorias", ""), { env });

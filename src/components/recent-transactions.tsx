@@ -3,8 +3,8 @@
 import { Transaction, CATEGORY_LABELS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { formatIso } from "@/lib/format-date";
+import { formatMoney } from "@/lib/money";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -36,7 +36,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{tx.description}</p>
                   <p className="text-xs text-muted-foreground font-mono">
-                    {format(new Date(tx.date), "d MMM · HH:mm", { locale: es })}
+                    {formatIso(tx.date, "d MMM")}
                   </p>
                 </div>
               </div>
@@ -46,7 +46,8 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   tx.type === "income" ? "text-income" : "text-expense"
                 )}
               >
-                {tx.type === "expense" ? "-" : "+"}${tx.amount.toLocaleString("es-AR")}
+                {tx.type === "expense" ? "−" : "+"}
+                {formatMoney(Math.abs(tx.amount), tx.currency)}
               </span>
             </div>
           ))}

@@ -19,6 +19,8 @@ export type ExpenseCategory =
 
 export type RecurrenceType = "once" | "monthly" | "weekly" | "yearly";
 
+export type LedgerKind = "regular" | "salary";
+
 export interface Transaction {
   id: string;
   type: TransactionType;
@@ -33,6 +35,14 @@ export interface Transaction {
   currentInstallment?: number;
   cardName?: string;
   createdAt: string;
+  /** ARS entra al saldo. USD y otras monedas se muestran aparte. */
+  currency?: string;
+  merchant?: string;
+  source?: string;
+  kind?: LedgerKind;
+  /** false = el movimiento queda guardado pero no mueve el saldo. */
+  countsInBalance?: boolean;
+  salaryPaymentId?: string;
 }
 
 export interface Goal {
@@ -82,6 +92,29 @@ export interface SalaryPayment {
   amount: number;
   date: string;
   note?: string;
+  /** Ingreso en el libro que representa este cobro. Borrar uno borra el otro. */
+  incomeId?: string;
+  /** Día de cobro configurado que cierra este período, AAAA-MM-DD. */
+  periodKey?: string;
+}
+
+export interface CashAccount {
+  id: string;
+  name: string;
+  currency: "ARS";
+  startingBalance: number;
+  startingDate: string;
+}
+
+export interface BalanceAdjustment {
+  id: string;
+  accountId: string;
+  amount: number;
+  date: string;
+  note?: string;
+  balanceBefore: number;
+  balanceAfter: number;
+  createdAt: string;
 }
 
 export const SALARY_FREQUENCY_LABELS: Record<SalaryFrequency, string> = {

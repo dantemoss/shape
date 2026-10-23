@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useShapeStore } from "@/lib/store";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionList } from "@/components/transaction-list";
+import { MoneyAgreement } from "@/components/money-agreement";
+import { formatPesos } from "@/lib/money";
+import { useMoneySnapshot } from "@/lib/use-money";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -18,9 +21,7 @@ export default function TransactionsPage() {
   const [open, setOpen] = useState(false);
   const transactions = useShapeStore((s) => s.transactions);
   const removeTransaction = useShapeStore((s) => s.removeTransaction);
-
-  const totalIncome   = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totalExpenses = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const snapshot = useMoneySnapshot();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -46,23 +47,14 @@ export default function TransactionsPage() {
         </div>
 
         {/* Fila 2: totales — siempre visible */}
-        <div className="flex items-center gap-4 px-4 sm:px-8 pb-3 sm:pb-4 sm:pt-0">
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-income" />
-            <span className="text-sm text-income font-mono">
-              +${totalIncome.toLocaleString("es-AR")}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-expense" />
-            <span className="text-sm text-expense font-mono">
-              −${totalExpenses.toLocaleString("es-AR")}
-            </span>
-          </div>
-          <div className="h-3 w-px bg-border" />
-          <span className="text-xs text-muted-foreground font-mono">
+        <div className="px-4 sm:px-8 pb-3 sm:pb-4 sm:pt-0 space-y-2">
+          <MoneyAgreement />
+          <p className="text-xs text-muted-foreground font-mono">
+            Histórico en pesos: +{formatPesos(snapshot.allTimeArs.income)} −{formatPesos(snapshot.allTimeArs.expense)}
+            {" · "}
             {transactions.length} movimiento{transactions.length !== 1 ? "s" : ""}
-          </span>
+            {(snapshot.usd.income > 0 || snapshot.usd.expense > 0) && " · los dólares no se suman a los pesos"}
+          </p>
         </div>
       </div>
 
