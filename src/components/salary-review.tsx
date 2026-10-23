@@ -13,6 +13,7 @@ export function SalaryReview() {
   const linkSalaryIncome = useShapeStore((s) => s.linkSalaryIncome);
   const attachSalaryIncome = useShapeStore((s) => s.attachSalaryIncome);
   const setIncomeCountsInBalance = useShapeStore((s) => s.setIncomeCountsInBalance);
+  const removeTransaction = useShapeStore((s) => s.removeTransaction);
 
   if (!config) return null;
 
@@ -21,7 +22,8 @@ export function SalaryReview() {
   const hasWork =
     review.duplicatePeriods.length > 0 ||
     review.unlinked.length > 0 ||
-    review.extras.length > 0;
+    review.extras.length > 0 ||
+    review.orphans.length > 0;
   if (!hasWork) return null;
 
   return (
@@ -68,6 +70,31 @@ export function SalaryReview() {
                 );
               })
             )}
+          </div>
+        );
+      })}
+
+      {review.orphans.map((orphan) => {
+        const income = incomes.find((candidate) => candidate.id === orphan.incomeId);
+        if (!income) return null;
+        return (
+          <div key={orphan.incomeId} className="flex flex-col gap-3 border border-border rounded-xl p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm">
+              “{income.description}” del {formatIso(income.date, "d 'de' MMM")} ({formatPesos(income.amount)}) está en el saldo y no tiene un cobro. Puede ser el ingreso que se creó solo, a veces con la fecha un día antes.
+            </p>
+            <div className="flex shrink-0 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setIncomeCountsInBalance(income.id, false)}
+              >
+                Sacar del saldo
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => removeTransaction(income.id)}>
+                Borrar
+              </Button>
+            </div>
           </div>
         );
       })}
