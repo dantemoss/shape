@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   RefreshCw,
 } from "lucide-react";
-import { subMonths, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
+import { MoneyAgreement } from "@/components/money-agreement";
+import { monthSeries } from "@/lib/money";
+import { useMoneySnapshot } from "@/lib/use-money";
 import { AreaChart } from "@/components/charts/area-chart";
 import { Area } from "@/components/charts/area";
 import { Grid } from "@/components/charts/grid";
@@ -37,18 +39,14 @@ const INSIGHT_CONFIG = {
 
 /* ── Helpers ────────────────────────────────────────────── */
 function buildMonthlyData(
-  transactions: ReturnType<typeof useShapeStore.getState>["transactions"]
+  transactions: ReturnType<typeof useShapeStore.getState>["transactions"],
+  today: string
 ) {
-  return Array.from({ length: 6 }, (_, i) => {
-    const ref      = subMonths(new Date(), 5 - i);
-    const interval = { start: startOfMonth(ref), end: endOfMonth(ref) };
-    const month    = transactions.filter((t) => isWithinInterval(new Date(t.date), interval));
-    return {
-      date:      startOfMonth(ref),
-      ingresos:  month.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0),
-      gastos:    month.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0),
-    };
-  });
+  return monthSeries(transactions, today, 6).map((bucket) => ({
+    date: bucket.date,
+    ingresos: bucket.income,
+    gastos: bucket.expense,
+  }));
 }
 
 function calcScore(spendPct: number): number {
@@ -72,21 +70,32 @@ export default function HealthPage() {
   const allTx         = useShapeStore((s) => s.transactions);
   const salaryConfig  = useShapeStore((s) => s.salaryConfig);
   const salary        = salaryConfig?.amount ?? 0;
+  const snapshot      = useMoneySnapshot();
 
-  const monthComp   = useMemo(() => getMonthComparison(allTx), [allTx]);
-  const breakdown   = useMemo(() => getCategoryBreakdown(allTx, salary), [allTx, salary]);
-  const recurring   = useMemo(() => getRecurringExpenses(allTx), [allTx]);
-  const insights    = useMemo(() => generateInsights(allTx, salary), [allTx, salary]);
-  const monthlyData = useMemo(() => buildMonthlyData(allTx), [allTx]);
-
-  const thisMonthExpenses = useMemo(() =>
-    allTx
-      .filter((t) => t.type === "expense" && isWithinInterval(new Date(t.date), { start: startOfMonth(new Date()), end: endOfMonth(new Date()) }))
-      .reduce((s, t) => s + t.amount, 0),
-    [allTx]
+  const monthComp   = useMemo(() => getMonthComparison(allTx, snapshot.today), [allTx, snapshot.today]);
+  const monthTx     = useMemo(
+    () => allTx.filter((t) => t.date.slice(0, 7) === snapshot.calendarMonth.key),
+    [allTx, snapshot.calendarMonth.key]
   );
+  const breakdown   = useMemo(() => getCategoryBreakdown(monthTx, salary), [monthTx, salary]);
+  const recurring   = useMemo(() => getRecurringExpenses(allTx), [allTx]);
+  const periodExpense = snapshot.payPeriod?.expense ?? snapshot.calendarMonth.expense;
+  const insights    = useMemo(
+    () => generateInsights(allTx, salary, {
+      periodExpenseTotal: periodExpense,
+      periodLabel: snapshot.payPeriod ? "período de cobro" : "mes calendario",
+    }),
+    [allTx, periodExpense, salary, snapshot.payPeriod]
+  );
+  const monthlyData = useMemo(() => buildMonthlyData(allTx, snapshot.today), [allTx, snapshot.today]);
 
-  const spendPct   = salary > 0 ? Math.min(Math.round((thisMonthExpenses / salary) * 100), 100) : 0;
+  const thisMonthExpenses = snapshot.calendarMonth.expense;
+
+  const spendPct   = snapshot.payPeriod
+    ? Math.round(snapshot.payPeriod.spendPct)
+    : salary > 0
+      ? Math.round((thisMonthExpenses / salary) * 100)
+      : 0;
   const score      = allTx.length > 0 ? calcScore(spendPct) : 0;
   const { text: scoreText, color: scoreColor } = scoreLabel(score);
   const topCats    = breakdown.slice(0, 6);
@@ -119,9 +128,12 @@ export default function HealthPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center gap-4 sticky top-0 bg-background z-10">
+      <div className="border-b border-border px-4 sm:px-8 py-4 flex flex-wrap items-center gap-4 sticky top-0 bg-background z-10">
         <h1 className="text-lg font-medium">Higiene Financiera</h1>
         <span className="text-sm text-muted-foreground">Análisis de hábitos</span>
+        <div className="w-full sm:w-auto sm:ml-auto">
+          <MoneyAgreement />
+        </div>
       </div>
 
       <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-5">
@@ -141,7 +153,7 @@ export default function HealthPage() {
 
           {/* Gastos del mes */}
           <div className="border border-border rounded-2xl p-5 bg-card">
-            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Gastos este mes</p>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Gastos del mes calendario</p>
             <p className="text-3xl font-medium font-mono text-expense mt-2">${thisMonthExpenses.toLocaleString("es-AR")}</p>
             {monthComp.previous > 0 && (
               <div className={cn("flex items-center gap-1 text-xs font-mono mt-2", monthComp.change > 0 ? "text-expense" : "text-income")}>
@@ -154,10 +166,12 @@ export default function HealthPage() {
           {/* % sueldo o mes anterior */}
           {salary > 0 ? (
             <div className="border border-border rounded-2xl p-5 bg-card">
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Del sueldo gastado</p>
+              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                {snapshot.payPeriod ? "Del sueldo, este período" : "Del sueldo gastado"}
+              </p>
               <p className={cn("text-3xl font-medium font-mono mt-2", spendPct >= 80 ? "text-expense" : spendPct >= 60 ? "text-yellow-600" : "text-income")}>{spendPct}%</p>
               <div className="mt-3 w-full h-1 bg-border rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${spendPct}%`, background: spendPct >= 80 ? "oklch(0.577 0.245 27.325)" : spendPct >= 60 ? "#d97706" : "oklch(0.55 0.15 162)" }} />
+                <div className="h-full rounded-full" style={{ width: `${Math.min(spendPct, 100)}%`, background: spendPct >= 80 ? "oklch(0.577 0.245 27.325)" : spendPct >= 60 ? "#d97706" : "oklch(0.55 0.15 162)" }} />
               </div>
             </div>
           ) : (
@@ -210,7 +224,7 @@ export default function HealthPage() {
           {catBarData.length > 0 && (
             <div className="border border-border rounded-2xl p-5 bg-card">
               <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1">Gastos por categoría</p>
-              <p className="text-sm font-medium mb-4">Este mes</p>
+              <p className="text-sm font-medium mb-4">Mes calendario, solo pesos</p>
               <BarChart
                 data={catBarData}
                 xDataKey="cat"

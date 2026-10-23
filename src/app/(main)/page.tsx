@@ -4,13 +4,13 @@ import { useState, useMemo } from "react";
 import { useShapeStore } from "@/lib/store";
 import { getMonthComparison, getCategoryBreakdown } from "@/lib/health-utils";
 import { TransactionForm } from "@/components/transaction-form";
+import { RealBalancePanel } from "@/components/real-balance-panel";
 import { Button } from "@/components/ui/button";
 import {
   Plus, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownLeft,
-  Wallet, Filter, Target, HeartPulse,
+  Filter, Target, HeartPulse,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import NumberFlow from "@number-flow/react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -18,11 +18,12 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Cell, PieChart, Pie,
 } from "recharts";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import Link from "next/link";
-import { getNextPaymentDate } from "@/lib/salary-utils";
 import { CATEGORY_LABELS, type ExpenseCategory } from "@/lib/types";
+import { argentinaHour, calendarWindowStart, formatMonthShort, todayISO } from "@/lib/dates";
+import { formatIso } from "@/lib/format-date";
+import { isArs } from "@/lib/money";
+import { useMoneySnapshot } from "@/lib/use-money";
 
 type Period = "month" | "3m" | "6m" | "year";
 
@@ -35,40 +36,35 @@ const EXPENSE_COLOR = "oklch(0.577 0.245 27.325)";
 
 function filterByPeriod(
   transactions: ReturnType<typeof useShapeStore.getState>["transactions"],
-  period: Period
+  period: Period,
+  today: string
 ) {
-  const now = new Date();
-  const cutoffs: Record<Period, Date> = {
-    month: new Date(now.getFullYear(), now.getMonth(), 1),
-    "3m": new Date(now.getFullYear(), now.getMonth() - 2, 1),
-    "6m": new Date(now.getFullYear(), now.getMonth() - 5, 1),
-    year: new Date(now.getFullYear(), 0, 1),
-  };
-  return transactions.filter((t) => new Date(t.date) >= cutoffs[period]);
+  const from = calendarWindowStart(period, today);
+  return transactions.filter((t) => {
+    if (!isArs(t.currency) || t.countsInBalance === false) return false;
+    const day = t.date.slice(0, 10);
+    return day >= from && day <= today;
+  });
 }
 
 function buildGroupedChartData(
   transactions: ReturnType<typeof useShapeStore.getState>["transactions"],
-  period: Period
+  period: Period,
+  today: string
 ) {
-  const filtered = filterByPeriod(transactions, period);
+  const filtered = filterByPeriod(transactions, period, today);
   const months: Record<string, { income: number; expense: number }> = {};
   filtered.forEach((t) => {
-    const d = new Date(t.date);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const key = t.date.slice(0, 7);
     if (!months[key]) months[key] = { income: 0, expense: 0 };
     months[key][t.type === "income" ? "income" : "expense"] += t.amount;
   });
   return Object.entries(months)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, vals]) => {
-      const [year, month] = key.split("-");
-      return {
-        month: new Date(parseInt(year), parseInt(month) - 1)
-          .toLocaleDateString("es-AR", { month: "short" }),
-        ...vals,
-      };
-    });
+    .map(([key, vals]) => ({
+      month: formatMonthShort(key),
+      ...vals,
+    }));
 }
 
 function CustomBarTooltip({ active, payload, label }: any) {
@@ -114,27 +110,8 @@ const CATEGORY_COLORS = [
   "oklch(0.70 0.10 65)",
 ];
 
-function SpendingRing({ pct }: { pct: number }) {
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const filled = Math.min(pct / 100, 1) * circ;
-  const color = pct >= 90 ? EXPENSE_COLOR : pct >= 70 ? "oklch(0.70 0.18 55)" : INCOME_COLOR;
-  return (
-    <svg width={72} height={72} viewBox="0 0 72 72" className="-rotate-90">
-      <circle cx={36} cy={36} r={r} fill="none" stroke="oklch(0.92 0 0)" strokeWidth={6} />
-      <circle
-        cx={36} cy={36} r={r} fill="none"
-        stroke={color} strokeWidth={6}
-        strokeDasharray={`${filled} ${circ - filled}`}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 0.6s ease" }}
-      />
-    </svg>
-  );
-}
-
 function getGreeting(name: string): string {
-  const hour = new Date().getHours();
+  const hour = argentinaHour();
   const saludo = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
   return `${saludo}, ${name}`;
 }
@@ -148,16 +125,17 @@ export default function DashboardPage() {
   const salaryConfig = useShapeStore((s) => s.salaryConfig);
   const userProfile = useShapeStore((s) => s.userProfile);
 
-  const filtered = useMemo(() => filterByPeriod(allTx, period), [allTx, period]);
-  const chartData = useMemo(() => buildGroupedChartData(allTx, period), [allTx, period]);
-  const monthComp = useMemo(() => getMonthComparison(allTx), [allTx]);
+  const snapshot = useMoneySnapshot();
+  const filtered = useMemo(() => filterByPeriod(allTx, period, snapshot.today), [allTx, period, snapshot.today]);
+  const chartData = useMemo(
+    () => buildGroupedChartData(allTx, period, snapshot.today),
+    [allTx, period, snapshot.today]
+  );
+  const monthComp = useMemo(() => getMonthComparison(allTx, snapshot.today), [allTx, snapshot.today]);
 
   const salary = salaryConfig?.amount ?? 0;
   const totalExpenses = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
   const totalIncome = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const balance = salary > 0 ? salary - totalExpenses : totalIncome - totalExpenses;
-  const spendPct = salary > 0 ? Math.round((totalExpenses / salary) * 100) : 0;
-  const changePercent = monthComp.previous > 0 ? -monthComp.changePercent : null;
 
   const catBreakdown = useMemo(() => getCategoryBreakdown(filtered, salary), [filtered, salary]);
   const topCats = catBreakdown.slice(0, 5);
@@ -167,7 +145,7 @@ export default function DashboardPage() {
   }));
 
   const recentTx = allTx.slice(0, 8);
-  const nextPayment = salaryConfig ? getNextPaymentDate(salaryConfig) : null;
+  const payPeriod = snapshot.payPeriod;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -178,7 +156,7 @@ export default function DashboardPage() {
             {userProfile ? getGreeting(userProfile.name) : "Dashboard"}
           </h1>
           <p className="text-xs text-muted-foreground font-mono capitalize">
-            {format(new Date(), "EEEE d 'de' MMMM", { locale: es })}
+            {formatIso(todayISO(), "EEEE d 'de' MMMM")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -200,88 +178,7 @@ export default function DashboardPage() {
         {/* ── Main ── */}
         <div className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-5 min-w-0">
 
-          {/* ── Wallet Card ── */}
-          <div className="border border-border rounded-2xl p-5 bg-card">
-            <div className="flex items-start justify-between gap-4">
-              {/* Left: balance info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-full bg-income/10 flex items-center justify-center shrink-0">
-                    <Wallet size={13} className="text-income" />
-                  </div>
-                  <span className="font-medium text-sm">Mi Balance</span>
-                  <Link href="/transactions">
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground ml-1">
-                      Ver todo →
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="flex items-end gap-3 mb-4">
-                  <p className={cn("text-4xl font-medium tabular-nums tracking-tight", balance >= 0 ? "text-foreground" : "text-expense")}>
-                    $<NumberFlow value={balance} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-                  </p>
-                  {changePercent !== null && (
-                    <span className={cn(
-                      "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full mb-1 shrink-0",
-                      changePercent >= 0 ? "bg-income/10 text-income" : "bg-expense/10 text-expense"
-                    )}>
-                      {changePercent >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-                      {changePercent >= 0 ? "+" : ""}{Math.round(changePercent)}% vs mes ant.
-                    </span>
-                  )}
-                </div>
-
-                {/* 3 métricas */}
-                <div className="grid grid-cols-3 divide-x divide-border sm:grid-cols-3">
-                  <div className="pr-4">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">Balance</p>
-                    <p className={cn("text-base font-medium tabular-nums font-mono", balance >= 0 ? "" : "text-expense")}>
-                      ${Math.abs(balance).toLocaleString("es-AR")}
-                    </p>
-                  </div>
-                  <div className="px-4">
-                    <p className="text-[10px] text-income uppercase tracking-wider font-mono mb-1">Sueldo</p>
-                    {salary > 0 ? (
-                      <p className="text-base font-medium tabular-nums font-mono text-income">
-                        ${salary.toLocaleString("es-AR")}
-                      </p>
-                    ) : (
-                      <Link href="/salary" className="text-xs text-muted-foreground underline underline-offset-4 decoration-dashed">
-                        Configurar
-                      </Link>
-                    )}
-                  </div>
-                  <div className="pl-4">
-                    <p className="text-[10px] text-expense uppercase tracking-wider font-mono mb-1">Gastos</p>
-                    <p className="text-base font-medium tabular-nums font-mono text-expense">
-                      ${totalExpenses.toLocaleString("es-AR")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right: spending ring */}
-              {salary > 0 && (
-                <div className="shrink-0 flex flex-col items-center gap-1">
-                  <div className="relative">
-                    <SpendingRing pct={spendPct} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={cn(
-                        "text-sm font-bold tabular-nums",
-                        spendPct >= 90 ? "text-expense" : spendPct >= 70 ? "text-yellow-600" : "text-income"
-                      )}>
-                        {spendPct}%
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground font-mono text-center leading-tight">
-                    gastado<br />del sueldo
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <RealBalancePanel />
 
           {/* ── Gráficos: Cash Flow + Categorías ── */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-5">
@@ -289,13 +186,21 @@ export default function DashboardPage() {
             <div className="col-span-1 lg:col-span-3 border border-border rounded-2xl p-4 sm:p-5 bg-card">
               {/* Fila 1: título + monto */}
               <div className="mb-3">
-                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Cash Flow</p>
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                  Solo pesos, por mes calendario
+                </p>
                 <p className="text-xl font-medium mt-0.5">
-                  ${(totalIncome - totalExpenses >= 0 ? totalIncome - totalExpenses : totalExpenses - totalIncome).toLocaleString("es-AR")}
+                  ${Math.abs(totalIncome - totalExpenses).toLocaleString("es-AR")}
                   <span className={cn("text-xs font-medium ml-2", totalIncome >= totalExpenses ? "text-income" : "text-expense")}>
                     {totalIncome >= totalExpenses ? "superávit" : "déficit"}
                   </span>
                 </p>
+                {period === "month" && monthComp.previous > 0 && (
+                  <p className={cn("text-xs font-mono mt-1 flex items-center gap-1", monthComp.change > 0 ? "text-expense" : "text-income")}>
+                    {monthComp.change > 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                    Gastos del mes {Math.abs(Math.round(monthComp.changePercent))}% vs el mes anterior
+                  </p>
+                )}
               </div>
 
               {/* Fila 2: período selector — fila propia con todo el ancho */}
@@ -358,7 +263,9 @@ export default function DashboardPage() {
             {/* Breakdown categorías */}
             <div className="col-span-1 lg:col-span-2 border border-border rounded-2xl p-4 sm:p-5 bg-card flex flex-col">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">Por categoría</p>
+                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+                  Por categoría · {PERIOD_LABELS[period].toLowerCase()}
+                </p>
                 <Link href="/health" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors font-mono">
                   Ver análisis →
                 </Link>
@@ -459,11 +366,14 @@ export default function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate leading-tight">{tx.description}</p>
                       <p className="text-[11px] text-muted-foreground font-mono">
-                        {CATEGORY_LABELS[tx.category]} · {format(new Date(tx.date), "d MMM", { locale: es })}
+                        {CATEGORY_LABELS[tx.category]} · {formatIso(tx.date, "d MMM")}
+                        {tx.currency === "USD" ? " · USD" : ""}
                       </p>
                     </div>
                     <span className={cn("text-sm font-mono font-semibold shrink-0", tx.type === "income" ? "text-income" : "text-expense")}>
-                      {tx.type === "expense" ? "-" : "+"}${tx.amount.toLocaleString("es-AR")}
+                      {tx.type === "expense" ? "-" : "+"}
+                      {tx.currency === "USD" ? "US$" : "$"}
+                      {tx.amount.toLocaleString("es-AR")}
                     </span>
                   </div>
                 ))}
@@ -476,9 +386,9 @@ export default function DashboardPage() {
         <div className="hidden lg:block w-[268px] shrink-0 border-l border-border p-4 space-y-4 sticky top-[61px] h-[calc(100vh-61px)] overflow-y-auto">
 
           {/* Próximo cobro */}
-          {salaryConfig && nextPayment ? (
+          {salaryConfig && payPeriod ? (
             <div>
-              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Próximo cobro</p>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Próximo cobro esperado</p>
               <Link href="/salary">
                 <div className="border border-border rounded-xl p-4 bg-card hover:bg-muted/30 transition-colors">
                   <div className="flex justify-between items-start mb-3">
@@ -487,31 +397,30 @@ export default function DashboardPage() {
                       <p className="text-lg font-medium font-mono text-income mt-0.5">
                         ${salaryConfig.amount.toLocaleString("es-AR")}
                       </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">esperado, no está en el saldo</p>
                     </div>
                     <span className={cn(
                       "text-xs font-medium px-2.5 py-1 rounded-full font-mono shrink-0",
-                      nextPayment.isToday
+                      payPeriod.isToday
                         ? "bg-income text-income-foreground"
-                        : nextPayment.daysLeft <= 3
+                        : payPeriod.daysLeft <= 3
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-muted text-muted-foreground"
                     )}>
-                      {nextPayment.isToday ? "¡Hoy!" : `${nextPayment.daysLeft}d`}
+                      {payPeriod.isToday ? "¡Hoy!" : `${payPeriod.daysLeft}d`}
                     </span>
                   </div>
 
-                  {/* Barra de días */}
                   <div className="flex gap-[2px] mb-1.5">
                     {Array.from({ length: 20 }).map((_, i) => {
-                      const totalDays = salaryConfig.frequency === "weekly" ? 7 : salaryConfig.frequency === "biweekly" ? 15 : 30;
-                      const filled = Math.round(((totalDays - nextPayment.daysLeft) / totalDays) * 20);
+                      const filled = Math.round((payPeriod.progress / 100) * 20);
                       return (
                         <div key={i} className={cn("flex-1 h-1.5 rounded-full", i < filled ? "bg-income" : "bg-border")} />
                       );
                     })}
                   </div>
                   <p className="text-[10px] text-muted-foreground font-mono">
-                    {format(nextPayment.date, "d 'de' MMMM", { locale: es })}
+                    {formatIso(payPeriod.end, "d 'de' MMMM")}
                   </p>
                 </div>
               </Link>
@@ -520,7 +429,7 @@ export default function DashboardPage() {
             <div className="border border-income/30 rounded-xl p-3.5 bg-income/5">
               <p className="text-sm font-medium text-income mb-1">Configurá tu sueldo</p>
               <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                Agregá tu sueldo para ver tu balance real y cuándo cobrás.
+                Agregá tu sueldo para ver el período de cobro. El saldo real se carga en el inicio.
               </p>
               <Link href="/salary">
                 <Button variant="income" size="sm" className="w-full">

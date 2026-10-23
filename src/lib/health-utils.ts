@@ -1,4 +1,14 @@
+import { addMonthsISO, monthKey, todayISO } from "./dates";
+import { isArs } from "./money";
 import { Transaction, CATEGORY_LABELS, ExpenseCategory } from "./types";
+
+function countsAsArsExpense(transaction: Transaction): boolean {
+  return (
+    transaction.type === "expense" &&
+    transaction.countsInBalance !== false &&
+    isArs(transaction.currency)
+  );
+}
 
 export interface RecurringExpense {
   description: string;
@@ -32,7 +42,7 @@ export interface MonthComparison {
 }
 
 export function getRecurringExpenses(transactions: Transaction[]): RecurringExpense[] {
-  const expenses = transactions.filter((t) => t.type === "expense");
+  const expenses = transactions.filter(countsAsArsExpense);
   const grouped: Record<string, Transaction[]> = {};
 
   expenses.forEach((tx) => {
@@ -62,7 +72,7 @@ export function getCategoryBreakdown(
   transactions: Transaction[],
   salaryAmount: number
 ): CategoryBreakdown[] {
-  const expenses = transactions.filter((t) => t.type === "expense");
+  const expenses = transactions.filter(countsAsArsExpense);
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
 
   const byCategory: Partial<Record<ExpenseCategory, { amount: number; count: number }>> = {};
@@ -85,20 +95,18 @@ export function getCategoryBreakdown(
     .sort((a, b) => b.amount - a.amount);
 }
 
-export function getMonthComparison(transactions: Transaction[]): MonthComparison {
-  const now = new Date();
-  const thisMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+export function getMonthComparison(transactions: Transaction[], today = todayISO()): MonthComparison {
+  const thisMonthKey = monthKey(today) ?? today.slice(0, 7);
+  const prevMonthKey = (monthKey(addMonthsISO(today, -1)) ?? "").slice(0, 7);
 
-  const expenses = transactions.filter((t) => t.type === "expense");
+  const expenses = transactions.filter(countsAsArsExpense);
 
   const current = expenses
-    .filter((t) => t.date.startsWith(thisMonthKey))
+    .filter((t) => t.date.slice(0, 7) === thisMonthKey)
     .reduce((s, t) => s + t.amount, 0);
 
   const previous = expenses
-    .filter((t) => t.date.startsWith(prevMonthKey))
+    .filter((t) => t.date.slice(0, 7) === prevMonthKey)
     .reduce((s, t) => s + t.amount, 0);
 
   const change = current - previous;
@@ -109,35 +117,38 @@ export function getMonthComparison(transactions: Transaction[]): MonthComparison
 
 export function generateInsights(
   transactions: Transaction[],
-  salaryAmount: number
+  salaryAmount: number,
+  options?: { periodExpenseTotal?: number; periodLabel?: string }
 ): HealthInsight[] {
   const insights: HealthInsight[] = [];
-  const expenses = transactions.filter((t) => t.type === "expense");
+  const expenses = transactions.filter(countsAsArsExpense);
   const totalExpenses = expenses.reduce((s, t) => s + t.amount, 0);
   const breakdown = getCategoryBreakdown(transactions, salaryAmount);
   const recurring = getRecurringExpenses(transactions);
   const monthComp = getMonthComparison(transactions);
+  const ratioBase = options?.periodExpenseTotal ?? totalExpenses;
+  const ratioLabel = options?.periodLabel ?? "registrado";
 
   // Ratio gasto/sueldo
   if (salaryAmount > 0) {
-    const ratio = (totalExpenses / salaryAmount) * 100;
+    const ratio = (ratioBase / salaryAmount) * 100;
     if (ratio > 90) {
       insights.push({
         type: "warning",
         title: "Gastos muy elevados",
-        description: `Estás gastando el ${Math.round(ratio)}% de tu sueldo. Tratá de mantenerlo por debajo del 80%.`,
+        description: `Estás gastando el ${Math.round(ratio)}% de tu sueldo en este ${ratioLabel}. Tratá de mantenerlo por debajo del 80%.`,
       });
     } else if (ratio > 70) {
       insights.push({
         type: "tip",
         title: "Margen ajustado",
-        description: `Tus gastos son el ${Math.round(ratio)}% de tu sueldo. Queda un margen del ${Math.round(100 - ratio)}% para ahorrar.`,
+        description: `Tus gastos de este ${ratioLabel} son el ${Math.round(ratio)}% de tu sueldo. Queda un margen del ${Math.round(100 - ratio)}% para ahorrar.`,
       });
     } else if (ratio < 60 && ratio > 0) {
       insights.push({
         type: "positive",
         title: "Buen control de gastos",
-        description: `Estás gastando solo el ${Math.round(ratio)}% de tu sueldo. Tenés ${Math.round(100 - ratio)}% disponible para ahorro o metas.`,
+        description: `En este ${ratioLabel} estás gastando el ${Math.round(ratio)}% de tu sueldo. Tenés ${Math.round(100 - ratio)}% disponible para ahorro o metas.`,
       });
     }
   }

@@ -3,9 +3,8 @@
 import { useShapeStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import NumberFlow from "@number-flow/react";
+import { formatIso } from "@/lib/format-date";
 
 export function SalaryHistory() {
   const salaryPayments = useShapeStore((s) => s.salaryPayments);
@@ -45,7 +44,8 @@ export function SalaryHistory() {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                {format(new Date(payment.date), "EEEE d 'de' MMMM yyyy", { locale: es })}
+                {formatIso(payment.date, "EEEE d 'de' MMMM yyyy")}
+                {payment.incomeId ? " · vinculado al ingreso" : " · sin ingreso vinculado"}
               </p>
             </div>
 
@@ -57,6 +57,7 @@ export function SalaryHistory() {
               variant="ghost"
               size="icon"
               className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
+              title="Eliminar el cobro y su ingreso"
               onClick={() => removeSalaryPayment(payment.id)}
             >
               <Trash2 size={13} />

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { SalaryConfig } from "@/lib/types";
-import { getNextPaymentDate, getPaymentProgress, NextPayment } from "@/lib/salary-utils";
+import { getNextPaymentDate, NextPayment, planSalaryRegistration } from "@/lib/salary-utils";
+import { todayISO } from "@/lib/dates";
+import { formatIso } from "@/lib/format-date";
 import NumberFlow from "@number-flow/react";
 import { useShapeStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -19,14 +21,14 @@ interface SalaryCountdownProps {
 }
 
 // ── Barra de segmentos de días ────────────────────────────────────────────
-function DaySegments({ progress, frequency }: { progress: number; frequency: SalaryConfig["frequency"] }) {
-  const total = frequency === "weekly" ? 7 : frequency === "biweekly" ? 15 : 30;
-  const filled = Math.round((progress / 100) * total);
+function DaySegments({ elapsed, total }: { elapsed: number; total: number }) {
+  const slots = Math.min(Math.max(total, 1), 24);
+  const filled = Math.round((elapsed / Math.max(total, 1)) * slots);
 
   return (
     <div className="space-y-2">
       <div className="flex gap-[3px]">
-        {Array.from({ length: total }).map((_, i) => (
+        {Array.from({ length: slots }).map((_, i) => (
           <div
             key={i}
             className={cn(
@@ -39,7 +41,7 @@ function DaySegments({ progress, frequency }: { progress: number; frequency: Sal
       </div>
       <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
         <span>día 1</span>
-        <span className="text-income font-medium">día {filled} de {total}</span>
+        <span className="text-income font-medium">día {elapsed} de {total}</span>
         <span>día {total}</span>
       </div>
     </div>
@@ -52,37 +54,37 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerAmount, setRegisterAmount] = useState(config.amount.toString());
   const [registerNote, setRegisterNote] = useState("");
+  const [registerDate, setRegisterDate] = useState(todayISO());
+  const [registerError, setRegisterError] = useState<string | null>(null);
 
   const addSalaryPayment = useShapeStore((s) => s.addSalaryPayment);
-  const addTransaction = useShapeStore((s) => s.addTransaction);
+  const salaryPayments = useShapeStore((s) => s.salaryPayments);
+  const plan = planSalaryRegistration(config, salaryPayments, registerDate);
 
   useEffect(() => {
     function update() {
-      setNext(getNextPaymentDate(config));
-      setProgress(getPaymentProgress(config));
+      const upcoming = getNextPaymentDate(config, new Date(), salaryPayments);
+      setNext(upcoming);
+      setProgress(upcoming.period.progress);
     }
     update();
     const interval = setInterval(update, 60_000);
     return () => clearInterval(interval);
-  }, [config]);
+  }, [config, salaryPayments]);
 
   function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     const amount = parseFloat(registerAmount.replace(",", "."));
-    if (!amount || amount <= 0) return;
-    const today = new Date().toISOString().split("T")[0];
-    addSalaryPayment({ amount, date: today, note: registerNote || undefined });
-    addTransaction({
-      type: "income",
-      amount,
-      description: registerNote || config.label,
-      category: "other",
-      recurrence: config.frequency === "weekly" ? "weekly" : "monthly",
-      date: today,
-      hasInstallments: false,
-    });
+    if (!amount || amount <= 0 || !registerDate) return;
+    if (!plan.ok) {
+      setRegisterError(plan.reason);
+      return;
+    }
+    addSalaryPayment({ amount, date: registerDate, note: registerNote || undefined });
     setRegisterOpen(false);
     setRegisterNote("");
+    setRegisterDate(todayISO());
+    setRegisterError(null);
   }
 
   if (!next) return null;
@@ -155,7 +157,9 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
                 format={{ maximumFractionDigits: 0 }}
               />
             </p>
-            <p className="text-xs text-muted-foreground mt-2">monto esperado de cobro</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              monto esperado de cobro. No entra al saldo hasta que lo marcás como cobrado.
+            </p>
           </div>
 
           {/* Grid de stats */}
@@ -196,7 +200,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
           </div>
 
           {/* Segmentos de días */}
-          <DaySegments progress={progress} frequency={config.frequency} />
+          <DaySegments elapsed={next.period.daysElapsed} total={next.period.periodDays} />
         </div>
       </div>
 
@@ -224,6 +228,25 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="salary-date">Fecha en que cobraste</Label>
+              <Input
+                id="salary-date"
+                type="date"
+                value={registerDate}
+                onChange={(event) => {
+                  setRegisterDate(event.target.value);
+                  setRegisterError(null);
+                }}
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                {plan.ok
+                  ? `Corresponde al cobro del ${formatIso(plan.coveredPayday, "d 'de' MMMM")}. El próximo esperado pasa a ser el ${formatIso(plan.nextPayday, "d 'de' MMMM")}.`
+                  : plan.reason}
+              </p>
+              {registerError && <p className="text-xs text-expense">{registerError}</p>}
+            </div>
+            <div className="space-y-1.5">
               <Label>Nota (opcional)</Label>
               <Input
                 placeholder="Ej: con bono, descuento obra social..."
@@ -232,7 +255,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
               />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">Confirmar</Button>
+              <Button type="submit" className="flex-1" disabled={!plan.ok}>Confirmar</Button>
               <Button type="button" variant="ghost" onClick={() => setRegisterOpen(false)}>Cancelar</Button>
             </div>
           </form>

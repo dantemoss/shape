@@ -18,8 +18,7 @@ import {
   HeartPulse, ShoppingBag, BookOpen, PiggyBank, Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { todayISO } from "@/lib/dates";
 
 // ─── Categorías con ícono y etiqueta ────────────────────────────────────────
 const CATEGORIES: { value: ExpenseCategory; label: string; icon: LucideIcon; suggestions: string[] }[] = [
@@ -79,7 +78,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
 
   // Step 2 — Descripción + detalles
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(todayISO());
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [recurrence, setRecurrence] = useState<RecurrenceType>("once");
   const [hasInstallments, setHasInstallments] = useState(false);

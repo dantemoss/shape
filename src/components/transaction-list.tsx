@@ -5,8 +5,8 @@ import { Transaction, CATEGORY_LABELS, RECURRENCE_LABELS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { format, isToday, isYesterday } from "date-fns";
-import { es } from "date-fns/locale";
+import { dayHeading } from "@/lib/format-date";
+import { formatMoney, isArs } from "@/lib/money";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -16,10 +16,7 @@ interface TransactionListProps {
 type Filter = "all" | "income" | "expense";
 
 function formatDayLabel(dateStr: string): string {
-  const d = new Date(dateStr);
-  if (isToday(d))     return "Hoy";
-  if (isYesterday(d)) return "Ayer";
-  return format(d, "EEEE d 'de' MMMM", { locale: es });
+  return dayHeading(dateStr);
 }
 
 export function TransactionList({ transactions, onRemove }: TransactionListProps) {
@@ -31,7 +28,7 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
     : transactions.filter((t) => t.type === filter);
 
   const grouped = filtered.reduce<Record<string, Transaction[]>>((acc, tx) => {
-    const key = format(new Date(tx.date), "yyyy-MM-dd");
+    const key = tx.date.slice(0, 10);
     if (!acc[key]) acc[key] = [];
     acc[key].push(tx);
     return acc;
@@ -90,9 +87,11 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
         <div className="space-y-8">
           {sortedDays.map((day) => {
             const dayTx = grouped[day];
-            const dayIncome  = dayTx.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-            const dayExpense = dayTx.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-            const dayNet     = dayIncome - dayExpense;
+            const dayArs = dayTx.filter((t) => isArs(t.currency) && t.countsInBalance !== false);
+            const dayIncome = dayArs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+            const dayExpense = dayArs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+            const dayNet = dayIncome - dayExpense;
+            const hasUsd = dayTx.some((t) => !isArs(t.currency));
 
             return (
               <div key={day}>
@@ -106,6 +105,7 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                     dayNet >= 0 ? "text-income" : "text-expense"
                   )}>
                     {dayNet >= 0 ? "+" : "−"}${Math.abs(dayNet).toLocaleString("es-AR")}
+                    {hasUsd ? " · USD aparte" : ""}
                   </span>
                 </div>
 
@@ -139,6 +139,24 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                             <span className="text-xs text-muted-foreground">
                               {CATEGORY_LABELS[tx.category]}
                             </span>
+                            {tx.kind === "salary" && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                Sueldo
+                              </Badge>
+                            )}
+                            {tx.countsInBalance === false && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                no suma
+                              </Badge>
+                            )}
+                            {tx.currency === "USD" && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                USD
+                              </Badge>
+                            )}
+                            {tx.merchant && tx.merchant !== tx.description && (
+                              <span className="text-xs text-muted-foreground truncate">{tx.merchant}</span>
+                            )}
                             {tx.recurrence !== "once" && (
                               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                                 {RECURRENCE_LABELS[tx.recurrence]}
@@ -158,8 +176,8 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                           "text-sm font-mono font-medium shrink-0",
                           tx.type === "income" ? "text-income" : "text-expense"
                         )}>
-                          {tx.type === "expense" ? "−" : "+"}$
-                          {tx.amount.toLocaleString("es-AR")}
+                          {tx.type === "expense" ? "−" : "+"}
+                          {formatMoney(Math.abs(tx.amount), tx.currency)}
                         </span>
 
                         {/* Botón eliminar — siempre visible en mobile */}

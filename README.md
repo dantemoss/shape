@@ -17,8 +17,9 @@ El ingreso de la app pide email y contraseña. El nombre y la foto siguen en el 
 3. Pegá y ejecutá, en este orden:
    - `supabase/migrations/20261022160000_init_schema.sql`
    - `supabase/migrations/20261022180000_expense_source_shortcut.sql`
+   - `supabase/migrations/20261023140000_real_balance_and_salary_links.sql`
 
-   Si ya habías corrido la primera, alcanza con la segunda. Esa segunda habilita el origen `shortcut` para los gastos del atajo.
+   Si ya habías corrido las dos primeras, alcanza con la tercera. Esa deja el saldo inicial, los ajustes y el vínculo entre un cobro de sueldo y su ingreso. No borra movimientos. Después, en la app, cargá el saldo inicial de Mercado Pago.
 4. En **Project Settings → API** copiá:
    - Project URL
    - `anon` `public` key
@@ -69,9 +70,11 @@ La copia usa el id viejo (`legacy_id`) para no duplicar si se reintenta. El `loc
 | `profiles` | Nombre y foto | `id` (= `auth.users.id`), `name`, `avatar` |
 | `expense_categories` | Categorías fijas de la app | `id` (`food`, `housing`, …), `label` |
 | `expenses` | Gastos manuales, del atajo y de Mercado Pago | `user_id`, `amount`, `currency`, `date`, `description`, `merchant`, `category`, `source` (`manual` \| `mercadopago` \| `shortcut`), `external_id`, `recurrence`, cuotas, `legacy_id` |
-| `incomes` | Ingresos cargados a mano (incluido el cobro de sueldo) | `user_id`, `amount`, `currency`, `date`, `description`, `category`, `recurrence` |
+| `incomes` | Ingresos cargados a mano (incluido el cobro de sueldo) | `user_id`, `amount`, `currency`, `date`, `description`, `category`, `recurrence`, `kind`, `counts_in_balance`, `salary_payment_id` |
+| `accounts` | Saldo inicial de la cuenta (Mercado Pago) | `user_id`, `name`, `starting_balance`, `starting_date` |
+| `balance_adjustments` | Ajustes para igualar el saldo real, con historial | `account_id`, `amount` (con signo), `date`, `balance_before`, `balance_after` |
 | `salary_configs` | Un sueldo por usuario | `user_id`, `amount`, `frequency`, `pay_day`, `pay_day_2`, `label` |
-| `salary_payments` | Historial de cobros | `user_id`, `amount`, `date`, `note` |
+| `salary_payments` | Historial de cobros | `user_id`, `amount`, `date`, `note`, `income_id`, `period_key` |
 | `goals` | Metas | `name`, `target_amount`, `current_amount`, `deadline` |
 | `credit_cards` | Tarjetas | `label`, `network`, `issuer_key`, `credit_limit`, `used_amount`, `last_four_digits` |
 | `card_installments` | Planes de cuotas | `card_id`, `description`, `total_amount`, `total_installments`, `paid_installments`, `start_date` |

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Check } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
+import { formatIso } from "@/lib/format-date";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Silk = dynamic(() => import("@/components/silk"), { ssr: false });
@@ -175,7 +176,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
 
         {goal.deadline && (
           <p className="text-xs text-muted-foreground font-mono">
-            Límite: {new Date(goal.deadline).toLocaleDateString("es-AR")}
+            Límite: {formatIso(goal.deadline, "d MMM yyyy")}
           </p>
         )}
 

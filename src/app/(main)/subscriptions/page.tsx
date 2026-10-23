@@ -20,12 +20,12 @@ import {
 } from "lucide-react";
 import { format, addMonths, addWeeks, addYears, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseDateOnly, todayISO } from "@/lib/dates";
 
 /* ── Helpers ──────────────────────────────────────── */
-function getNextRenewal(sub: Subscription): Date {
-  const start = new Date(sub.startDate);
-  const now   = new Date();
-  now.setHours(0, 0, 0, 0);
+function getNextRenewal(sub: Subscription, today = todayISO()): Date {
+  const start = parseDateOnly(sub.startDate);
+  const now = parseDateOnly(today);
 
   let next = new Date(start);
   const advance = sub.period === "monthly"

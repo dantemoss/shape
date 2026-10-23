@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Search, Plus, ChevronLeft } from "lucide-react";
+import { todayISO } from "@/lib/dates";
 
 interface Props { onSuccess: () => void; }
 
@@ -36,9 +37,7 @@ export function SubscriptionForm({ onSuccess }: Props) {
   const [price, setPrice]       = useState("");
   const [currency, setCurrency] = useState<SubCurrency>("ARS");
   const [period, setPeriod]     = useState<SubPeriod>("monthly");
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [startDate, setStartDate] = useState(todayISO());
 
   const filtered = POPULAR_SERVICES.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
