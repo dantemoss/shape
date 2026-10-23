@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Transaction, CATEGORY_LABELS, RECURRENCE_LABELS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react";
@@ -22,6 +22,7 @@ function formatDayLabel(dateStr: string): string {
 export function TransactionList({ transactions, onRemove }: TransactionListProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const confirmRef = useRef<string | null>(null);
 
   const filtered = filter === "all"
     ? transactions
@@ -42,14 +43,20 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
     { value: "expense", label: "Gastos" },
   ];
 
-  function handleRemove(id: string) {
-    if (confirmId === id) {
-      onRemove(id);
+  function armRemove(id: string) {
+    if (confirmRef.current === id) {
+      confirmRef.current = null;
       setConfirmId(null);
-    } else {
-      setConfirmId(id);
-      setTimeout(() => setConfirmId(null), 2500);
+      onRemove(id);
+      return;
     }
+    confirmRef.current = id;
+    setConfirmId(id);
+    window.setTimeout(() => {
+      if (confirmRef.current !== id) return;
+      confirmRef.current = null;
+      setConfirmId(null);
+    }, 4000);
   }
 
   return (
@@ -116,7 +123,7 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                     return (
                       <div
                         key={tx.id}
-                        className="flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 active:bg-muted/50"
+                        className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 active:bg-muted/50"
                       >
                         {/* Ícono */}
                         <div className={cn(
@@ -180,19 +187,28 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                           {formatMoney(Math.abs(tx.amount), tx.currency)}
                         </span>
 
-                        {/* Botón eliminar — siempre visible en mobile */}
-                        <button
-                          onClick={() => handleRemove(tx.id)}
-                          className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all",
-                            isConfirming
-                              ? "bg-expense text-white scale-110"
-                              : "text-muted-foreground/50 hover:text-expense hover:bg-expense/10 sm:opacity-0 sm:group-hover:opacity-100"
-                          )}
-                          title={isConfirming ? "Tocá de nuevo para confirmar" : "Eliminar"}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        {isConfirming ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              confirmRef.current = null;
+                              setConfirmId(null);
+                              onRemove(tx.id);
+                            }}
+                            className="shrink-0 rounded-full bg-expense px-2.5 py-1 text-xs font-medium text-white"
+                          >
+                            Borrar
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => armRemove(tx.id)}
+                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-muted-foreground/70 hover:text-expense hover:bg-expense/10"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     );
                   })}
