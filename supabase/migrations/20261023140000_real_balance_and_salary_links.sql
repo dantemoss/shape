@@ -1,6 +1,7 @@
 -- Saldo real, ajustes y vínculo cobro ↔ ingreso.
 -- Correrla después de 20261022180000_expense_source_shortcut.sql,
 -- en el SQL Editor de Supabase. No borra movimientos.
+-- Se puede volver a correr: si una parte ya quedó aplicada, el resto sigue.
 --
 -- Qué hace con los datos que ya están:
 --   * Si un cobro y un ingreso coinciden en fecha, monto y descripción
@@ -37,14 +38,36 @@ create table if not exists public.balance_adjustments (
   id uuid primary key default extensions.gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   account_id uuid not null references public.accounts (id) on delete cascade,
-  amount numeric(14, 2) not null check (amount <> 0),
+  amount numeric(14, 2) not null,
   date date not null,
   note text,
   balance_before numeric(14, 2) not null,
   balance_after numeric(14, 2) not null,
-  created_at timestamptz not null default now(),
-  constraint balance_adjustments_amount_check check (balance_after = balance_before + amount)
+  created_at timestamptz not null default now()
 );
+
+-- El check suelto `amount <> 0` Postgres lo nombra balance_adjustments_amount_check.
+-- Por eso la ecuación del saldo lleva otro nombre: si no, el create table choca (42710).
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'balance_adjustments_amount_nonzero_check'
+      and conrelid = 'public.balance_adjustments'::regclass
+  ) then
+    alter table public.balance_adjustments
+      add constraint balance_adjustments_amount_nonzero_check check (amount <> 0);
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'balance_adjustments_equation_check'
+      and conrelid = 'public.balance_adjustments'::regclass
+  ) then
+    alter table public.balance_adjustments
+      add constraint balance_adjustments_equation_check
+      check (balance_after = balance_before + amount);
+  end if;
+end $$;
 
 comment on table public.balance_adjustments is
   'Diferencia anotada al ajustar el saldo calculado al saldo real. amount es con signo: positivo suma, negativo resta.';
