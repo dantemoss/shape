@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import NumberFlow from "@number-flow/react";
-import { Wallet } from "lucide-react";
+import { Ellipsis, Info, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MoneyAgreement } from "@/components/money-agreement";
+import { allowance } from "@/lib/chart-series";
 import { formatIso } from "@/lib/format-date";
 import { adjustmentForTarget, buildMoneySnapshot, formatPesos } from "@/lib/money";
 import { useShapeStore } from "@/lib/store";
@@ -28,26 +28,11 @@ function parseAmount(raw: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function SpendingRing({ pct }: { pct: number }) {
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const filled = Math.min(Math.max(pct, 0) / 100, 1) * circ;
-  const color = pct >= 90 ? "oklch(0.577 0.245 27.325)" : pct >= 70 ? "oklch(0.70 0.18 55)" : "oklch(0.55 0.15 162)";
-  return (
-    <svg width={72} height={72} viewBox="0 0 72 72" className="-rotate-90">
-      <circle cx={36} cy={36} r={r} fill="none" stroke="oklch(0.92 0 0)" strokeWidth={6} />
-      <circle
-        cx={36}
-        cy={36}
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth={6}
-        strokeDasharray={`${filled} ${circ - filled}`}
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+function usdChip(income: number, expense: number): string | null {
+  if (income <= 0 && expense <= 0) return null;
+  if (income > 0 && expense > 0) return "USD aparte";
+  const amount = (income > 0 ? income : expense).toLocaleString("es-AR", { maximumFractionDigits: 2 });
+  return `US$${amount} aparte`;
 }
 
 export function RealBalancePanel() {
@@ -65,135 +50,89 @@ export function RealBalancePanel() {
   const [reconcileOpen, setReconcileOpen] = useState(false);
 
   const period = snapshot.payPeriod;
-  const spendPct = period ? Math.round(period.spendPct) : 0;
   const balance = snapshot.account.balance;
+  const budget = period ? allowance(period.salaryExpected, period.expense, period.daysLeft) : null;
+  const usd = usdChip(snapshot.usd.income, snapshot.usd.expense);
+  const salaryChip = period
+    ? period.salaryReceived > 0
+      ? "Sueldo cobrado"
+      : "Sueldo pendiente"
+    : null;
+  const payWhen = !period
+    ? null
+    : period.isToday
+      ? "hoy"
+      : period.daysLeft === 1
+        ? "en 1 día"
+        : `en ${period.daysLeft} días`;
+  const remainLine = budget && budget.expected > 0 && payWhen
+    ? `${budget.left >= 0 ? "Te quedan" : "Te pasaste"} ${formatPesos(Math.abs(budget.left))} del sueldo · ${period?.isToday ? "cobrás hoy" : period?.daysLeft === 1 ? "cobrás mañana" : `cobrás ${payWhen}`}`
+    : null;
+
+  const info = [
+    snapshot.account.hasBaseline
+      ? `Base del ${formatIso(account?.startingDate ?? snapshot.today, "d 'de' MMMM")} más ingresos menos gastos en pesos desde ese día. El sueldo esperado no entra hasta que lo marcás como cobrado.`
+      : "Cargá cuánta plata tenías en Mercado Pago un día puntual. Desde ahí se suman los ingresos y se restan los gastos.",
+    `Cuenta: ${account?.name ?? "Mercado Pago"}.`,
+    ...adjustments.slice(0, 3).map((adjustment) =>
+      `Ajuste ${formatPesos(adjustment.amount)} el ${formatIso(adjustment.date, "d MMM")}${adjustment.note ? ` · ${adjustment.note}` : ""}.`
+    ),
+  ].join(" ");
 
   return (
     <div className="viz-card">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]">
-              <Wallet size={13} />
-            </div>
-            <span className="font-medium text-sm">Saldo real</span>
-            <span className="text-[10px] text-muted-foreground font-mono truncate">
-              {account?.name ?? "Mercado Pago"}
-            </span>
-            <Link href="/transactions">
-              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground ml-1">
-                Ver todo →
-              </Button>
-            </Link>
-          </div>
-
-          {snapshot.account.hasBaseline ? (
-            <p className={cn("num mb-1 text-[clamp(2rem,8vw,2.6rem)]", balance < 0 && "text-expense")}>
-              $<NumberFlow value={balance} locales="es-AR" format={{ maximumFractionDigits: 2 }} />
-            </p>
-          ) : (
-            <p className="text-2xl font-medium text-muted-foreground mb-1">Todavía no hay saldo</p>
-          )}
-          <p className="text-xs text-muted-foreground mb-4 max-w-md">
-            {snapshot.account.hasBaseline
-              ? `Base del ${formatIso(account?.startingDate ?? snapshot.today, "d 'de' MMMM")} más ingresos menos gastos en pesos desde ese día. El sueldo esperado no entra hasta que lo marcás como cobrado.`
-              : "Cargá cuánta plata tenías en Mercado Pago un día puntual. Desde ahí se suman los ingresos y se restan los gastos."}
-          </p>
-
-          <MoneyAgreement showSaldo={false} className="mb-4" />
-
-          {period && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-border">
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">
-                  Sueldo de este período
-                </p>
-                {period.salaryReceived > 0 ? (
-                  <p className="text-sm font-mono text-income">Cobrado {formatPesos(period.salaryReceived)}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">Todavía no cobraste</p>
-                )}
-                <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                  Esperado {formatPesos(period.salaryExpected)}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">
-                  Gastado este período
-                </p>
-                <p className="text-sm font-mono text-expense">{formatPesos(period.expense)}</p>
-                <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                  {formatIso(period.start, "d MMM")} → {formatIso(period.end, "d MMM")}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">
-                  Próximo cobro
-                </p>
-                <p className="text-sm font-medium">{formatIso(period.end, "d 'de' MMM")}</p>
-                <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                  {period.isToday ? "Es hoy" : `${period.daysLeft} días`}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2 mt-4">
-            {!ledgerReady ? (
-              <p className="text-xs text-muted-foreground">
-                Falta correr la migración de saldos en Supabase para guardar la base y los ajustes.
-              </p>
-            ) : snapshot.account.hasBaseline ? (
-              <>
-                <Button type="button" variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
-                  Ajustar a mi saldo real
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={() => setBaselineOpen(true)}>
-                  Corregir saldo inicial
-                </Button>
-              </>
-            ) : (
-              <Button type="button" size="sm" onClick={() => setBaselineOpen(true)}>
-                Cargar saldo inicial
-              </Button>
-            )}
-          </div>
-
-          {adjustments.length > 0 && (
-            <ul className="mt-4 space-y-1">
-              {adjustments.slice(0, 3).map((adjustment) => (
-                <li key={adjustment.id} className="text-[11px] text-muted-foreground font-mono">
-                  Ajuste {formatPesos(adjustment.amount)} el {formatIso(adjustment.date, "d MMM")}
-                  {adjustment.note ? ` · ${adjustment.note}` : ""}
-                </li>
-              ))}
-            </ul>
-          )}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]">
+          <Wallet size={13} />
         </div>
-
-        {period && period.salaryExpected > 0 && (
-          <div className="hidden shrink-0 flex-col items-center gap-1 sm:flex">
-            <div className="relative">
-              <SpendingRing pct={spendPct} />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span
-                  className={cn(
-                    "text-sm font-bold tabular-nums",
-                    spendPct >= 90 ? "text-expense" : spendPct >= 70 ? "text-yellow-600" : "text-income"
-                  )}
-                >
-                  {spendPct}%
-                </span>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground font-mono text-center leading-tight">
-              del sueldo
-              <br />
-              esperado
-            </p>
-          </div>
-        )}
+        <span className="text-[15px] font-medium text-[#1c1f26]">Saldo real</span>
+        <InfoNote text={info} />
+        <div className="ml-auto">
+          <CardMenu
+            ledgerReady={ledgerReady}
+            hasBaseline={snapshot.account.hasBaseline}
+            onReconcile={() => setReconcileOpen(true)}
+            onBaseline={() => setBaselineOpen(true)}
+          />
+        </div>
       </div>
+
+      {snapshot.account.hasBaseline ? (
+        <p className={cn("num text-[clamp(2rem,7vw,2.6rem)]", balance < 0 && "text-expense")}>
+          $<NumberFlow value={balance} locales="es-AR" format={{ maximumFractionDigits: 2 }} />
+        </p>
+      ) : (
+        <p className="text-[1.6rem] font-semibold tracking-tight text-[#9aa1ab]">Todavía no hay saldo</p>
+      )}
+
+      {remainLine ? <p className="mt-2 max-w-xl text-[14px] leading-snug text-[#6d7480]">{remainLine}</p> : null}
+
+      {(salaryChip || usd) && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {salaryChip ? (
+            <span className="rounded-full bg-[#f4f5f7] px-2.5 py-1 text-[12px] font-medium text-[#1c1f26]">{salaryChip}</span>
+          ) : null}
+          {usd ? (
+            <span className="rounded-full bg-[#f4f5f7] px-2.5 py-1 text-[12px] font-medium text-[#1c1f26]">{usd}</span>
+          ) : null}
+        </div>
+      )}
+
+      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-black/[0.06] pt-4">
+        <Stat label="Entró este mes" value={formatPesos(snapshot.calendarMonth.income)} tone="text-income" />
+        <Stat label="Salió este mes" value={formatPesos(snapshot.calendarMonth.expense)} tone="text-expense" />
+        <Stat
+          label="Próximo cobro"
+          value={period ? formatIso(period.end, "d 'de' MMM") : "Sin fecha"}
+          hint={payWhen ?? undefined}
+        />
+      </div>
+
+      {!ledgerReady ? (
+        <p className="mt-4 text-[13px] leading-snug text-[#8b919c]">
+          Falta correr la migración de saldos en Supabase para guardar la base y los ajustes.
+        </p>
+      ) : null}
 
       <BaselineDialog
         open={baselineOpen}
@@ -222,6 +161,133 @@ export function RealBalancePanel() {
           setReconcileOpen(false);
         }}
       />
+    </div>
+  );
+}
+
+function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[13px] text-[#9aa1ab]">{label}</p>
+      <p className={cn("mt-1 truncate text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tracking-tight tabular-nums", tone ?? "text-[#1c1f26]")}>
+        {value}
+      </p>
+      {hint ? <p className="mt-0.5 text-[13px] text-[#6d7480]">{hint}</p> : null}
+    </div>
+  );
+}
+
+function InfoNote({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+  const shown = open || hover;
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  return (
+    <span
+      ref={ref}
+      className="relative"
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") setHover(true);
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") setHover(false);
+      }}
+    >
+      <button
+        type="button"
+        aria-label="Cómo se calcula el saldo"
+        aria-expanded={shown}
+        onClick={() => setOpen((value) => !value)}
+        className="flex size-6 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]"
+      >
+        <Info size={13} />
+      </button>
+      {shown ? (
+        <span className="absolute top-8 left-0 z-30 w-[min(18rem,calc(100vw-3rem))] rounded-2xl bg-white p-3 text-[13px] leading-relaxed text-[#3a4150] shadow-[0_12px_32px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.06]">
+          {text}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function CardMenu({
+  ledgerReady,
+  hasBaseline,
+  onReconcile,
+  onBaseline,
+}: {
+  ledgerReady: boolean;
+  hasBaseline: boolean;
+  onReconcile: () => void;
+  onBaseline: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!ref.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        aria-label="Más opciones del saldo"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex size-9 items-center justify-center rounded-full bg-[#f5f6f8] text-[#a0a6b0] ring-1 ring-black/[0.04]"
+      >
+        <Ellipsis size={16} />
+      </button>
+      {open ? (
+        <div className="absolute top-11 right-0 z-30 w-56 rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.06]">
+          <Link
+            href="/transactions"
+            onClick={() => setOpen(false)}
+            className="block rounded-xl px-3 py-2.5 text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9]"
+          >
+            Ver movimientos
+          </Link>
+          <button
+            type="button"
+            disabled={!ledgerReady || !hasBaseline}
+            onClick={() => {
+              setOpen(false);
+              onReconcile();
+            }}
+            className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9] disabled:opacity-40"
+          >
+            Ajustar a mi saldo real
+          </button>
+          <button
+            type="button"
+            disabled={!ledgerReady}
+            onClick={() => {
+              setOpen(false);
+              onBaseline();
+            }}
+            className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9] disabled:opacity-40"
+          >
+            {hasBaseline ? "Corregir saldo inicial" : "Cargar saldo inicial"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
