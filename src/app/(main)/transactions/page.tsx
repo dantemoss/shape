@@ -26,9 +26,8 @@ export default function TransactionsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ── Header ── */}
-      <div className="border-b border-border sticky top-0 bg-background z-10">
-        {/* Fila 1: título + botón */}
-        <div className="flex items-center justify-between px-4 sm:px-8 pt-4 pb-2 sm:pb-4 sm:border-b-0">
+      <div className="page-head !block">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-medium">Movimientos</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={
@@ -49,7 +48,7 @@ export default function TransactionsPage() {
         {/* Fila 2: totales — siempre visible */}
         <div className="px-4 sm:px-8 pb-3 sm:pb-4 sm:pt-0 space-y-2">
           <MoneyAgreement />
-          <p className="text-xs text-muted-foreground font-mono">
+          <p className="text-[13px] leading-relaxed break-words text-[#8b919c]">
             Histórico en pesos: +{formatPesos(snapshot.allTimeArs.income)} −{formatPesos(snapshot.allTimeArs.expense)}
             {" · "}
             {transactions.length} movimiento{transactions.length !== 1 ? "s" : ""}

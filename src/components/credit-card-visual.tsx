@@ -253,18 +253,18 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
       </div>
 
       {/* ── Stats strip ── */}
-      <div className="grid grid-cols-3 divide-x divide-border border border-border rounded-xl overflow-hidden">
-        <div className="p-3.5">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">Límite</p>
-          <p className="text-sm font-medium font-mono">${card.creditLimit.toLocaleString("es-AR")}</p>
+      <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border">
+        <div className="min-w-0 p-3">
+          <p className="mb-1 text-[10px] font-mono tracking-wider text-muted-foreground uppercase">Límite</p>
+          <p className="text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all tabular-nums">${card.creditLimit.toLocaleString("es-AR")}</p>
         </div>
-        <div className="p-3.5">
-          <p className="text-[10px] text-expense uppercase tracking-wider font-mono mb-1">Usado</p>
-          <p className="text-sm font-medium font-mono text-expense">${card.usedAmount.toLocaleString("es-AR")}</p>
+        <div className="min-w-0 p-3">
+          <p className="mb-1 text-[10px] font-mono tracking-wider text-expense uppercase">Usado</p>
+          <p className="text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all text-expense tabular-nums">${card.usedAmount.toLocaleString("es-AR")}</p>
         </div>
-        <div className="p-3.5">
-          <p className="text-[10px] text-income uppercase tracking-wider font-mono mb-1">Disponible</p>
-          <p className={cn("text-sm font-medium font-mono", available >= 0 ? "text-income" : "text-expense")}>
+        <div className="min-w-0 p-3">
+          <p className="mb-1 text-[10px] font-mono tracking-wider text-income uppercase">Disponible</p>
+          <p className={cn("text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all tabular-nums", available >= 0 ? "text-income" : "text-expense")}>
             ${Math.abs(available).toLocaleString("es-AR")}
           </p>
         </div>

@@ -142,7 +142,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
         )}
 
         {/* Contenido — empujado hacia abajo */}
-        <div className="relative z-10 px-8 pt-10 pb-8">
+        <div className="relative z-10 px-5 pt-8 pb-6 sm:px-8">
           {/* Label sin ícono */}
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-8">
             {config.label}
@@ -150,7 +150,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
 
           {/* Monto — grande, hacia abajo */}
           <div className="mb-8">
-            <p className="text-[3.25rem] font-medium tracking-tight leading-none">
+            <p className="num text-[clamp(2.1rem,11vw,3.25rem)] leading-none">
               $<NumberFlow
                 value={config.amount}
                 locales="es-AR"
@@ -163,12 +163,12 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
           </div>
 
           {/* Grid de stats */}
-          <div className="grid grid-cols-3 gap-6 mb-7">
+          <div className="mb-7 grid grid-cols-3 gap-2 sm:gap-6">
             <div>
               <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
                 Próximo cobro
               </p>
-              <p className="text-2xl font-medium leading-none capitalize">
+              <p className="text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold">
                 {format(next.date, "d 'de' MMM", { locale: es })}
               </p>
             </div>
@@ -178,7 +178,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
                 {next.isToday ? "¡Es hoy!" : "Días restantes"}
               </p>
               <p className={cn(
-                "text-2xl font-medium font-mono tabular-nums leading-none",
+                "text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold tabular-nums",
                 next.isToday || next.daysLeft <= 3 ? "text-income" : "text-foreground"
               )}>
                 {next.isToday ? "🎉" : <NumberFlow value={next.daysLeft} />}
@@ -192,7 +192,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
               <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
                 Período
               </p>
-              <p className="text-2xl font-medium font-mono tabular-nums leading-none">
+              <p className="text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold tabular-nums">
                 <NumberFlow value={Math.round(progress)} />
                 <span className="text-sm font-normal text-muted-foreground ml-0.5">%</span>
               </p>

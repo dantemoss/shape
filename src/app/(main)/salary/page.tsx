@@ -15,8 +15,8 @@ export default function SalaryPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
-        <div className="flex items-center gap-4">
+      <div className="page-head">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
           <h1 className="text-lg font-medium">Sueldo</h1>
           <span className="text-sm text-muted-foreground">
             {salaryConfig ? salaryConfig.label : "Sin configurar"}

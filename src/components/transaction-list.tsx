@@ -104,15 +104,16 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
               <div key={day}>
                 {/* ── Encabezado del día ── */}
                 <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-xs font-medium text-muted-foreground capitalize tracking-wide">
+                  <span className="text-xs font-medium tracking-wide text-muted-foreground">
                     {formatDayLabel(day)}
                   </span>
                   <span className={cn(
-                    "text-xs font-mono font-medium",
-                    dayNet >= 0 ? "text-income" : "text-expense"
+                    "shrink-0 text-xs font-medium tabular-nums",
+                    dayNet > 0 ? "text-income" : dayNet < 0 ? "text-expense" : "text-muted-foreground"
                   )}>
-                    {dayNet >= 0 ? "+" : "−"}${Math.abs(dayNet).toLocaleString("es-AR")}
-                    {hasUsd ? " · USD aparte" : ""}
+                    {dayIncome === 0 && dayExpense === 0 && hasUsd
+                      ? "USD aparte"
+                      : `${dayNet >= 0 ? "+" : "−"}$${Math.abs(dayNet).toLocaleString("es-AR")}${hasUsd ? " · USD aparte" : ""}`}
                   </span>
                 </div>
 

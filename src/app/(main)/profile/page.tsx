@@ -53,7 +53,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="page-head">
         <h1 className="text-lg font-medium">Mi perfil</h1>
       </div>
 

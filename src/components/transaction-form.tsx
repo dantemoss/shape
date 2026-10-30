@@ -95,14 +95,6 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     if (step === 0) amountInputRef.current?.focus();
   }, [step]);
 
-  // Auto-suggest description when category changes
-  useEffect(() => {
-    if (!description && category) {
-      const cat = CATEGORIES.find((c) => c.value === category);
-      if (cat) setDescription(cat.suggestions[0]);
-    }
-  }, [category]);
-
   function goNext() {
     setDir(1);
     if (type === "income") {
@@ -234,7 +226,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
               <p className="text-xs text-muted-foreground uppercase tracking-wider font-mono text-center">
                 ¿Qué tipo de gasto?
               </p>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-3 gap-2 min-[420px]:grid-cols-5">
                 {CATEGORIES.map((cat) => {
                   const Icon = cat.icon;
                   const active = category === cat.value;
@@ -243,16 +235,19 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                       key={cat.value}
                       type="button"
                       whileTap={{ scale: 0.93 }}
-                      onClick={() => setCategory(cat.value)}
+                      onClick={() => {
+                        setCategory(cat.value);
+                        setDescription((current) => current || cat.suggestions[0] || "");
+                      }}
                       className={cn(
-                        "flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-150",
+                        "flex min-w-0 flex-col items-center gap-1.5 rounded-xl border p-2 transition-all duration-150",
                         active
                           ? "border-foreground bg-foreground text-background shadow-md"
                           : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
                       )}
                     >
                       <Icon size={18} strokeWidth={1.75} />
-                      <span className="text-[10px] font-medium leading-none">{cat.label}</span>
+                      <span className="w-full text-center text-[11px] leading-tight font-medium break-words">{cat.label}</span>
                     </motion.button>
                   );
                 })}

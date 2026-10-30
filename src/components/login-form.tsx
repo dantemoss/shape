@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { signIn, signUp, stashPendingProfile } from "@/lib/auth";
 import { bootstrap } from "@/lib/session";
 import { useShapeStore } from "@/lib/store";
+import { previewMode } from "@/lib/preview";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
 import { ConfigMissing, LoadingScreen } from "@/components/loading-screen";
@@ -13,10 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, User } from "lucide-react";
-import { motion } from "framer-motion";
 import { ShapeLogo } from "@/components/shape-logo";
-
-const Silk = dynamic(() => import("@/components/silk"), { ssr: false });
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [mode, setMode] = useState<"signup" | "login">("signup");
@@ -33,6 +30,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   const ready = useShapeStore((s) => s.ready);
 
   useEffect(() => {
+    if (previewMode) return;
     if (authStatus === "authenticated" && ready) router.replace("/");
   }, [authStatus, ready, router]);
 
@@ -75,11 +73,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     }
   }
 
-  if (!isSupabaseConfigured()) {
+  if (!isSupabaseConfigured() && !previewMode) {
     return <ConfigMissing />;
   }
 
-  if (authStatus === "loading" || (authStatus === "authenticated" && !ready)) {
+  if (!previewMode && (authStatus === "loading" || (authStatus === "authenticated" && !ready))) {
     return <LoadingScreen />;
   }
 
@@ -91,7 +89,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+      <div className="overflow-hidden rounded-[28px] bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
         <div className="grid md:grid-cols-2">
           <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-6">
             <div className="flex flex-col gap-1">
@@ -216,54 +214,29 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
             </Button>
           </form>
 
-          <div className="relative hidden md:flex flex-col items-center justify-center overflow-hidden">
-            <div className="absolute inset-0">
-              <Silk speed={5} scale={1} color="#2F48A1" noiseIntensity={1.5} rotation={0} />
-            </div>
-
-            <div className="relative z-10 text-center px-8 flex flex-col items-center gap-6">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <ShapeLogo size={64} />
-              </motion.div>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="text-2xl font-medium text-white"
-              >
+          <div className="relative hidden flex-col justify-between overflow-hidden bg-[linear-gradient(165deg,#eef3ff_0%,#f7f1ff_55%,#ffffff_100%)] p-8 md:flex">
+            <div>
+              <ShapeLogo size={40} />
+              <p className="mt-6 text-[1.7rem] leading-tight font-semibold tracking-[-0.04em] text-[#1c1f26]">
                 Tus finanzas,<br />en orden.
-              </motion.p>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="text-sm text-white/60 leading-relaxed"
-              >
-                Seguí tus gastos, controlá tu sueldo y alcanzá tus metas.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-                className="w-full bg-white/10 backdrop-blur-sm rounded-xl p-4 space-y-2"
-              >
-                {[
-                  { label: "Balance", value: "$284.500", color: "text-emerald-300" },
-                  { label: "Gastos del mes", value: "$65.300", color: "text-red-300" },
-                  { label: "Meta: Vacaciones", value: "67%", color: "text-white/80" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
-                    <span className="text-xs text-white/50">{item.label}</span>
-                    <span className={cn("text-xs font-mono font-semibold", item.color)}>{item.value}</span>
-                  </div>
-                ))}
-              </motion.div>
+              </p>
+              <p className="mt-2 max-w-[16rem] text-[14px] leading-relaxed text-[#8b919c]">
+                Seguí tus gastos, el sueldo y lo que te queda para el próximo cobro.
+              </p>
             </div>
+            <svg viewBox="0 0 220 90" className="mt-8 h-24 w-full" aria-hidden>
+              {[28, 46, 34, 62, 40, 70, 52].map((height, index) => (
+                <rect
+                  key={height}
+                  x={12 + index * 30}
+                  y={80 - height}
+                  width="16"
+                  height={height}
+                  rx="7"
+                  fill={index === 5 ? "#7c6cf0" : "#e6e8ee"}
+                />
+              ))}
+            </svg>
           </div>
         </div>
       </div>

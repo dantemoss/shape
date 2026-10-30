@@ -13,5 +13,6 @@ export function dayHeading(value: string, now: Date = new Date()): string {
   const today = todayISO(now);
   if (day === today) return "Hoy";
   if (day === addDaysISO(today, -1)) return "Ayer";
-  return formatIso(day, "EEEE d 'de' MMMM");
+  const label = formatIso(day, "EEEE d 'de' MMMM");
+  return label.charAt(0).toLocaleUpperCase("es-AR") + label.slice(1);
 }
