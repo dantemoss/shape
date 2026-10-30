@@ -4,12 +4,12 @@ import Link from "next/link";
 import { formatChartPesos } from "@/lib/chart-format";
 import { ChartCard, EmptyChart } from "./ui";
 
-const TICKS = 26;
 const CX = 160;
-const CY = 118;
-const RADIUS = 92;
-const TICK_W = 8;
-const TICK_H = 18;
+const CY = 104;
+const RADIUS = 78;
+const STROKE = 18;
+const ARC = `M ${CX - RADIUS} ${CY} A ${RADIUS} ${RADIUS} 0 0 1 ${CX + RADIUS} ${CY}`;
+const ARC_LENGTH = Math.PI * RADIUS;
 
 export function BudgetGaugeCard({
   spent,
@@ -24,8 +24,10 @@ export function BudgetGaugeCard({
   pct: number;
   periodLabel: string | null;
 }) {
-  const filled = Math.max(0, Math.min(TICKS, Math.round((Math.min(Math.max(pct, 0), 100) / 100) * TICKS)));
+  const clamped = Math.min(Math.max(pct, 0), 100);
   const shownPct = Math.round(pct);
+  const progress = (clamped / 100) * ARC_LENGTH;
+  const progressColor = shownPct >= 100 ? "#e5484d" : "#1f9d55";
 
   return (
     <ChartCard title="Del sueldo" subtitle="Cuánto del cobro esperado ya se fue" href="/salary">
@@ -39,38 +41,39 @@ export function BudgetGaugeCard({
           </span>
         </EmptyChart>
       ) : (
-        <div>
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="mb-3 flex shrink-0 flex-wrap items-end justify-between gap-4">
             <Stat dash="#1f9d55" label={left >= 0 ? "Te queda" : "De más"} value={formatChartPesos(Math.abs(left))} />
             <Stat dash="#c5cad3" label="Sueldo esperado" value={formatChartPesos(expected)} align="right" />
           </div>
-          <p className="mb-2 text-[12px] text-[#9aa1ab]">{periodLabel}</p>
-          <svg viewBox="0 0 320 146" className="mx-auto block h-[132px] w-full max-w-[320px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
-            {Array.from({ length: TICKS }, (_, index) => {
-              const angle = Math.PI * (1 - (index + 0.5) / TICKS);
-              const x = CX + Math.cos(angle) * RADIUS;
-              const y = CY - Math.sin(angle) * RADIUS;
-              const rotation = (angle * 180) / Math.PI - 90;
-              return (
-                <rect
-                  key={index}
-                  x={x - TICK_W / 2}
-                  y={y - TICK_H / 2}
-                  width={TICK_W}
-                  height={TICK_H}
-                  rx={TICK_W / 2}
-                  fill={index < filled ? "#1f9d55" : "#e6e8ee"}
-                  transform={`rotate(${rotation} ${x} ${y})`}
-                />
-              );
-            })}
+          <p className="mb-2 shrink-0 text-[12px] text-[#9aa1ab]">{periodLabel}</p>
+          <div className="flex flex-1 flex-col justify-end">
+          <svg viewBox="0 0 320 124" className="mx-auto block h-[118px] w-full max-w-[340px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
+            <path
+              d={ARC}
+              fill="none"
+              stroke="#e6e8ee"
+              strokeWidth={STROKE}
+              strokeLinecap="round"
+            />
+            {progress > 0 ? (
+              <path
+                d={ARC}
+                fill="none"
+                stroke={progressColor}
+                strokeWidth={STROKE}
+                strokeLinecap="round"
+                strokeDasharray={`${progress} ${ARC_LENGTH}`}
+              />
+            ) : null}
           </svg>
-          <div className="mt-1 text-center">
+          <div className="mt-1 shrink-0 text-center">
             <p className="text-[13px] text-[#9aa1ab]">Gastado del sueldo</p>
             <p className="num mt-1 text-[clamp(1.55rem,3vw,2rem)] text-[#16181d]">{formatChartPesos(spent)}</p>
             <p className={shownPct >= 100 ? "mt-1 text-[13px] font-medium text-[#e5484d]" : "mt-1 text-[13px] font-medium text-[#1f9d55]"}>
               {shownPct.toLocaleString("es-AR")}% del esperado
             </p>
+          </div>
           </div>
         </div>
       )}

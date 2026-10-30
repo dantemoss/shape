@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Ellipsis } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,15 +21,15 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn("viz-card", className)}>
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <section className={cn("viz-card flex h-full min-h-0 flex-col", className)}>
+      <header className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">{title}</h2>
           {subtitle ? <p className="mt-0.5 text-[13px] leading-snug text-[#9aa1ab]">{subtitle}</p> : null}
         </div>
         <div className="ml-auto shrink-0">{action ?? (href ? <DotLink href={href} /> : null)}</div>
       </header>
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </section>
   );
 }
@@ -129,8 +130,31 @@ export function EmptyChart({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Alto fijo: el viewBox no puede crecer con el ancho de la pantalla. */
-export const chartPlotClass = "mx-auto block h-[188px] w-full max-w-[640px] sm:h-[206px]";
+/** El gráfico ocupa el alto que le deja la tarjeta, sin deformar el dibujo. */
+export function useChartPlot(width: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(220);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const measure = () => {
+      const box = node.getBoundingClientRect();
+      if (box.width < 16 || box.height < 16) return;
+      const next = Math.round((box.height / box.width) * width);
+      setHeight((prev) => (Math.abs(prev - next) < 2 ? prev : Math.max(190, next)));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [width]);
+
+  return { ref, height };
+}
+
+export const chartPlotFrameClass = "relative min-h-[210px] w-full flex-1";
+export const chartPlotSvgClass = "absolute inset-0 block h-full w-full";
 
 /** Círculo neutro. El ícono va oscuro; el color de categoría es un punto aparte. */
 export const iconWell =

@@ -5,10 +5,9 @@ import { Landmark } from "lucide-react";
 import { formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { BalancePoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
-const H = 220;
 const PAD_L = 8;
 const PAD_R = 8;
 const PAD_T = 18;
@@ -17,6 +16,8 @@ const PAD_B = 28;
 export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
   const uid = useId().replace(/:/g, "");
   const [active, setActive] = useState(Math.max(0, points.length - 1));
+  const plot = useChartPlot(W);
+  const H = plot.height;
   const domain = paddedDomain(points.map((point) => point.balance));
   const plotBottom = H - PAD_B;
   const slot = points.length > 1 ? (W - PAD_L - PAD_R) / (points.length - 1) : 0;
@@ -55,8 +56,8 @@ export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
               </p>
             ) : null}
           </div>
-          <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Saldo en el tiempo">
+          <div ref={plot.ref} className={chartPlotFrameClass}>
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Saldo en el tiempo">
               <defs>
                 <linearGradient id={`${uid}-band`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ddd6fe" stopOpacity="0.95" />

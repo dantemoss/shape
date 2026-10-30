@@ -4,10 +4,9 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { AreaPoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
-const H = 210;
 const PAD_L = 8;
 const PAD_R = 44;
 const PAD_T = 14;
@@ -25,6 +24,8 @@ export function FlowAreaCard({
   const uid = useId().replace(/:/g, "");
   const lastCurrent = [...points].reverse().find((point) => point.current != null);
   const [active, setActive] = useState(Math.max(0, points.findIndex((point) => point.date === lastCurrent?.date)));
+  const plot = useChartPlot(W);
+  const H = plot.height;
   const values = points.flatMap((point) => [point.previous, point.current].filter((value): value is number => value != null));
   const domain = paddedDomain(values);
   const plotBottom = H - PAD_B;
@@ -62,8 +63,8 @@ export function FlowAreaCard({
               </p>
             ) : null}
           </div>
-          <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Comparación del período">
+          <div ref={plot.ref} className={chartPlotFrameClass}>
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Comparación del período">
               <defs>
                 <linearGradient id={`${uid}-blue`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.45" />

@@ -48,7 +48,7 @@ export function ExpenseDonutCard({
       {sum <= 0 ? (
         <EmptyChart>No hay gastos en pesos en este período.</EmptyChart>
       ) : (
-        <div className="flex flex-col gap-5 min-[420px]:flex-row min-[420px]:items-center">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 min-[420px]:flex-row min-[420px]:items-center">
           <div className="min-w-0 flex-1">
             <p className="text-[13px] text-[#9aa1ab]">Total de gastos</p>
             <HeroNumber className="mt-1">{formatChartPesos(total)}</HeroNumber>
