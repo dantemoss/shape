@@ -25,8 +25,8 @@ export default function GoalsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
-        <div className="flex items-center gap-4">
+      <div className="page-head">
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
           <h1 className="text-lg font-medium">Metas</h1>
           {goals.length > 0 && (
             <span className="text-sm text-muted-foreground font-mono">

@@ -7,9 +7,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   return (
     <TooltipProvider delay={300}>
       <UserGuard>
-        <div className="flex min-h-screen">
+        <div className="flex min-h-dvh min-w-0 overflow-x-clip">
           <Sidebar />
-          <div className="flex-1 md:ml-52 min-h-screen flex flex-col pb-16 md:pb-0">
+          <div className="flex min-h-dvh min-w-0 flex-1 flex-col overflow-x-clip pb-[calc(4.6rem+env(safe-area-inset-bottom))] md:ml-56 md:pb-0">
             <StatusBanners />
             {children}
           </div>

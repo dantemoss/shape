@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { Goal } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,49 +8,6 @@ import { Trash2, Plus, Check } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { formatIso } from "@/lib/format-date";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-const Silk = dynamic(() => import("@/components/silk"), { ssr: false });
-
-// Paleta de colores que cicla automáticamente por índice de meta
-const SILK_COLORS = [
-  "#2F48A1", // brand blue
-  "#7C3AED", // violet
-  "#E11D48", // rose
-  "#059669", // emerald
-  "#B45309", // amber
-  "#0891B2", // cyan
-  "#DB2777", // pink
-  "#C2410C", // orange
-  "#374151", // slate
-  "#065F46", // dark green
-];
-
-function getSilkColor(index: number): string {
-  return SILK_COLORS[index % SILK_COLORS.length];
-}
-
-// ── Radial SVG para el progreso circular ────────────────────────────────────
-function CircleProgress({ percentage }: { percentage: number }) {
-  const r = 20;
-  const circ = 2 * Math.PI * r;
-  const filled = (Math.min(percentage, 100) / 100) * circ;
-
-  return (
-    <svg width={52} height={52} className="-rotate-90">
-      <circle cx={26} cy={26} r={r} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={3} />
-      <circle
-        cx={26} cy={26} r={r}
-        fill="none"
-        stroke="white"
-        strokeWidth={3}
-        strokeDasharray={`${filled} ${circ}`}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dasharray 0.6s ease" }}
-      />
-    </svg>
-  );
-}
 
 interface GoalCardProps {
   goal: Goal;
@@ -67,7 +23,8 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
   const percentage = Math.min(Math.round((goal.currentAmount / goal.targetAmount) * 100), 100);
   const remaining = goal.targetAmount - goal.currentAmount;
   const isComplete = goal.currentAmount >= goal.targetAmount;
-  const silkColor = getSilkColor(index);
+  const tones = ["#166534", "#1d4ed8", "#c2410c", "#7c3aed"];
+  const tone = tones[index % tones.length];
 
   function handleAddAmount(e: React.FormEvent) {
     e.preventDefault();
@@ -79,64 +36,29 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
   }
 
   return (
-    <div className={cn(
-      "border border-border rounded-2xl overflow-hidden bg-card transition-all duration-150 group",
-      isComplete && "border-income/40"
-    )}>
-      {/* ── Header visual ── */}
-      <div className="relative h-32 overflow-hidden">
-        {/* Silk background */}
-        <div className="absolute inset-0">
-          <Silk color={silkColor} speed={4} scale={1.2} noiseIntensity={1.5} rotation={0} />
+    <div className={cn("viz-card", isComplete && "ring-1 ring-[#1f9d55]/30")}>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate text-[17px] font-semibold tracking-[-0.03em]">{goal.name}</h3>
+          {isComplete ? <p className="text-[12px] font-medium text-[#1f9d55]">Completada</p> : null}
         </div>
-        {/* Overlay sutil */}
-        <div className="absolute inset-0 bg-black/30" />
-
-        {/* Progress circle — top right */}
-        <div className="absolute top-3 right-3 flex flex-col items-center">
-          <div className="relative flex items-center justify-center">
-            <CircleProgress percentage={percentage} />
-            <span className="absolute text-[10px] font-medium text-white font-mono">
-              {percentage}%
-            </span>
-          </div>
-        </div>
-
-        {/* Botón eliminar — top left, aparece en hover */}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <button
-                onClick={() => onRemove(goal.id)}
-                className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/40 text-white/70 hover:bg-black/60 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              />
-            }
-          >
-            <Trash2 size={12} />
-          </TooltipTrigger>
-          <TooltipContent side="right">Eliminar meta</TooltipContent>
-        </Tooltip>
-
-        {/* Nombre de la meta — bottom left */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-gradient-to-t from-black/60 to-transparent">
-          <h3 className="text-sm font-medium text-white leading-tight">
-            {goal.name}
-          </h3>
-          {isComplete && (
-            <span className="text-[10px] text-income font-mono">✓ completado</span>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => onRemove(goal.id)}
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f6f7f9] text-[#8b919c]"
+          aria-label="Eliminar meta"
+        >
+          <Trash2 size={14} />
+        </button>
       </div>
-
-      {/* ── Cuerpo ── */}
-      <div className="p-4 space-y-3">
+      <div className="space-y-3">
         {/* Montos */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
               Ahorrado
             </p>
-            <p className="text-xl font-medium font-mono text-income">
+            <p className="num text-[1.6rem]" style={{ color: tone }}>
               $<NumberFlow value={goal.currentAmount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
             </p>
           </div>
@@ -152,14 +74,11 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
 
         {/* Barra segmentada */}
         <div className="flex gap-[3px]">
-          {Array.from({ length: 20 }).map((_, i) => (
+          {Array.from({ length: 24 }).map((_, i) => (
             <div
               key={i}
-              className={cn(
-                "flex-1 h-1 rounded-full transition-all duration-500",
-                i < Math.round(percentage / 5) ? "bg-income" : "bg-border"
-              )}
-              style={{ transitionDelay: `${i * 30}ms` }}
+              className="h-2.5 flex-1 rounded-[4px]"
+              style={{ background: i < Math.round((percentage / 100) * 24) ? tone : "#f1f2f4" }}
             />
           ))}
         </div>

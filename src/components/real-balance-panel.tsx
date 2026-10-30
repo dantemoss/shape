@@ -69,7 +69,7 @@ export function RealBalancePanel() {
   const balance = snapshot.account.balance;
 
   return (
-    <div className="border border-border rounded-2xl p-5 bg-card">
+    <div className="viz-card">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
@@ -88,7 +88,7 @@ export function RealBalancePanel() {
           </div>
 
           {snapshot.account.hasBaseline ? (
-            <p className={cn("text-4xl font-medium tabular-nums tracking-tight mb-1", balance < 0 && "text-expense")}>
+            <p className={cn("num mb-1 text-[clamp(2rem,8vw,2.6rem)]", balance < 0 && "text-expense")}>
               $<NumberFlow value={balance} locales="es-AR" format={{ maximumFractionDigits: 2 }} />
             </p>
           ) : (
@@ -130,7 +130,7 @@ export function RealBalancePanel() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono mb-1">
                   Próximo cobro
                 </p>
-                <p className="text-sm font-medium capitalize">{formatIso(period.end, "d 'de' MMM")}</p>
+                <p className="text-sm font-medium">{formatIso(period.end, "d 'de' MMM")}</p>
                 <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
                   {period.isToday ? "Es hoy" : `${period.daysLeft} días`}
                 </p>
@@ -172,7 +172,7 @@ export function RealBalancePanel() {
         </div>
 
         {period && period.salaryExpected > 0 && (
-          <div className="shrink-0 flex flex-col items-center gap-1">
+          <div className="hidden shrink-0 flex-col items-center gap-1 sm:flex">
             <div className="relative">
               <SpendingRing pct={spendPct} />
               <div className="absolute inset-0 flex items-center justify-center">

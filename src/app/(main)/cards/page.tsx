@@ -43,7 +43,7 @@ export default function CardsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-4 sm:px-8 py-4 flex items-center justify-between sticky top-0 bg-background z-10">
+      <div className="page-head">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-medium">Tarjetas</h1>
           {creditCards.length > 0 && (

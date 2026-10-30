@@ -52,43 +52,43 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-  --color-chart-label: var(----chart-label);
-  --color-chart-ring-background: var(----chart-ring-background);
-  --color-chart-marker-foreground: var(----chart-marker-foreground);
-  --color-chart-marker-border: var(----chart-marker-border);
-  --color-chart-marker-background: var(----chart-marker-background);
-  --color-chart-tooltip-muted: var(----chart-tooltip-muted);
-  --color-chart-tooltip-foreground: var(----chart-tooltip-foreground);
-  --color-chart-tooltip-background: var(----chart-tooltip-background);
-  --chart-brush-border: var(----chart-brush-border);
-  --color-chart-grid: var(----chart-grid);
-  --color-chart-crosshair: var(----chart-crosshair);
-  --chart-line-secondary: var(----chart-line-secondary);
-  --chart-line-primary: var(----chart-line-primary);
-  --color-chart-foreground-muted: var(----chart-foreground-muted);
-  --color-chart-foreground: var(----chart-foreground);
-  --color-chart-background: var(----chart-background);
+  --color-chart-label: var(--chart-label);
+  --color-chart-ring-background: var(--chart-ring-background);
+  --color-chart-marker-foreground: var(--chart-marker-foreground);
+  --color-chart-marker-border: var(--chart-marker-border);
+  --color-chart-marker-background: var(--chart-marker-background);
+  --color-chart-tooltip-muted: var(--chart-tooltip-muted);
+  --color-chart-tooltip-foreground: var(--chart-tooltip-foreground);
+  --color-chart-tooltip-background: var(--chart-tooltip-background);
+  --color-chart-brush-border: var(--chart-brush-border);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-crosshair: var(--chart-crosshair);
+  --color-chart-line-secondary: var(--chart-line-secondary);
+  --color-chart-line-primary: var(--chart-line-primary);
+  --color-chart-foreground-muted: var(--chart-foreground-muted);
+  --color-chart-foreground: var(--chart-foreground);
+  --color-chart-background: var(--chart-background);
 }
 
 :root {
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.13 0 0);
+  --background: oklch(0.972 0.003 260);
+  --foreground: oklch(0.22 0.02 265);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.13 0 0);
+  --card-foreground: oklch(0.22 0.02 265);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.13 0 0);
-  --primary: oklch(0.17 0 0);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.17 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.50 0 0);
-  --accent: oklch(0.96 0 0);
-  --accent-foreground: oklch(0.17 0 0);
+  --popover-foreground: oklch(0.22 0.02 265);
+  --primary: oklch(0.22 0.02 265);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.965 0.003 260);
+  --secondary-foreground: oklch(0.22 0.02 265);
+  --muted: oklch(0.965 0.003 260);
+  --muted-foreground: oklch(0.58 0.012 260);
+  --accent: oklch(0.965 0.003 260);
+  --accent-foreground: oklch(0.22 0.02 265);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0 0);
-  --input: oklch(0.90 0 0);
-  --ring: oklch(0.65 0 0);
+  --border: oklch(0.92 0.004 260);
+  --input: oklch(0.92 0.004 260);
+  --ring: oklch(0.72 0.02 260);
   /* Emerald income */
   --income: oklch(0.55 0.15 162);
   --income-foreground: oklch(0.97 0.02 162);
@@ -103,7 +103,7 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.75rem;
+  --radius: 1rem;
   --sidebar: oklch(0.97 0 0);
   --sidebar-foreground: oklch(0.13 0 0);
   --sidebar-primary: oklch(0.17 0 0);
@@ -187,19 +187,97 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+    overflow-x: clip;
+    max-width: 100%;
+  }
   body {
     @apply bg-background text-foreground;
-    font-weight: 300;
+    overflow-x: clip;
+    max-width: 100%;
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  html {
-    @apply font-sans;
+}
+
+.page-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding: 14px 16px;
+  background: color-mix(in oklch, var(--background) 88%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.viz-card {
+  min-width: 0;
+  border-radius: 26px;
+  background: #fff;
+  padding: 18px 16px 16px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 18px 40px rgba(15, 23, 42, 0.045);
+}
+
+.num {
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+@media (min-width: 640px) {
+  .page-head {
+    padding: 16px 28px;
   }
-  /* Remap Tailwind weight utilities to keep things thin */
-  .font-medium   { font-weight: 400; }
-  .font-semibold { font-weight: 500; }
-  .font-bold     { font-weight: 600; }
+  .viz-card {
+    padding: 22px 22px 18px;
+    border-radius: 28px;
+  }
+}
+
+@keyframes viz-rise {
+  from { transform: scaleY(0.05); }
+  to { transform: scaleY(1); }
+}
+@keyframes viz-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes viz-pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes viz-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+svg text {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+.viz-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viz-bar { animation: viz-rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .viz-block { animation: viz-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .viz-segment { animation: viz-fade 0.45s ease both; }
+  .viz-donut { animation: viz-fade 0.6s ease both; }
+  .viz-line {
+    stroke-dasharray: 900;
+    stroke-dashoffset: 900;
+    animation: viz-draw 1.15s ease forwards;
+  }
 }
 
 /* Logos de logo.dev sobre fondos claros: elimina el fondo blanco del logo */

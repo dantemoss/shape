@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useShapeStore } from "@/lib/store";
+import { previewMode } from "@/lib/preview";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { ConfigMissing, LoadingScreen } from "@/components/loading-screen";
 
@@ -17,7 +18,7 @@ export function UserGuard({ children }: { children: React.ReactNode }) {
     }
   }, [authStatus, router]);
 
-  if (!isSupabaseConfigured()) return <ConfigMissing />;
+  if (!isSupabaseConfigured() && !previewMode) return <ConfigMissing />;
   if (authStatus === "loading" || !ready) return <LoadingScreen />;
   if (authStatus !== "authenticated") return null;
 

@@ -101,8 +101,8 @@ export default function SubscriptionsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* ── Header ── */}
-      <div className="border-b border-border sticky top-0 bg-background z-10">
-        <div className="flex items-center justify-between px-4 sm:px-8 pt-4 pb-2">
+      <div className="page-head !block">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-medium">Suscripciones</h1>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={<Button className="gap-2" />}>
@@ -120,7 +120,7 @@ export default function SubscriptionsPage() {
 
         {/* Totales mensuales */}
         {active.length > 0 && (
-          <div className="flex items-center gap-4 px-4 sm:px-8 pb-3">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
             {monthlyARS > 0 && (
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-expense" />
