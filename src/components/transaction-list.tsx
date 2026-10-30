@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Transaction, CATEGORY_LABELS, RECURRENCE_LABELS } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react";
+import { iconWell } from "@/components/viz/ui";
 import { cn } from "@/lib/utils";
 import { dayHeading } from "@/lib/format-date";
 import { formatMoney, isArs } from "@/lib/money";
@@ -127,12 +128,7 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                         className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/30 active:bg-muted/50"
                       >
                         {/* Ícono */}
-                        <div className={cn(
-                          "w-9 h-9 rounded-full flex items-center justify-center shrink-0",
-                          tx.type === "income"
-                            ? "bg-income/12 text-income"
-                            : "bg-expense/12 text-expense"
-                        )}>
+                        <div className={iconWell}>
                           {tx.type === "income"
                             ? <ArrowDownLeft size={15} />
                             : <ArrowUpRight  size={15} />}
@@ -204,7 +200,7 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                           <button
                             type="button"
                             onClick={() => armRemove(tx.id)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-muted-foreground/70 hover:text-expense hover:bg-expense/10"
+                            className="flex size-8 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26] hover:bg-white"
                             title="Eliminar"
                           >
                             <Trash2 size={13} />

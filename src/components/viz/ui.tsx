@@ -129,6 +129,13 @@ export function EmptyChart({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Alto fijo: el viewBox no puede crecer con el ancho de la pantalla. */
+export const chartPlotClass = "mx-auto block h-[188px] w-full max-w-[640px] sm:h-[206px]";
+
+/** Círculo neutro. El ícono va oscuro; el color de categoría es un punto aparte. */
+export const iconWell =
+  "flex size-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]";
+
 export function HeroNumber({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <p className={cn("num text-[clamp(1.7rem,6.4vw,2.55rem)] leading-none text-[#16181d]", className)}>

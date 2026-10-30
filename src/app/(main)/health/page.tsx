@@ -22,9 +22,9 @@ import { useMoneySnapshot } from "@/lib/use-money";
 import { cn } from "@/lib/utils";
 
 const INSIGHT = {
-  warning: { icon: AlertTriangle, box: "bg-[#fdecec]", iconColor: "text-[#e5484d]", title: "text-[#e5484d]" },
-  tip: { icon: Lightbulb, box: "bg-[#f6f7f9]", iconColor: "text-[#6d7480]", title: "text-[#1c1f26]" },
-  positive: { icon: CheckCircle2, box: "bg-[#e7f8ee]", iconColor: "text-[#1f9d55]", title: "text-[#1f9d55]" },
+  warning: { icon: AlertTriangle, box: "bg-[#f6f7f9]", dot: "#e5484d" },
+  tip: { icon: Lightbulb, box: "bg-[#f6f7f9]", dot: "#6d7480" },
+  positive: { icon: CheckCircle2, box: "bg-[#f6f7f9]", dot: "#1f9d55" },
 } as const;
 
 function scoreFor(spendPct: number): number {
@@ -129,12 +129,12 @@ export default function HealthPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6">
-        <div className="viz-card">
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
+        <div className="viz-card xl:col-span-2">
           <MoneyAgreement />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:col-span-2">
           <Kpi label="Salud" value={String(score)} hint={scoreText} tone={scoreTone} />
           <Kpi label="Gastos del mes" value={formatChartPesos(snapshot.calendarMonth.expense)} hint={monthComp.previous > 0 ? `${Math.abs(Math.round(monthComp.changePercent))}% vs el mes anterior` : "Mes calendario"} tone={monthComp.change > 0 ? "text-[#e5484d]" : "text-[#1f9d55]"} />
           <Kpi
@@ -156,6 +156,7 @@ export default function HealthPage() {
           currentLabel={snapshot.payPeriod ? "Nivel de este período" : "Nivel de este mes"}
           delta={areaDelta}
         />
+        <div className="space-y-4 xl:col-span-2">
         <CategoryStripCard
           income={snapshot.calendarMonth.income}
           expense={snapshot.calendarMonth.expense}
@@ -173,9 +174,14 @@ export default function HealthPage() {
                 const Icon = config.icon;
                 return (
                   <div key={index} className={cn("flex items-start gap-3 rounded-2xl px-3 py-3", config.box)}>
-                    <Icon size={15} className={cn("mt-0.5 shrink-0", config.iconColor)} />
+                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26]">
+                      <Icon size={14} />
+                    </span>
                     <div className="min-w-0">
-                      <p className={cn("text-[13px] font-semibold", config.title)}>{insight.title}</p>
+                      <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[#1c1f26]">
+                        <span className="size-1.5 rounded-full" style={{ background: config.dot }} />
+                        {insight.title}
+                      </p>
                       <p className="mt-0.5 text-[13px] leading-relaxed text-[#6d7480]">{insight.description}</p>
                     </div>
                   </div>
@@ -215,6 +221,7 @@ export default function HealthPage() {
               </p>
             ) : null}
           </section>
+        </div>
         </div>
       </div>
     </div>

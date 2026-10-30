@@ -30,6 +30,7 @@ import {
 import { useShapeStore } from "@/lib/store";
 import { CATEGORY_LABELS } from "@/lib/types";
 import { useMoneySnapshot } from "@/lib/use-money";
+import { iconWell } from "@/components/viz/ui";
 import { cn } from "@/lib/utils";
 
 function sentenceCase(value: string): string {
@@ -123,45 +124,47 @@ export default function DashboardPage() {
         </Dialog>
       </header>
 
-      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6 sm:py-6">
-        <RealBalancePanel />
-
-        <MonthlyBarsCard points={months} />
-
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ExpenseDonutCard
-            total={donut.total}
-            previous={previousTotal}
-            slices={donut.slices}
-            window={window}
-            onWindow={setWindow}
-          />
-          <BudgetGaugeCard
-            spent={budget?.spent ?? 0}
-            expected={budget?.expected ?? 0}
-            left={budget?.left ?? 0}
-            pct={budget?.pct ?? 0}
-            periodLabel={periodLabel}
-          />
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
+        <div className="xl:col-span-2">
+          <RealBalancePanel />
         </div>
 
-        {budget ? (
-          <BudgetBlocksCard
-            spent={budget.spent}
-            expected={budget.expected}
-            left={budget.left}
-            daysLeft={period?.daysLeft ?? 0}
-            perDay={budget.perDay}
-          />
-        ) : (
-          <BudgetBlocksCard spent={0} expected={0} left={0} daysLeft={0} perDay={0} />
-        )}
-
+        <MonthlyBarsCard points={months} />
         <DailyBarsCard days={days} periodLabel={periodLabel} />
+
+        <ExpenseDonutCard
+          total={donut.total}
+          previous={previousTotal}
+          slices={donut.slices}
+          window={window}
+          onWindow={setWindow}
+        />
+        <BudgetGaugeCard
+          spent={budget?.spent ?? 0}
+          expected={budget?.expected ?? 0}
+          left={budget?.left ?? 0}
+          pct={budget?.pct ?? 0}
+          periodLabel={periodLabel}
+        />
+
+        <div className="xl:col-span-2">
+          {budget ? (
+            <BudgetBlocksCard
+              spent={budget.spent}
+              expected={budget.expected}
+              left={budget.left}
+              daysLeft={period?.daysLeft ?? 0}
+              perDay={budget.perDay}
+            />
+          ) : (
+            <BudgetBlocksCard spent={0} expected={0} left={0} daysLeft={0} perDay={0} />
+          )}
+        </div>
+
         <DayCylindersCard days={days} movements={movements} periodLabel={periodLabel} />
         <MerchantCard model={merchants} />
 
-        <section className="viz-card">
+        <section className="viz-card xl:col-span-2">
           <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Últimos movimientos</h2>
             <Link href="/transactions" className="text-[13px] font-medium text-[#6d7480]">
@@ -174,12 +177,7 @@ export default function DashboardPage() {
             <ul className="divide-y divide-black/[0.04]">
               {recent.map((transaction) => (
                 <li key={transaction.id} className="flex items-center gap-3 py-3">
-                  <span
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-full",
-                      transaction.type === "income" ? "bg-[#e7f8ee] text-[#1f9d55]" : "bg-[#fdecec] text-[#e5484d]"
-                    )}
-                  >
+                  <span className={iconWell}>
                     {transaction.type === "income" ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}
                   </span>
                   <span className="min-w-0 flex-1">
