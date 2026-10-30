@@ -129,7 +129,7 @@ export default function HealthPage() {
         </div>
       </header>
 
-      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
         <div className="viz-card xl:col-span-2">
           <MoneyAgreement />
         </div>
@@ -165,8 +165,8 @@ export default function HealthPage() {
           segments={strip}
         />
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="viz-card">
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+          <section className="viz-card flex h-full flex-col">
             <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Para mirar</h2>
             <div className="mt-3 space-y-2">
               {insights.slice(0, 4).map((insight, index) => {
@@ -190,7 +190,7 @@ export default function HealthPage() {
             </div>
           </section>
 
-          <section className="viz-card">
+          <section className="viz-card flex h-full flex-col">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Se repiten</h2>
               <span className="inline-flex items-center gap-1 text-[12px] text-[#9aa1ab]">

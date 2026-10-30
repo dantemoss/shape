@@ -124,7 +124,7 @@ export default function DashboardPage() {
         </Dialog>
       </header>
 
-      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-start gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
+      <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
         <div className="xl:col-span-2">
           <RealBalancePanel />
         </div>

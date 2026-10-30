@@ -5,10 +5,9 @@ import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-form
 import type { AlignedDay } from "@/lib/chart-series";
 import { averageElapsedSpend, elapsedSpend } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
-const H = 210;
 const PAD_L = 46;
 const PAD_R = 8;
 const PAD_T = 12;
@@ -19,6 +18,8 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
   const elapsed = days.filter((day) => !day.future);
   const withSpend = elapsed.reduce((found, day, index) => (day.current > 0 ? index : found), Math.max(0, elapsed.length - 1));
   const [active, setActive] = useState(withSpend);
+  const plot = useChartPlot(W);
+  const H = plot.height;
   const max = Math.max(1, ...days.flatMap((day) => [day.current, day.previous]));
   const { top, ticks } = niceCeiling(max, 3);
   const plotBottom = H - PAD_B;
@@ -48,8 +49,8 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
               <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(averageElapsedSpend(days))}</HeroNumber>
             </div>
           </div>
-          <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Gasto diario contra el período anterior">
+          <div ref={plot.ref} className={chartPlotFrameClass}>
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Gasto diario contra el período anterior">
               <defs>
                 <linearGradient id={`${uid}-green`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#4ade80" />

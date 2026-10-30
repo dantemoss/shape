@@ -19,8 +19,8 @@ export function MerchantCard({ model }: { model: MerchantCardModel }) {
   }));
 
   return (
-    <section className="viz-card overflow-hidden bg-[linear-gradient(180deg,#e7f1ff_0%,#ffffff_46%)] !p-0">
-      <div className="px-5 pt-5 sm:px-6">
+    <section className="viz-card flex h-full flex-col overflow-hidden bg-[linear-gradient(180deg,#e7f1ff_0%,#ffffff_46%)] !p-0">
+      <div className="flex flex-1 flex-col px-5 pt-5 sm:px-6">
         <h2 className="text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">Comercios</h2>
         {model.total <= 0 ? (
           <div className="py-6">
@@ -60,7 +60,7 @@ export function MerchantCard({ model }: { model: MerchantCardModel }) {
         )}
       </div>
       {model.total > 0 ? (
-        <div className="mt-4">
+        <div className="mt-auto pt-4">
           <svg viewBox={`0 0 ${width} ${height}`} className="h-[92px] w-full" aria-hidden>
             <defs>
               <linearGradient id={`${uid}-spark`} x1="0" y1="0" x2="0" y2="1">

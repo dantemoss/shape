@@ -93,7 +93,7 @@ export function DayCylindersCard({
       {shown.length === 0 ? (
         <EmptyChart>Todavía no hay días en este período.</EmptyChart>
       ) : (
-        <>
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="w-full min-w-0 overflow-x-auto">
           <div className={cn("flex items-end gap-1", shown.length > 8 ? "w-max" : "justify-between")}>
             {shown.map((day, index) => {
@@ -160,7 +160,7 @@ export function DayCylindersCard({
           </div>
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-auto space-y-2 pt-4">
             {dayMoves.length === 0 ? (
               <p className="rounded-2xl bg-[#f6f7f9] px-4 py-4 text-[13px] text-[#8d949e]">
                 Sin movimientos el {selected ? `${selected.weekday.toLocaleLowerCase("es-AR")} ${selected.dayNumber}` : "día elegido"}.
@@ -192,7 +192,7 @@ export function DayCylindersCard({
               })
             )}
           </div>
-        </>
+        </div>
       )}
     </ChartCard>
   );

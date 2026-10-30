@@ -4,10 +4,9 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-format";
 import type { MonthFlowPoint } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotClass } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
-const H = 228;
 const PAD_L = 6;
 const PAD_R = 52;
 const PAD_T = 16;
@@ -16,6 +15,8 @@ const PAD_B = 28;
 export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
   const uid = useId().replace(/:/g, "");
   const [active, setActive] = useState(Math.max(0, points.length - 1));
+  const plot = useChartPlot(W);
+  const H = plot.height;
   const max = Math.max(1, ...points.flatMap((point) => [point.income, point.expense]));
   const { top, ticks } = niceCeiling(max, 4);
   const plotBottom = H - PAD_B;
@@ -33,8 +34,21 @@ export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
       {points.every((point) => point.income === 0 && point.expense === 0) ? (
         <EmptyChart>Cuando cargues movimientos en pesos, el mes se dibuja acá.</EmptyChart>
       ) : (
-        <div className="relative">
-          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Ingresos y gastos por mes">
+        <>
+          {selected ? (
+            <div className="mb-3 grid shrink-0 grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <p className="text-[13px] text-[#9aa1ab]">Ingresos · {selected.label}</p>
+                <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(selected.income)}</HeroNumber>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] text-[#9aa1ab]">Gastos · {selected.label}</p>
+                <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(selected.expense)}</HeroNumber>
+              </div>
+            </div>
+          ) : null}
+          <div ref={plot.ref} className={chartPlotFrameClass}>
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Ingresos y gastos por mes">
             <defs>
               <linearGradient id={`${uid}-grey`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#f7f8fa" />
@@ -123,7 +137,9 @@ export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
               />
             </TipAnchor>
           ) : null}
-        </div>
+          </div>
+          <p className="mt-1 shrink-0 text-[11px] text-[#b0b6bf]">Tocá un mes para ver ingresos y gastos.</p>
+        </>
       )}
     </ChartCard>
   );
