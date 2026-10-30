@@ -25,10 +25,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
               <div className="flex items-center gap-3 min-w-0">
                 <div
                   className={cn(
-                    "w-7 h-7 rounded-full flex items-center justify-center shrink-0",
-                    tx.type === "income"
-                      ? "bg-income/15 text-income"
-                      : "bg-expense/15 text-expense"
+                    "flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]"
                   )}
                 >
                   {tx.type === "income" ? <ArrowDownLeft size={12} /> : <ArrowUpRight size={12} />}

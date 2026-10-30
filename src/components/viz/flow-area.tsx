@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { AreaPoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
 
 const W = 360;
 const H = 210;
@@ -63,7 +63,7 @@ export function FlowAreaCard({
             ) : null}
           </div>
           <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Comparación del período">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Comparación del período">
               <defs>
                 <linearGradient id={`${uid}-blue`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.45" />

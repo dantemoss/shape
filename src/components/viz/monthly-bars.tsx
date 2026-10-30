@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-format";
 import type { MonthFlowPoint } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HoverTip, TipAnchor } from "./ui";
+import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotClass } from "./ui";
 
 const W = 360;
 const H = 228;
@@ -34,7 +34,7 @@ export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
         <EmptyChart>Cuando cargues movimientos en pesos, el mes se dibuja acá.</EmptyChart>
       ) : (
         <div className="relative">
-          <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full overflow-visible" role="img" aria-label="Ingresos y gastos por mes">
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Ingresos y gastos por mes">
             <defs>
               <linearGradient id={`${uid}-grey`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#f7f8fa" />

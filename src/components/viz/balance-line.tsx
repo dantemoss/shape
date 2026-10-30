@@ -5,7 +5,7 @@ import { Landmark } from "lucide-react";
 import { formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { BalancePoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
 
 const W = 360;
 const H = 220;
@@ -43,7 +43,7 @@ export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
               <span className="mt-1 h-10 w-1.5 shrink-0 rounded-full bg-[#c4b5fd]" />
               <div className="min-w-0">
                 <p className="flex items-center gap-1.5 text-[13px] text-[#9aa1ab]">
-                  <Landmark size={13} />
+                  <Landmark size={13} className="text-[#1c1f26]" />
                   Saldo
                 </p>
                 <HeroNumber className="mt-1">{formatChartPesos(selected?.balance ?? 0)}</HeroNumber>
@@ -56,7 +56,7 @@ export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
             ) : null}
           </div>
           <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Saldo en el tiempo">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Saldo en el tiempo">
               <defs>
                 <linearGradient id={`${uid}-band`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ddd6fe" stopOpacity="0.95" />

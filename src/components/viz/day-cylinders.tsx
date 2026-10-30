@@ -17,7 +17,7 @@ import { formatChartPesos } from "@/lib/chart-format";
 import type { AlignedDay } from "@/lib/chart-series";
 import type { ExpenseCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ChartCard, EmptyChart, Segmented } from "./ui";
+import { ChartCard, EmptyChart, Segmented, iconWell } from "./ui";
 
 export interface CylinderMovement {
   id: string;
@@ -42,17 +42,17 @@ const ICONS: Record<ExpenseCategory, typeof Wallet> = {
   other: Wallet,
 };
 
-const TONES: Record<ExpenseCategory, string> = {
-  housing: "bg-[#efeaff] text-[#7c6cf0]",
-  food: "bg-[#e7f8ee] text-[#1f9d55]",
-  transport: "bg-[#fff1e6] text-[#f97316]",
-  entertainment: "bg-[#fde8f3] text-[#db2777]",
-  health: "bg-[#e7f8ee] text-[#1f9d55]",
-  education: "bg-[#e7f1ff] text-[#3b82f6]",
-  subscriptions: "bg-[#fff4e5] text-[#ea580c]",
-  clothing: "bg-[#fde8f3] text-[#db2777]",
-  savings: "bg-[#e7f8ee] text-[#1f9d55]",
-  other: "bg-[#eef2ff] text-[#4f46e5]",
+const DOT: Record<ExpenseCategory, string> = {
+  housing: "#7c6cf0",
+  food: "#d08a1f",
+  transport: "#d97706",
+  entertainment: "#db2777",
+  health: "#1f9d55",
+  education: "#3b82f6",
+  subscriptions: "#ea580c",
+  clothing: "#db2777",
+  savings: "#1f9d55",
+  other: "#6d7480",
 };
 
 export function DayCylindersCard({
@@ -170,12 +170,18 @@ export function DayCylindersCard({
                 const Icon = movement.type === "income" ? Wallet : ICONS[movement.category];
                 return (
                   <div key={movement.id} className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] px-3 py-3">
-                    <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", movement.type === "income" ? "bg-[#e7f8ee] text-[#1f9d55]" : TONES[movement.category])}>
-                      <Icon size={16} />
+                    <span className={cn(iconWell, "size-10")}>
+                      <Icon size={16} strokeWidth={1.75} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14px] font-medium text-[#1c1f26]">{movement.title}</span>
-                      <span className="block truncate text-[12px] text-[#9aa1ab]">{movement.meta}</span>
+                      <span className="flex min-w-0 items-center gap-1.5 text-[12px] text-[#9aa1ab]">
+                        <span
+                          className="size-1.5 shrink-0 rounded-full"
+                          style={{ background: movement.type === "income" ? "#1f9d55" : DOT[movement.category] }}
+                        />
+                        <span className="truncate">{movement.meta}</span>
+                      </span>
                     </span>
                     <span className={cn("shrink-0 text-[14px] font-semibold tabular-nums", movement.type === "income" ? "text-[#1f9d55]" : "text-[#1c1f26]")}>
                       {movement.type === "expense" ? "−" : "+"}

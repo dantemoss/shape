@@ -191,7 +191,7 @@ export default function CardsPage() {
                                   <TooltipTrigger render={
                                     <button
                                       onClick={() => payInstallment(inst.id)}
-                                      className="w-7 h-7 rounded-full bg-income/10 text-income hover:bg-income/20 flex items-center justify-center transition-colors"
+                                      className="flex size-7 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26] transition-colors hover:bg-white"
                                     />
                                   }>
                                     <CheckCircle2 size={13} />
@@ -202,7 +202,7 @@ export default function CardsPage() {
                                   <TooltipTrigger render={
                                     <button
                                       onClick={() => removeCardInstallment(inst.id)}
-                                      className="w-7 h-7 rounded-full bg-expense/10 text-expense hover:bg-expense/20 flex items-center justify-center transition-colors"
+                                      className="flex size-7 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26] transition-colors hover:bg-white"
                                     />
                                   }>
                                     <Trash2 size={13} />

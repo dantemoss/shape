@@ -73,8 +73,8 @@ export function RealBalancePanel() {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-full bg-income/10 flex items-center justify-center shrink-0">
-              <Wallet size={13} className="text-income" />
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]">
+              <Wallet size={13} />
             </div>
             <span className="font-medium text-sm">Saldo real</span>
             <span className="text-[10px] text-muted-foreground font-mono truncate">

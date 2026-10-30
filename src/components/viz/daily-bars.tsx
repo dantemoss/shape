@@ -5,7 +5,7 @@ import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-form
 import type { AlignedDay } from "@/lib/chart-series";
 import { averageElapsedSpend, elapsedSpend } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor } from "./ui";
+import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotClass } from "./ui";
 
 const W = 360;
 const H = 210;
@@ -49,7 +49,7 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
             </div>
           </div>
           <div className="relative">
-            <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Gasto diario contra el período anterior">
+            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className={chartPlotClass} role="img" aria-label="Gasto diario contra el período anterior">
               <defs>
                 <linearGradient id={`${uid}-green`} x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#4ade80" />

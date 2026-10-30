@@ -57,7 +57,7 @@ export function Sidebar() {
                 href={href}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-colors",
-                  active ? "bg-[#eef2ff] font-medium text-[#2f48a1]" : "text-[#6d7480] hover:bg-[#f6f7f9] hover:text-[#1c1f26]"
+                  active ? "bg-[#f3f4f6] font-medium text-[#16181d]" : "text-[#6d7480] hover:bg-[#f6f7f9] hover:text-[#1c1f26]"
                 )}
               >
                 <Icon size={16} strokeWidth={active ? 2.1 : 1.7} />
@@ -71,13 +71,13 @@ export function Sidebar() {
             href="/profile"
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px]",
-              pathname === "/profile" ? "bg-[#eef2ff] font-medium text-[#2f48a1]" : "text-[#6d7480] hover:bg-[#f6f7f9]"
+              pathname === "/profile" ? "bg-[#f3f4f6] font-medium text-[#16181d]" : "text-[#6d7480] hover:bg-[#f6f7f9]"
             )}
           >
             {userProfile?.avatar ? (
               <img src={userProfile.avatar} alt="" className="size-7 rounded-full object-cover" />
             ) : (
-              <span className="flex size-7 items-center justify-center rounded-full bg-[#f3f4f6]">
+              <span className="flex size-7 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26]">
                 <User size={14} />
               </span>
             )}
@@ -99,7 +99,7 @@ export function Sidebar() {
                 href={href}
                 className={cn(
                   "flex min-h-[52px] flex-col items-center justify-center gap-1 px-0.5 py-1.5",
-                  active ? "text-[#2f48a1]" : "text-[#8b919c]"
+                  active ? "text-[#16181d]" : "text-[#8b919c]"
                 )}
               >
                 <Icon size={21} strokeWidth={active ? 2.2 : 1.7} />
@@ -112,7 +112,7 @@ export function Sidebar() {
             onClick={() => setMoreOpen(true)}
             className={cn(
               "flex min-h-[52px] flex-col items-center justify-center gap-1 px-0.5 py-1.5",
-              moreActive ? "text-[#2f48a1]" : "text-[#8b919c]"
+              moreActive ? "text-[#16181d]" : "text-[#8b919c]"
             )}
           >
             <LayoutGrid size={21} strokeWidth={moreActive ? 2.2 : 1.7} />
@@ -142,7 +142,7 @@ export function Sidebar() {
                     onClick={() => setMoreOpen(false)}
                     className={cn(
                       "flex min-h-14 items-center gap-3 rounded-2xl px-3",
-                      active ? "bg-[#eef2ff] text-[#2f48a1]" : "bg-[#f6f7f9] text-[#1c1f26]"
+                      active ? "bg-white text-[#16181d] ring-1 ring-black/[0.06]" : "bg-[#f6f7f9] text-[#1c1f26]"
                     )}
                   >
                     {href === "/profile" && userProfile?.avatar ? (
