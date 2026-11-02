@@ -85,7 +85,7 @@ export function SalarySetup({ onSave }: SalarySetupProps) {
             placeholder="0"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="pl-7 font-mono"
+            className="pl-7 tabular-nums"
             required
           />
         </div>
@@ -142,7 +142,7 @@ export function SalarySetup({ onSave }: SalarySetupProps) {
               max="31"
               value={payDay}
               onChange={(e) => setPayDay(e.target.value)}
-              className="font-mono"
+              className="tabular-nums"
             />
           </div>
           <div className="space-y-1.5">
@@ -154,7 +154,7 @@ export function SalarySetup({ onSave }: SalarySetupProps) {
               max="31"
               value={payDay2}
               onChange={(e) => setPayDay2(e.target.value)}
-              className="font-mono"
+              className="tabular-nums"
             />
           </div>
         </div>
@@ -168,7 +168,7 @@ export function SalarySetup({ onSave }: SalarySetupProps) {
             max="31"
             value={payDay}
             onChange={(e) => setPayDay(e.target.value)}
-            className="font-mono"
+            className="tabular-nums"
             placeholder="25"
           />
         </div>

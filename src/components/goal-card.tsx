@@ -5,7 +5,7 @@ import { Goal } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus, Check } from "lucide-react";
-import NumberFlow from "@number-flow/react";
+import { Amount, IconWell, Stat, StatRow } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 import { formatIso } from "@/lib/format-date";
 
@@ -16,16 +16,13 @@ interface GoalCardProps {
   onAddAmount: (id: string, amount: number) => void;
 }
 
-export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) {
+export function GoalCard({ goal, onRemove, onAddAmount }: GoalCardProps) {
   const [adding, setAdding] = useState(false);
   const [addAmount, setAddAmount] = useState("");
 
   const percentage = Math.min(Math.round((goal.currentAmount / goal.targetAmount) * 100), 100);
   const remaining = goal.targetAmount - goal.currentAmount;
   const isComplete = goal.currentAmount >= goal.targetAmount;
-  const tones = ["#166534", "#1d4ed8", "#c2410c", "#7c3aed"];
-  const tone = tones[index % tones.length];
-
   function handleAddAmount(e: React.FormEvent) {
     e.preventDefault();
     const parsed = parseFloat(addAmount.replace(",", "."));
@@ -45,32 +42,18 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
         <button
           type="button"
           onClick={() => onRemove(goal.id)}
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#f6f7f9] text-[#8b919c]"
           aria-label="Eliminar meta"
         >
-          <Trash2 size={14} />
+          <IconWell size="sm">
+            <Trash2 size={14} />
+          </IconWell>
         </button>
       </div>
       <div className="space-y-3">
-        {/* Montos */}
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-              Ahorrado
-            </p>
-            <p className="num text-[1.6rem]" style={{ color: tone }}>
-              $<NumberFlow value={goal.currentAmount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-              Objetivo
-            </p>
-            <p className="text-base font-medium font-mono text-muted-foreground">
-              $<NumberFlow value={goal.targetAmount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-            </p>
-          </div>
-        </div>
+        <StatRow columns={2}>
+          <Stat label="Ahorrado" value={<Amount value={goal.currentAmount} tone={isComplete ? "income" : "neutral"} animate />} size="md" />
+          <Stat label="Objetivo" value={<Amount value={goal.targetAmount} />} className="text-right" />
+        </StatRow>
 
         {/* Barra segmentada */}
         <div className="flex gap-[3px]">
@@ -78,25 +61,20 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
             <div
               key={i}
               className="h-2.5 flex-1 rounded-[4px]"
-              style={{ background: i < Math.round((percentage / 100) * 24) ? tone : "#f1f2f4" }}
+              style={{ background: i < Math.round((percentage / 100) * 24) ? (isComplete ? "#1f9d55" : "#f97316") : "#f1f2f4" }}
             />
           ))}
         </div>
 
         {/* Falta */}
         {!isComplete && (
-          <p className="text-xs text-muted-foreground">
-            Faltan{" "}
-            <span className="font-mono font-medium text-foreground">
-              $<NumberFlow value={remaining} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-            </span>
+          <p className="text-[13px] text-[#6d7480]">
+            Faltan <Amount value={remaining} className="font-semibold" />
           </p>
         )}
 
         {goal.deadline && (
-          <p className="text-xs text-muted-foreground font-mono">
-            Límite: {formatIso(goal.deadline, "d MMM yyyy")}
-          </p>
+          <p className="text-[12px] text-[#9aa1ab]">Límite: {formatIso(goal.deadline, "d MMM yyyy")}</p>
         )}
 
         {/* Agregar ahorro */}
@@ -122,7 +100,7 @@ export function GoalCard({ goal, index, onRemove, onAddAmount }: GoalCardProps) 
                   placeholder="0"
                   value={addAmount}
                   onChange={(e) => setAddAmount(e.target.value)}
-                  className="pl-6 font-mono text-sm"
+                  className="pl-6 text-sm tabular-nums"
                   autoFocus
                 />
               </div>

@@ -8,6 +8,7 @@ import {
 } from "@/lib/types";
 import { logoUrl } from "@/lib/logodev";
 import { SubscriptionForm } from "@/components/subscription-form";
+import { Amount, Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat, pageStackClass } from "@/components/primitives";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -52,12 +53,6 @@ function daysLabel(days: number): string {
   return `${Math.round(days / 30)}m`;
 }
 
-function urgencyColor(days: number): string {
-  if (days <= 3)  return "text-expense";
-  if (days <= 7)  return "text-yellow-600";
-  return "text-muted-foreground";
-}
-
 /* ─────────────────────────────────────────────────── */
 export default function SubscriptionsPage() {
   const subscriptions    = useShapeStore((s) => s.subscriptions);
@@ -99,13 +94,35 @@ export default function SubscriptionsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* ── Header ── */}
-      <div className="page-head !block">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-medium">Suscripciones</h1>
+    <div className="min-w-0">
+      <PageHeader
+        title="Suscripciones"
+        subtitle={
+          active.length > 0 ? (
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              {monthlyARS > 0 ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <CategoryDot color="#e5484d" />
+                  <Amount value={Math.round(monthlyARS)} tone="expense" animate /> /mes
+                </span>
+              ) : null}
+              {monthlyUSD > 0 ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <CategoryDot color="#6d7480" />
+                  <Amount value={monthlyUSD} currency="USD" /> /mes
+                </span>
+              ) : null}
+              <span>
+                {active.length} activa{active.length === 1 ? "" : "s"}
+              </span>
+            </span>
+          ) : (
+            "Lo que se renueva solo"
+          )
+        }
+        action={
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button className="gap-2" />}>
+            <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
               <Plus size={14} />
               Nueva suscripción
             </DialogTrigger>
@@ -116,70 +133,43 @@ export default function SubscriptionsPage() {
               <SubscriptionForm onSuccess={() => setOpen(false)} />
             </DialogContent>
           </Dialog>
-        </div>
-
-        {/* Totales mensuales */}
-        {active.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-            {monthlyARS > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-expense" />
-                <span className="text-sm font-mono text-expense">
-                  ${Math.round(monthlyARS).toLocaleString("es-AR")} ARS/mes
-                </span>
-              </div>
-            )}
-            {monthlyUSD > 0 && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-foreground/40" />
-                <span className="text-sm font-mono text-muted-foreground">
-                  ${monthlyUSD.toFixed(2)} USD/mes
-                </span>
-              </div>
-            )}
-            <div className="h-3 w-px bg-border" />
-            <span className="text-xs text-muted-foreground font-mono">
-              {active.length} activa{active.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
-      </div>
+        }
+      />
 
       {/* ── Contenido ── */}
-      <div className="flex-1 px-4 sm:px-8 py-5 space-y-8">
-
+      <div className={cn(pageStackClass, "space-y-6")}>
         {subscriptions.length === 0 ? (
-          /* ── Empty state ── */
-          <div className="flex flex-col items-center justify-center py-24 gap-4 text-center border border-dashed border-border rounded-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
-              <RefreshCw size={24} className="text-muted-foreground" />
-            </div>
-            <div>
-              <p className="font-medium mb-1">Sin suscripciones</p>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Agregá tus suscripciones para ver cuánto gastás por mes y cuándo se renuevan.
-              </p>
-            </div>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger render={<Button className="gap-2 mt-2" />}>
-                <Plus size={14} />
-                Nueva suscripción
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader><DialogTitle>Agregar suscripción</DialogTitle></DialogHeader>
-                <SubscriptionForm onSuccess={() => setOpen(false)} />
-              </DialogContent>
-            </Dialog>
-          </div>
+          <EmptyState
+            icon={
+              <IconWell size="lg">
+                <RefreshCw size={18} />
+              </IconWell>
+            }
+            title="Sin suscripciones"
+            action={
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
+                  <Plus size={14} />
+                  Nueva suscripción
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Agregar suscripción</DialogTitle>
+                  </DialogHeader>
+                  <SubscriptionForm onSuccess={() => setOpen(false)} />
+                </DialogContent>
+              </Dialog>
+            }
+          >
+            Agregá tus suscripciones para ver cuánto gastás por mes y cuándo se renuevan.
+          </EmptyState>
         ) : (
           <>
             {/* ── Activas ── */}
             {active.length > 0 && (
               <section>
-                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-3 px-1">
-                  Activas · {active.length}
-                </p>
-                <div className="rounded-2xl border border-border overflow-hidden bg-card divide-y divide-border">
+                <p className="mb-3 px-1 text-[13px] text-[#9aa1ab]">Activas · {active.length}</p>
+                <div className="viz-card divide-y divide-black/[0.04] !py-1">
                   {active.map((sub) => (
                     <SubscriptionRow
                       key={sub.id}
@@ -196,10 +186,8 @@ export default function SubscriptionsPage() {
             {/* ── Pausadas ── */}
             {inactive.length > 0 && (
               <section>
-                <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-3 px-1">
-                  Pausadas · {inactive.length}
-                </p>
-                <div className="rounded-2xl border border-border overflow-hidden bg-card divide-y divide-border opacity-60">
+                <p className="mb-3 px-1 text-[13px] text-[#9aa1ab]">Pausadas · {inactive.length}</p>
+                <div className="viz-card divide-y divide-black/[0.04] !py-1 opacity-70">
                   {inactive.map((sub) => (
                     <SubscriptionRow
                       key={sub.id}
@@ -215,7 +203,7 @@ export default function SubscriptionsPage() {
 
             {/* ── Resumen por período ── */}
             {active.length > 1 && (
-              <section className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <SummaryCard
                   label="Este mes"
                   amountARS={monthlyARS}
@@ -233,7 +221,6 @@ export default function SubscriptionsPage() {
                   nextRenewal={active.length > 0 ? getNextRenewal(active[0]) : undefined}
                   nextName={active[0]?.name}
                   icon={<DollarSign size={14} />}
-                  className="col-span-2 sm:col-span-1"
                 />
               </section>
             )}
@@ -258,75 +245,44 @@ function SubscriptionRow({
   const daysLeft    = differenceInDays(nextRenewal, new Date());
   const isConfirming = confirmId === sub.id;
 
+  const renewal = sub.active ? `Renueva en ${daysLabel(daysLeft)}` : format(nextRenewal, "d MMM", { locale: es });
+
   return (
-    <div className="flex items-center gap-3.5 px-4 py-3.5 group transition-colors hover:bg-muted/20">
-      {/* Logo */}
-      <div className="w-9 h-9 flex items-center justify-center shrink-0">
-        {sub.domain ? (
-          <img
-            src={logoUrl(sub.domain, 64)}
-            alt={sub.name}
-            className="w-9 h-9 object-contain logo-light dark:logo-dark"
-          />
+    <ListRow
+      className="py-3"
+      icon={
+        sub.domain ? (
+          <img src={logoUrl(sub.domain, 64)} alt="" className="size-9 shrink-0 rounded-full object-contain" />
         ) : (
-          <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center">
-            <span className="text-sm font-medium text-muted-foreground">
-              {sub.name[0]}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium leading-snug truncate">{sub.name}</p>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-xs text-muted-foreground">
-            {SUB_CATEGORY_LABELS[sub.category]}
-          </span>
-          <span className="text-muted-foreground/40 text-xs">·</span>
-          <span className="text-xs text-muted-foreground">
-            {SUB_PERIOD_LABELS[sub.period as SubPeriod]}
-          </span>
-        </div>
-      </div>
-
-      {/* Precio */}
-      <div className="text-right shrink-0">
-        <p className="text-sm font-mono font-medium">
-          {sub.currency === "USD" ? "U$D " : "$"}
-          {sub.price.toLocaleString("es-AR")}
-        </p>
-        <p className={cn("text-[11px] font-mono", urgencyColor(daysLeft))}>
-          {sub.active
-            ? `Renueva en ${daysLabel(daysLeft)}`
-            : format(nextRenewal, "d MMM", { locale: es })}
-        </p>
-      </div>
-
-      {/* Acciones */}
-      <div className="flex items-center gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={onToggle}
-          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all"
-          title={sub.active ? "Pausar" : "Activar"}
-        >
-          {sub.active ? <Pause size={12} /> : <Play size={12} />}
-        </button>
-        <button
-          onClick={() => onRemove(sub.id)}
-          className={cn(
-            "w-7 h-7 rounded-full flex items-center justify-center transition-all",
-            isConfirming
-              ? "bg-expense text-white scale-110"
-              : "text-muted-foreground/60 hover:text-expense hover:bg-expense/10"
-          )}
-          title={isConfirming ? "Tocá de nuevo para confirmar" : "Eliminar"}
-        >
-          <Trash2 size={12} />
-        </button>
-      </div>
-    </div>
+          <IconWell>
+            <span className="text-[13px] font-semibold">{sub.name[0]}</span>
+          </IconWell>
+        )
+      }
+      title={sub.name}
+      meta={`${SUB_CATEGORY_LABELS[sub.category]} · ${SUB_PERIOD_LABELS[sub.period as SubPeriod]} · ${renewal}`}
+      amount={<Amount value={sub.price} currency={sub.currency} tone="expense" />}
+      trailing={
+        <>
+          <button type="button" onClick={onToggle} title={sub.active ? "Pausar" : "Activar"} aria-label={sub.active ? "Pausar" : "Activar"}>
+            <IconWell size="sm">{sub.active ? <Pause size={12} /> : <Play size={12} />}</IconWell>
+          </button>
+          <button
+            type="button"
+            onClick={() => onRemove(sub.id)}
+            title={isConfirming ? "Tocá de nuevo para confirmar" : "Eliminar"}
+            aria-label={isConfirming ? "Confirmar eliminación" : "Eliminar"}
+            className={isConfirming ? "flex size-7 items-center justify-center rounded-full bg-expense text-white" : undefined}
+          >
+            {isConfirming ? <Trash2 size={12} /> : (
+              <IconWell size="sm">
+                <Trash2 size={12} />
+              </IconWell>
+            )}
+          </button>
+        </>
+      }
+    />
   );
 }
 
@@ -342,32 +298,15 @@ function SummaryCard({
   className?:   string;
 }) {
   return (
-    <div className={cn("border border-border rounded-2xl p-4 bg-card", className)}>
-      <div className="flex items-center gap-1.5 mb-2 text-muted-foreground">
-        {icon}
-        <p className="text-[10px] font-mono uppercase tracking-wider">{label}</p>
-      </div>
+    <Card className={className} title={label} action={<IconWell size="sm">{icon}</IconWell>}>
       {nextRenewal ? (
-        <>
-          <p className="text-sm font-medium">{nextName}</p>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5">
-            {format(nextRenewal, "d 'de' MMMM", { locale: es })}
-          </p>
-        </>
+        <Stat label={nextName ?? "Próxima"} value={format(nextRenewal, "d 'de' MMMM", { locale: es })} size="md" />
       ) : (
-        <>
-          {(amountARS ?? 0) > 0 && (
-            <p className="text-lg font-medium font-mono text-expense">
-              ${Math.round(amountARS!).toLocaleString("es-AR")}
-            </p>
-          )}
-          {(amountUSD ?? 0) > 0 && (
-            <p className={cn("font-mono text-sm", (amountARS ?? 0) > 0 ? "text-muted-foreground" : "text-lg font-medium text-foreground")}>
-              U$D {amountUSD!.toFixed(2)}
-            </p>
-          )}
-        </>
+        <div className="space-y-1">
+          {(amountARS ?? 0) > 0 ? <Amount value={Math.round(amountARS!)} tone="expense" className="block text-[1.15rem] font-semibold" /> : null}
+          {(amountUSD ?? 0) > 0 ? <Amount value={amountUSD!} currency="USD" className="block text-[14px] font-semibold" /> : null}
+        </div>
       )}
-    </div>
+    </Card>
   );
 }

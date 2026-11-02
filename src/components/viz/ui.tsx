@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Ellipsis } from "lucide-react";
+import { Card, SegmentedControl, iconWellClass } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 
 export function ChartCard({
@@ -21,16 +22,9 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <section className={cn("viz-card flex h-full min-h-0 flex-col", className)}>
-      <header className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-[13px] leading-snug text-[#9aa1ab]">{subtitle}</p> : null}
-        </div>
-        <div className="ml-auto shrink-0">{action ?? (href ? <DotLink href={href} /> : null)}</div>
-      </header>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-    </section>
+    <Card title={title} subtitle={subtitle} action={action ?? (href ? <DotLink href={href} /> : undefined)} className={className}>
+      {children}
+    </Card>
   );
 }
 
@@ -46,42 +40,7 @@ export function DotLink({ href, label = "Más opciones" }: { href: string; label
   );
 }
 
-export function Segmented<T extends string>({
-  value,
-  onChange,
-  options,
-  label,
-}: {
-  value: T;
-  onChange: (value: T) => void;
-  options: { value: T; label: string }[];
-  label: string;
-}) {
-  return (
-    <div role="tablist" aria-label={label} className="inline-flex max-w-full rounded-full bg-[#f2f3f5] p-1">
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            onClick={() => onChange(option.value)}
-            className={cn(
-              "min-h-8 rounded-full px-3 text-[13px] font-medium transition-all",
-              selected
-                ? "bg-white text-[#1c1f26] shadow-[0_1px_2px_rgba(15,23,42,0.08)]"
-                : "text-[#8d949e]"
-            )}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+export const Segmented = SegmentedControl;
 
 export function HoverTip({
   rows,
@@ -157,8 +116,7 @@ export const chartPlotFrameClass = "relative min-h-[210px] w-full flex-1";
 export const chartPlotSvgClass = "absolute inset-0 block h-full w-full";
 
 /** Círculo neutro. El ícono va oscuro; el color de categoría es un punto aparte. */
-export const iconWell =
-  "flex size-9 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]";
+export const iconWell = cn(iconWellClass, "size-9");
 
 export function HeroNumber({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

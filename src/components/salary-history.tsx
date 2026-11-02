@@ -1,70 +1,52 @@
 "use client";
 
 import { useShapeStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import NumberFlow from "@number-flow/react";
+import { Trash2, Wallet } from "lucide-react";
 import { formatIso } from "@/lib/format-date";
+import { Amount, Card, EmptyState, IconWell, ListRow } from "@/components/primitives";
 
 export function SalaryHistory() {
   const salaryPayments = useShapeStore((s) => s.salaryPayments);
   const removeSalaryPayment = useShapeStore((s) => s.removeSalaryPayment);
+  const totalCobrado = salaryPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
   if (salaryPayments.length === 0) {
-    return (
-      <div className="border border-border rounded-xl p-6 text-center text-muted-foreground text-sm">
-        Todavía no registraste ningún cobro
-      </div>
-    );
+    return <EmptyState title="Todavía no registraste ningún cobro" />;
   }
 
-  const totalCobrado = salaryPayments.reduce((sum, p) => sum + p.amount, 0);
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-          Historial de cobros
-        </h2>
-        <span className="text-xs font-mono text-muted-foreground">
-          Total: $<NumberFlow value={totalCobrado} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-        </span>
-      </div>
-
-      <div className="space-y-2">
+    <Card
+      title="Historial de cobros"
+      action={<Amount value={totalCobrado} tone="income" animate className="text-[13px] font-semibold" />}
+    >
+      <ul className="divide-y divide-black/[0.04]">
         {salaryPayments.map((payment) => (
-          <div
-            key={payment.id}
-            className="flex items-center justify-between gap-4 p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors group"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium">
-                  {payment.note ?? "Cobro registrado"}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                {formatIso(payment.date, "EEEE d 'de' MMMM yyyy")}
-                {payment.incomeId ? " · vinculado al ingreso" : " · sin ingreso vinculado"}
-              </p>
-            </div>
-
-            <span className="text-sm font-mono font-medium shrink-0">
-              +$<NumberFlow value={payment.amount} locales="es-AR" format={{ maximumFractionDigits: 0 }} />
-            </span>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 text-muted-foreground hover:text-destructive"
-              title="Eliminar el cobro y su ingreso"
-              onClick={() => removeSalaryPayment(payment.id)}
-            >
-              <Trash2 size={13} />
-            </Button>
-          </div>
+          <li key={payment.id}>
+            <ListRow
+              className="py-3"
+              icon={
+                <IconWell>
+                  <Wallet size={15} />
+                </IconWell>
+              }
+              title={payment.note ?? "Cobro registrado"}
+              meta={`${formatIso(payment.date, "EEEE d 'de' MMMM yyyy")}${payment.incomeId ? " · vinculado al ingreso" : " · sin ingreso vinculado"}`}
+              amount={<Amount value={payment.amount} tone="income" signed />}
+              trailing={
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center rounded-full text-[#8b919c] hover:bg-[#f4f5f7] hover:text-[#1c1f26]"
+                  title="Eliminar el cobro y su ingreso"
+                  aria-label="Eliminar el cobro y su ingreso"
+                  onClick={() => removeSalaryPayment(payment.id)}
+                >
+                  <Trash2 size={14} />
+                </button>
+              }
+            />
+          </li>
         ))}
-      </div>
-    </div>
+      </ul>
+    </Card>
   );
 }
