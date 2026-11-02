@@ -11,6 +11,7 @@ import {
   periodRange,
   signedFormat,
   summarize,
+  walletParts,
   weekdayPattern,
 } from "./logic";
 
@@ -71,16 +72,21 @@ test("los dólares no entran en el total en pesos", () => {
     tx({ id: "in", date: "2026-11-02", amount: 300, type: "income" }),
     tx({ id: "skip", date: "2026-11-02", amount: 999, type: "expense", countsInBalance: false }),
   ];
-  const summary = summarize(rows, { from: "2026-11-01", to: "2026-11-02" }, "2026-11-02", "all");
-  assert.equal(summary.total, -700);
+  const summary = summarize(rows, { from: "2026-11-01", to: "2026-11-02" }, "2026-11-02", "all", "expense");
+  assert.equal(summary.total, 1000);
+  assert.equal(summary.side, "expense");
   assert.equal(summary.count, 4);
   assert.equal(summary.days, 2);
-  assert.equal(summary.average, -350);
+  assert.equal(summary.average, 500);
   assert.equal(summary.usdAside, true);
   assert.equal(summary.currency, "ARS");
 
-  const dollars = summarize(rows, { from: "2026-11-01", to: "2026-11-02" }, "2026-11-02", "USD");
-  assert.equal(dollars.total, -42);
+  const mixed = summarize(rows, { from: "2026-11-01", to: "2026-11-02" }, "2026-11-02", "all", "all");
+  assert.equal(mixed.total, 1000);
+  assert.equal(mixed.side, "expense");
+
+  const dollars = summarize(rows, { from: "2026-11-01", to: "2026-11-02" }, "2026-11-02", "USD", "expense");
+  assert.equal(dollars.total, 42);
   assert.equal(dollars.currency, "USD");
   assert.equal(dollars.usdAside, false);
 
@@ -129,4 +135,12 @@ test("el patrón semanal suma pesos y arranca el lunes", () => {
   assert.equal(pattern.peakLabel, "El lunes es el día más alto.");
   assert.equal(signedFormat(-1500, "ARS").startsWith("−$"), true);
   assert.equal(signedFormat(1500, "USD").startsWith("+US$"), true);
+  const whole = walletParts(-1213661, "ARS");
+  assert.equal(whole.sign, "−");
+  assert.equal(whole.symbol, "$");
+  assert.equal(whole.integer, "1.213.661");
+  assert.equal(whole.fraction, null);
+  const cents = walletParts(10.5, "ARS");
+  assert.equal(cents.fraction, ",50");
+  assert.equal(walletParts(42, "USD").symbol, "US$");
 });

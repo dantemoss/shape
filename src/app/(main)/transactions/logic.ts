@@ -44,7 +44,9 @@ export interface DayGroup {
 
 export interface FilterSummary {
   count: number;
+  /** Magnitud del lado que se muestra. Nunca es un neto. */
   total: number;
+  side: "expense" | "income";
   currency: "ARS" | "USD";
   average: number;
   days: number;
@@ -263,30 +265,107 @@ export function summarize(
   transactions: Transaction[],
   range: DateRange,
   today: string,
-  currency: CurrencyFilter
+  currency: CurrencyFilter,
+  type: TypeFilter
 ): FilterSummary {
-  let ars = 0;
-  let usd = 0;
+  let arsExpense = 0;
+  let arsIncome = 0;
+  let usdExpense = 0;
+  let usdIncome = 0;
   let hasUsd = false;
   for (const transaction of transactions) {
     if (transaction.countsInBalance === false || !Number.isFinite(transaction.amount)) continue;
-    const signed = signedAmount(transaction);
-    if (isArs(transaction.currency)) ars += signed;
-    else if (normalizeCurrency(transaction.currency) === "USD") {
+    const code = normalizeCurrency(transaction.currency);
+    if (code === "USD") {
       hasUsd = true;
-      usd += signed;
+      if (transaction.type === "expense") usdExpense += transaction.amount;
+      else usdIncome += transaction.amount;
+    } else if (isArs(transaction.currency)) {
+      if (transaction.type === "expense") arsExpense += transaction.amount;
+      else arsIncome += transaction.amount;
     }
   }
   const useUsd = currency === "USD";
-  const total = roundMoney(useUsd ? usd : ars);
+  const side = type === "income" ? "income" : "expense";
+  const total = roundMoney(
+    side === "income"
+      ? useUsd ? usdIncome : arsIncome
+      : useUsd ? usdExpense : arsExpense
+  );
   const days = elapsedDays(range, today);
   return {
     count: transactions.length,
     total,
+    side,
     currency: useUsd ? "USD" : "ARS",
     average: roundMoney(total / days),
     days,
     usdAside: !useUsd && hasUsd,
+  };
+}
+
+/** Total del día del mismo lado que la tira. Un día mixto muestra el gasto, no el neto. */
+export function dayHeadline(
+  transactions: Transaction[],
+  type: TypeFilter,
+  currency: CurrencyFilter
+): { amount: number; currency: "ARS" | "USD"; tone: "income" | "neutral"; aside: number | null } {
+  let arsExpense = 0;
+  let arsIncome = 0;
+  let usdExpense = 0;
+  let usdIncome = 0;
+  let hasUsd = false;
+  for (const transaction of transactions) {
+    if (transaction.countsInBalance === false || !Number.isFinite(transaction.amount)) continue;
+    const code = normalizeCurrency(transaction.currency);
+    if (code === "USD") {
+      hasUsd = true;
+      if (transaction.type === "expense") usdExpense += transaction.amount;
+      else usdIncome += transaction.amount;
+    } else if (isArs(transaction.currency)) {
+      if (transaction.type === "expense") arsExpense += transaction.amount;
+      else arsIncome += transaction.amount;
+    }
+  }
+  const useUsd = currency === "USD";
+  const code = useUsd ? "USD" : "ARS";
+  const expense = roundMoney(useUsd ? usdExpense : arsExpense);
+  const income = roundMoney(useUsd ? usdIncome : arsIncome);
+  if (type === "income" || (type === "all" && expense === 0 && income > 0)) {
+    return { amount: income, currency: code, tone: income > 0 ? "income" : "neutral", aside: null };
+  }
+  return {
+    amount: -expense,
+    currency: code,
+    tone: "neutral",
+    aside: !useUsd && hasUsd ? -roundMoney(usdExpense) : null,
+  };
+}
+
+export interface WalletParts {
+  sign: string;
+  symbol: string;
+  integer: string;
+  /** Incluye la coma. Null si no hay centavos, así no aparece ",00". */
+  fraction: string | null;
+}
+
+/** Parte un monto para una cifra de billetera: el entero manda, el signo y los centavos no. */
+export function walletParts(amount: number, currency: "ARS" | "USD"): WalletParts {
+  const rounded = roundMoney(amount);
+  const sign = rounded < 0 ? "−" : rounded > 0 ? "+" : "";
+  const absolute = Math.abs(rounded);
+  const cents = Math.abs(absolute - Math.round(absolute)) >= 0.001;
+  const formatted = absolute.toLocaleString("es-AR", {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+  const [integer, fraction] = formatted.split(",");
+  return {
+    sign,
+    symbol: currency === "USD" ? "US$" : "$",
+    integer: integer ?? formatted,
+    fraction: fraction ? `,${fraction}` : null,
   };
 }
 

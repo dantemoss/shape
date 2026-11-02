@@ -21,7 +21,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { TransactionForm } from "@/components/transaction-form";
-import { MoneyAgreement } from "@/components/money-agreement";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,16 +45,15 @@ import { useMoneySnapshot } from "@/lib/use-money";
 import { cn } from "@/lib/utils";
 import {
   clampRange,
+  dayHeadline,
   groupByDay,
   matchesFilters,
   monthRange,
-  movementAmount,
   movementClock,
   movementDetail,
   movementTitle,
   periodRange,
   shortRangeLabel,
-  signedFormat,
   summarize,
   weekdayPattern,
   type CategoryFilter,
@@ -64,6 +62,8 @@ import {
   type RangePreset,
   type TypeFilter,
 } from "./logic";
+import { InfoTip } from "./info-tip";
+import { WalletAmount } from "./wallet-amount";
 import { WeekdayBars } from "./weekday-bars";
 
 const CATEGORY_DOT: Record<ExpenseCategory, string> = {
@@ -294,7 +294,8 @@ function MovementRow({
 }) {
   const Icon = transaction.type === "income" ? ArrowDownLeft : CATEGORY_ICON[transaction.category];
   const clock = movementClock(transaction);
-  const amount = movementAmount(transaction);
+  const currencyCode = transaction.currency?.toUpperCase() === "USD" ? "USD" : "ARS";
+  const signed = transaction.type === "expense" ? -transaction.amount : transaction.amount;
 
   return (
     <li className="flex min-w-0 items-center gap-3 px-3.5 py-3 duration-200 ease-out motion-reduce:transition-none hover:bg-[#f7f8fa] sm:px-4">
@@ -312,14 +313,12 @@ function MovementRow({
         </span>
       </span>
       <span className="shrink-0 text-right">
-        <span
-          className={cn(
-            "block text-[14px] font-semibold tabular-nums",
-            transaction.type === "income" ? "text-[#1f9d55]" : "text-[#1c1f26]"
-          )}
-        >
-          {amount}
-        </span>
+        <WalletAmount
+          value={signed}
+          currency={currencyCode}
+          size="row"
+          tone={transaction.type === "income" ? "income" : "neutral"}
+        />
         {clock ? <span className="mt-0.5 block text-[12px] text-[#9aa1ab] tabular-nums">{clock}</span> : null}
       </span>
       {confirming ? (
@@ -349,7 +348,7 @@ function MovementRow({
 export function MovementScreen() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [type, setType] = useState<TypeFilter>("all");
+  const [type, setType] = useState<TypeFilter>("expense");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [currency, setCurrency] = useState<CurrencyFilter>("all");
   const [preset, setPreset] = useState<RangePreset>("period");
@@ -399,8 +398,8 @@ export function MovementScreen() {
   );
   const groups = useMemo(() => groupByDay(filtered, snapshot.today), [filtered, snapshot.today]);
   const summary = useMemo(
-    () => summarize(filtered, range, snapshot.today, currency),
-    [currency, filtered, range, snapshot.today]
+    () => summarize(filtered, range, snapshot.today, currency, type),
+    [currency, filtered, range, snapshot.today, type]
   );
   const pattern = useMemo(() => weekdayPattern(filtered, currency), [currency, filtered]);
 
@@ -411,21 +410,8 @@ export function MovementScreen() {
         ? shortRangeLabel(range)
         : `Este mes · ${shortRangeLabel(range)}`;
 
-  const filterSubtitle = useMemo(() => {
-    if (preset === "period" && !snapshot.payPeriod) return "Sin período de sueldo, miro el mes.";
-    const parts: string[] = [];
-    if (type === "expense") parts.push("Gastos");
-    if (type === "income") parts.push("Ingresos");
-    if (category !== "all") parts.push(CATEGORY_LABELS[category]);
-    if (currency === "ARS") parts.push("Pesos");
-    if (currency === "USD") parts.push("Dólares");
-    const needle = query.trim();
-    if (needle) parts.push(`“${needle}”`);
-    return parts.length > 0 ? parts.join(" · ") : "Todo lo que entra en estas fechas";
-  }, [category, currency, preset, query, snapshot.payPeriod, type]);
-
   const activeCount =
-    (type !== "all" ? 1 : 0) +
+    (type !== "expense" ? 1 : 0) +
     (category !== "all" ? 1 : 0) +
     (currency !== "all" ? 1 : 0) +
     (preset !== "period" ? 1 : 0);
@@ -439,7 +425,7 @@ export function MovementScreen() {
   }
 
   function clearFilters() {
-    setType("all");
+    setType("expense");
     setCategory("all");
     setCurrency("all");
     setPreset("period");
@@ -503,53 +489,43 @@ export function MovementScreen() {
       </header>
 
       <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
-        <section className="viz-card xl:col-span-2">
-          <MoneyAgreement />
-        </section>
-
-        <section className="viz-card xl:col-span-2">
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="min-w-0">
-              <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">En este filtro</h2>
-              <p className="mt-0.5 text-[13px] leading-snug text-[#9aa1ab]">{filterSubtitle}</p>
-              <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-3 sm:grid-cols-3">
-                <figure className="col-span-2 min-w-0 sm:col-span-1">
-                  <figcaption className="text-[13px] text-[#9aa1ab]">Total</figcaption>
-                  <p
-                    className={cn(
-                      "num mt-1 text-[clamp(1.5rem,5vw,1.85rem)] text-[#16181d]",
-                      summary.total > 0 && "text-[#1f9d55]"
-                    )}
-                  >
-                    {signedFormat(summary.total, summary.currency)}
-                  </p>
-                </figure>
-                <figure className="min-w-0">
-                  <figcaption className="text-[13px] text-[#9aa1ab]">Cantidad</figcaption>
-                  <span className="mt-1 block text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tabular-nums text-[#1c1f26]">
-                    {summary.count.toLocaleString("es-AR")}
-                  </span>
-                </figure>
-                <figure className="min-w-0">
-                  <figcaption className="text-[13px] text-[#9aa1ab]">Promedio por día</figcaption>
-                  <span className="mt-1 block truncate text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tabular-nums text-[#1c1f26]">
-                    {signedFormat(summary.average, summary.currency)}
-                  </span>
-                </figure>
-              </div>
-              {summary.usdAside ? (
-                <p className="mt-3 text-[13px] leading-snug text-[#6d7480]">Los dólares no entran en este total.</p>
-              ) : null}
+        <section className="viz-card xl:col-span-2" style={{ padding: "12px 16px" }}>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1.4fr)_auto_minmax(0,1fr)] items-end gap-x-3">
+              <figure className="min-w-0">
+                <figcaption className="truncate text-[13px] text-[#9aa1ab]">
+                  {summary.side === "income" ? "Ingresado" : "Gastado"}
+                </figcaption>
+                <p className="mt-1">
+                  <WalletAmount
+                    value={summary.side === "income" ? summary.total : -summary.total}
+                    currency={summary.currency}
+                    size="strip"
+                    tone={summary.side === "income" && summary.total > 0 ? "income" : "neutral"}
+                  />
+                </p>
+              </figure>
+              <figure className="min-w-0">
+                <figcaption className="truncate text-[13px] text-[#9aa1ab]">Cantidad</figcaption>
+                <p className="mt-1 text-[16px] font-semibold tabular-nums leading-none text-[#1c1f26]">
+                  {summary.count.toLocaleString("es-AR")}
+                </p>
+              </figure>
+              <figure className="min-w-0">
+                <figcaption className="truncate text-[13px] text-[#9aa1ab]">Por día</figcaption>
+                <p className="mt-1">
+                  <WalletAmount
+                    value={summary.side === "income" ? summary.average : -summary.average}
+                    currency={summary.currency}
+                    size="row"
+                    tone="neutral"
+                  />
+                </p>
+              </figure>
             </div>
-            <div className="hidden min-w-0 md:block">
-              <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">{pattern.title}</h2>
-              <p className="mt-0.5 text-[13px] leading-snug text-[#9aa1ab]">
-                {pattern.currency === "USD" ? "Dólares del filtro" : "Pesos del filtro"}
-              </p>
-              <div className="mt-4">
-                <WeekdayBars pattern={pattern} />
-              </div>
-            </div>
+            {summary.usdAside ? (
+              <InfoTip text="Los dólares no entran en este total." label="Por qué el total no incluye dólares" />
+            ) : null}
           </div>
         </section>
 
@@ -560,7 +536,7 @@ export function MovementScreen() {
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Buscar comercio o descripción"
+                placeholder="Buscar"
                 aria-label="Buscar comercio o descripción"
                 autoComplete="off"
                 className="h-8 w-auto min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-transparent focus-visible:ring-0"
@@ -625,9 +601,9 @@ export function MovementScreen() {
 
           {activeCount > 0 ? (
             <div className="flex flex-wrap gap-1.5 md:hidden">
-              {type !== "all" ? (
-                <Chip selected onClick={() => setType("all")}>
-                  {type === "expense" ? "Gastos" : "Ingresos"} ×
+              {type !== "expense" ? (
+                <Chip selected onClick={() => setType("expense")}>
+                  {type === "income" ? "Ingresos" : "Todos"} ×
                 </Chip>
               ) : null}
               {category !== "all" ? (
@@ -662,25 +638,21 @@ export function MovementScreen() {
           ) : (
             <div className="flex min-w-0 flex-col gap-4">
               {groups.map((group) => {
-                const usdOnly = currency === "USD" || (!group.hasArs && group.hasUsd);
-                const net = usdOnly ? group.usdNet : group.arsNet;
-                const code = usdOnly ? "USD" : "ARS";
+                const headline = dayHeadline(group.transactions, type, currency);
                 return (
                   <section key={group.day} className="min-w-0">
                     <div className="sticky top-[var(--mov-head)] z-10 flex items-baseline justify-between gap-3 bg-background py-2">
                       <h2 className="min-w-0 truncate text-[14px] font-medium text-[#1c1f26]">{group.label}</h2>
-                      <p className="shrink-0 text-right leading-tight">
-                        <span
-                          className={cn(
-                            "block text-[13px] font-semibold tabular-nums text-[#1c1f26]",
-                            net > 0 && "text-[#1f9d55]"
-                          )}
-                        >
-                          {signedFormat(net, code)}
-                        </span>
-                        {!usdOnly && group.hasUsd ? (
-                          <span className="mt-0.5 block text-[12px] font-medium text-[#9aa1ab] tabular-nums">
-                            {signedFormat(group.usdNet, "USD")}
+                      <p className="shrink-0 text-right">
+                        <WalletAmount
+                          value={headline.amount}
+                          currency={headline.currency}
+                          size="day"
+                          tone={headline.tone === "income" ? "income" : "neutral"}
+                        />
+                        {headline.aside != null ? (
+                          <span className="mt-0.5 block">
+                            <WalletAmount value={headline.aside} currency="USD" size="day" tone="muted" />
                           </span>
                         ) : null}
                       </p>
@@ -705,6 +677,15 @@ export function MovementScreen() {
               })}
             </div>
           )}
+          <section className="viz-card hidden xl:block">
+            <h2 className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">{pattern.title}</h2>
+            <p className="mt-0.5 text-[13px] leading-snug text-[#9aa1ab]">
+              {pattern.currency === "USD" ? "Dólares del filtro" : "Pesos del filtro"}
+            </p>
+            <div className="mt-4">
+              <WeekdayBars pattern={pattern} />
+            </div>
+          </section>
         </div>
       </div>
     </div>
