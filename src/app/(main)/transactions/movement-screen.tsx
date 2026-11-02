@@ -47,6 +47,7 @@ import {
   clampRange,
   dayHeadline,
   groupByDay,
+  type FilterSummary,
   matchesFilters,
   monthRange,
   movementClock,
@@ -345,6 +346,109 @@ function MovementRow({
   );
 }
 
+const stripLabel = "flex h-5 items-center gap-1 text-[13px] leading-none text-[#9aa1ab]";
+const stripRule = "border-l border-black/[0.06]";
+
+function FilterStrip({ summary }: { summary: FilterSummary }) {
+  const spent = summary.side === "income" ? summary.total : -summary.total;
+  const perDay = summary.side === "income" ? summary.average : -summary.average;
+  const tone = summary.side === "income" && summary.total > 0 ? "income" : "neutral";
+  const title = summary.side === "income" ? "Ingresado" : "Gastado";
+  const count = summary.count.toLocaleString("es-AR");
+  const tip = summary.usdAside ? (
+    <InfoTip text="Los dólares no entran en este total." label="Por qué el total no incluye dólares" />
+  ) : null;
+
+  return (
+    <section
+      data-strip
+      className="viz-card max-w-full justify-self-start xl:col-span-2"
+      style={{ padding: "14px 18px", width: "max-content" }}
+    >
+      <div className="flex flex-col items-start md:hidden" style={{ width: "max-content" }}>
+        <div data-label="gastado" className={stripLabel}>
+          <span>{title}</span>
+          {tip}
+        </div>
+        <WalletAmount
+          amountName="gastado"
+          className="mt-1.5"
+          value={spent}
+          currency={summary.currency}
+          size="strip"
+          tone={tone}
+        />
+        <div
+          className="mt-3 grid items-baseline"
+          style={{ gridTemplateColumns: "max-content max-content" }}
+        >
+          <div data-label="cantidad" className={cn(stripLabel, "col-start-1 row-start-1 pr-5")}>
+            Cantidad
+          </div>
+          <div data-label="dia" className={cn(stripLabel, stripRule, "col-start-2 row-start-1 pl-5")}>
+            Por día
+          </div>
+          <span
+            data-amount="cantidad"
+            className="col-start-1 row-start-2 self-baseline pr-5 pt-1.5 text-[22px] font-semibold leading-none tabular-nums text-[#1c1f26]"
+          >
+            {count}
+          </span>
+          <WalletAmount
+            amountName="dia"
+            className={cn("col-start-2 row-start-2 self-baseline pt-1.5 pl-5", stripRule)}
+            value={perDay}
+            currency={summary.currency}
+            size="stat"
+            tone="neutral"
+          />
+        </div>
+      </div>
+
+      <div
+        className="hidden items-baseline md:inline-grid"
+        style={{ gridTemplateColumns: "max-content max-content max-content" }}
+      >
+        <div data-label="gastado" className={cn(stripLabel, "col-start-1 row-start-1 pr-6")}>
+          <span>{title}</span>
+          {tip}
+        </div>
+        <div data-label="cantidad" className={cn(stripLabel, stripRule, "col-start-2 row-start-1 px-6")}>
+          Cantidad
+        </div>
+        <div data-label="dia" className={cn(stripLabel, stripRule, "col-start-3 row-start-1 pl-6")}>
+          Por día
+        </div>
+        <WalletAmount
+          amountName="gastado"
+          className="col-start-1 row-start-2 self-baseline pr-6 pt-1.5"
+          value={spent}
+          currency={summary.currency}
+          size="strip"
+          tone={tone}
+        />
+        <span
+          data-amount="cantidad"
+          className={cn(
+            "col-start-2 row-start-2 self-baseline px-6 pt-1.5 text-[22px] font-semibold leading-none tabular-nums text-[#1c1f26]",
+            stripRule
+          )}
+        >
+          {count}
+        </span>
+        <WalletAmount
+          amountName="dia"
+          className={cn("col-start-3 row-start-2 self-baseline pt-1.5 pl-6", stripRule)}
+          value={perDay}
+          currency={summary.currency}
+          size="stat"
+          tone="neutral"
+        />
+      </div>
+    </section>
+  );
+}
+
 export function MovementScreen() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -489,45 +593,7 @@ export function MovementScreen() {
       </header>
 
       <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
-        <section className="viz-card xl:col-span-2" style={{ padding: "12px 16px" }}>
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1.4fr)_auto_minmax(0,1fr)] items-end gap-x-3">
-              <figure className="min-w-0">
-                <figcaption className="truncate text-[13px] text-[#9aa1ab]">
-                  {summary.side === "income" ? "Ingresado" : "Gastado"}
-                </figcaption>
-                <p className="mt-1">
-                  <WalletAmount
-                    value={summary.side === "income" ? summary.total : -summary.total}
-                    currency={summary.currency}
-                    size="strip"
-                    tone={summary.side === "income" && summary.total > 0 ? "income" : "neutral"}
-                  />
-                </p>
-              </figure>
-              <figure className="min-w-0">
-                <figcaption className="truncate text-[13px] text-[#9aa1ab]">Cantidad</figcaption>
-                <p className="mt-1 text-[16px] font-semibold tabular-nums leading-none text-[#1c1f26]">
-                  {summary.count.toLocaleString("es-AR")}
-                </p>
-              </figure>
-              <figure className="min-w-0">
-                <figcaption className="truncate text-[13px] text-[#9aa1ab]">Por día</figcaption>
-                <p className="mt-1">
-                  <WalletAmount
-                    value={summary.side === "income" ? summary.average : -summary.average}
-                    currency={summary.currency}
-                    size="row"
-                    tone="neutral"
-                  />
-                </p>
-              </figure>
-            </div>
-            {summary.usdAside ? (
-              <InfoTip text="Los dólares no entran en este total." label="Por qué el total no incluye dólares" />
-            ) : null}
-          </div>
-        </section>
+        <FilterStrip summary={summary} />
 
         <div className="flex min-w-0 flex-col gap-3 xl:col-span-2">
           <div className="flex min-w-0 items-center gap-2">

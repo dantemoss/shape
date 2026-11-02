@@ -7,8 +7,10 @@ import { walletParts } from "./logic";
  * Sin ",00". Local hasta que Amount en las primitivas compartidas lo cubra.
  */
 const SCALE = {
-  /** Total de la tira. Cerca de los 24 px; Stat md llega hasta 1,7 rem. */
-  strip: { main: "text-[24px] leading-none", minor: "text-[16px]" },
+  /** Gastado de la tira. */
+  strip: { main: "text-[28px] leading-none", minor: "text-[18px]" },
+  /** Cantidad no usa esto. Por día en la tira. */
+  stat: { main: "text-[22px] leading-none", minor: "text-[14px]" },
   /** Total del día. */
   day: { main: "text-[16px] leading-none", minor: "text-[13px]" },
   /** Monto de la fila. */
@@ -21,32 +23,36 @@ export function WalletAmount({
   size,
   tone = "neutral",
   className,
+  amountName,
 }: {
   value: number;
   currency: "ARS" | "USD";
   size: keyof typeof SCALE;
   tone?: "neutral" | "income" | "muted";
   className?: string;
+  amountName?: string;
 }) {
   const parts = walletParts(value, currency);
   const scale = SCALE[size];
   return (
     <span
+      data-amount={amountName}
       className={cn(
-        "inline-flex items-baseline font-semibold tabular-nums",
+        "inline-block whitespace-nowrap font-semibold tabular-nums",
+        scale.main,
         tone === "income" && "text-[#1f9d55]",
         tone === "neutral" && "text-[#1c1f26]",
         tone === "muted" && "text-[#8b919c]",
         className
       )}
     >
-      <span className={cn("font-medium text-[#8b919c]", scale.minor, tone === "income" && "text-[#1f9d55]/70")}>
+      <span className={cn("align-baseline font-medium text-[#8b919c]", scale.minor, tone === "income" && "text-[#1f9d55]/70")}>
         {parts.sign}
         {parts.symbol}
       </span>
-      <span className={scale.main}>{parts.integer}</span>
+      <span className="align-baseline">{parts.integer}</span>
       {parts.fraction ? (
-        <span className={cn("font-medium text-[#8b919c]", scale.minor, tone === "income" && "text-[#1f9d55]/70")}>
+        <span className={cn("align-baseline font-medium text-[#8b919c]", scale.minor, tone === "income" && "text-[#1f9d55]/70")}>
           {parts.fraction}
         </span>
       ) : null}
