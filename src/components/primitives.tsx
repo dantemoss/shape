@@ -64,7 +64,7 @@ export const moneyClass: Record<MoneySize, string> = {
   secondary: "text-[1rem] font-semibold leading-none tracking-[-0.02em] sm:text-[1.0625rem]",
 };
 
-const moneyPart = "mt-[0.28em] text-[0.62em] font-medium leading-none opacity-80";
+const moneyPart = "align-baseline text-[0.62em] font-medium leading-none opacity-80";
 
 export function Amount({
   value,
@@ -97,7 +97,7 @@ export function Amount({
   return (
     <span
       className={cn(
-        "inline-flex items-start whitespace-nowrap tabular-nums",
+        "whitespace-nowrap tabular-nums",
         moneyClass[size],
         resolved === "income" && "text-income",
         resolved === "expense" && "text-expense",
@@ -107,7 +107,7 @@ export function Amount({
     >
       {wallet ? (
         <>
-          <span className={moneyPart}>
+          <span className={cn(moneyPart, "mr-[0.06em] align-baseline")}>
             {sign}
             {symbol}
           </span>
@@ -120,11 +120,12 @@ export function Amount({
               transformTiming={FLOW_TIMING}
               spinTiming={FLOW_TIMING}
               opacityTiming={{ duration: 200, easing: "ease-out" }}
+              style={{ display: "inline", lineHeight: 1, verticalAlign: "baseline" }}
             />
           ) : (
-            <span>{integer.toLocaleString("es-AR")}</span>
+            <span className="align-baseline">{integer.toLocaleString("es-AR")}</span>
           )}
-          {decimals ? <span className={moneyPart}>,{decimals}</span> : null}
+          {decimals ? <span className={cn(moneyPart, "align-baseline")}>,{decimals}</span> : null}
         </>
       ) : (
         <>
@@ -158,12 +159,24 @@ export function Stat({
   className?: string;
 }) {
   return (
-    <div className={cn("min-w-0", className)}>
-      <p className="text-[13px] leading-none text-[#9aa1ab]">{label}</p>
-      <div className={cn("mt-1.5 whitespace-nowrap", STAT_SIZE[size], tone)}>{value}</div>
-      {hint ? <p className="mt-1 text-[13px] text-[#6d7480]">{hint}</p> : null}
+    <div data-stat className={cn("min-w-0", className)}>
+      <p className="truncate text-[13px] leading-none text-[#9aa1ab]">{label}</p>
+      <div className={cn("mt-1.5 max-w-full", STAT_SIZE[size], tone)}>
+        <span data-money className="inline-block whitespace-nowrap">
+          {value}
+        </span>
+      </div>
+      {hint ? <p className="mt-1 text-[13px] leading-none text-[#6d7480]">{hint}</p> : null}
     </div>
   );
+}
+
+function amountOverflows(node: HTMLElement): boolean {
+  return [...node.querySelectorAll<HTMLElement>("[data-stat]")].some((stat) => {
+    const money = stat.querySelector<HTMLElement>("[data-money]");
+    if (!money) return false;
+    return money.scrollWidth > stat.clientWidth + 1;
+  });
 }
 
 export function StatRow({
@@ -175,11 +188,42 @@ export function StatRow({
   columns?: 2 | 3 | 4;
   className?: string;
 }) {
-  const minimum = columns > 3 ? "9.5rem" : "12.5rem";
+  const ref = useRef<HTMLDivElement>(null);
+  const [cols, setCols] = useState<number | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const measure = () => {
+      const narrow = node.clientWidth < 480;
+      const start = narrow ? Math.min(columns, 2) : columns;
+      let chosen = 1;
+      for (let count = start; count >= 1; count -= 1) {
+        node.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
+        if (count === 1 || !amountOverflows(node)) {
+          chosen = count;
+          break;
+        }
+      }
+      setCols((prev) => (prev === chosen ? prev : chosen));
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [columns]);
+
   return (
     <div
-      className={cn("grid gap-x-4 gap-y-4", className)}
-      style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minimum}), 1fr))` }}
+      ref={ref}
+      className={cn(
+        "grid items-baseline gap-x-4 gap-y-4",
+        columns <= 2 ? "grid-cols-2" : "grid-cols-2 min-[480px]:grid-cols-3",
+        className
+      )}
+      style={cols ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined}
     >
       {children}
     </div>

@@ -137,9 +137,9 @@ import { GeistMono } from "geist/font/mono";
 | Cuerpo | `text-[14px] leading-snug` | |
 | Caption | `text-[12px]` o `text-[13px]` | |
 
-El monto no se parte ni se trunca. `whitespace-nowrap` y cifras tabulares. En una fila angosta, `StatRow` baja a menos columnas (`minmax` de 12.5rem) para que un número como `$12.072.199` entre a 360 sin bajar del mínimo de la escala.
+El monto no se parte ni se trunca. `whitespace-nowrap` y cifras tabulares. En 360 y 390, `StatRow` de tres queda en dos columnas: los dos primeros lado a lado y el tercero en la fila de abajo, a la izquierda. Solo pasa a una columna si, al medir, el monto no entra en la celda.
 
-El signo y los decimales van al 62% del entero, más livianos (`opacity-80`). Si los centavos son cero, no se muestran. El entero queda en es-AR (`12.072.199`). Ingreso en `text-income`, gasto en `text-expense`, el resto en `#1c1f26`.
+El signo y los decimales van al 62% del entero, más livianos (`opacity-80`), en la misma línea de base. Si los centavos son cero, no se muestran. El entero queda en es-AR (`12.072.199`). Ingreso en `text-income`, gasto en `text-expense`, el resto en `#1c1f26`.
 
 Prohibido en UI nueva: `font-mono` para etiquetas, fechas o montos, y `uppercase tracking-wider` en micro-etiquetas. Los montos pasan por el helper del parámetro de locale.
 
@@ -271,7 +271,7 @@ Están en `src/components/primitives.tsx`. shadcn sigue siendo la base de botón
 | `PageHeader` | Título de página, subtítulo y acción. Va con `pageStackClass`. |
 | `Card` | Título, subtítulo, acción, cuerpo `flex-1`. |
 | `CardMenu` | Botón `···` con ítems (`href` o `onSelect`). |
-| `Stat` / `StatRow` | Etiqueta de 13px arriba del valor. `sm` y `md` usan el stat primario; `lg`, el hero. La fila no aprieta tres montos enormes en 360. |
+| `Stat` / `StatRow` | Etiqueta de 13px arriba del valor, montos en la misma línea de base. En 360/390 una fila de tres usa dos columnas. `sm` y `md` son el stat primario; `lg`, el hero. |
 | `Amount` | Monto es-AR. `size`: `hero`, `primary` (default), `secondary`. Signo y centavos más chicos. `tone`: `income`, `expense`, `neutral`, `auto`. `signed` pone `+` o `−`. `animate` mueve solo el entero. |
 | `IconWell` | Pozo neutro. `size`: `sm`, `md`, `lg`. La clase suelta sigue en `iconWell` (`src/components/viz/ui.tsx`). |
 | `CategoryDot` | Punto de 6px. |
