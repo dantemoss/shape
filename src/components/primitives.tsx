@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import NumberFlow from "@number-flow/react";
 import { Ellipsis, Info } from "lucide-react";
-import { formatMoney, normalizeCurrency } from "@/lib/money";
+import { formatMoney, normalizeCurrency, roundMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 const FLOW_TIMING = { duration: 250, easing: "ease-out" } as const;
@@ -55,6 +55,16 @@ export function Chip({ children, className }: { children: ReactNode; className?:
 }
 
 export type AmountTone = "income" | "expense" | "neutral" | "auto";
+export type MoneySize = "hero" | "primary" | "secondary";
+
+/** Hero 36–48px, stat 22–28px, lista 16–17px. Semibold, tracking cerrado, tabular. */
+export const moneyClass: Record<MoneySize, string> = {
+  hero: "text-[clamp(2.25rem,5.2vw,3rem)] font-semibold leading-none tracking-[-0.045em]",
+  primary: "text-[clamp(1.375rem,2vw,1.75rem)] font-semibold leading-none tracking-[-0.03em]",
+  secondary: "text-[1rem] font-semibold leading-none tracking-[-0.02em] sm:text-[1.0625rem]",
+};
+
+const moneyPart = "mt-[0.28em] text-[0.62em] font-medium leading-none opacity-80";
 
 export function Amount({
   value,
@@ -62,49 +72,64 @@ export function Amount({
   tone = "neutral",
   signed = false,
   animate = false,
+  size = "primary",
   className,
 }: {
   value: number;
   currency?: string | null;
   tone?: AmountTone;
   signed?: boolean;
-  /** NumberFlow. Solo en el hero y en totales, no en cada fila. */
+  /** NumberFlow en el entero. Hero y totales, no cada fila. */
   animate?: boolean;
+  size?: MoneySize;
   className?: string;
 }) {
   const resolved: Exclude<AmountTone, "auto"> =
     tone === "auto" ? (value < 0 ? "expense" : value > 0 ? "income" : "neutral") : tone;
-  const abs = Math.abs(value);
   const code = normalizeCurrency(currency);
   const sign = signed || value < 0 ? (resolved === "income" && value >= 0 ? "+" : "−") : "";
-  const digits = Math.abs(abs - Math.round(abs)) < 0.001 ? 0 : 2;
-  const canFlow = animate && (code === "ARS" || code === "USD");
-  const prefix = `${sign}${code === "USD" ? "US$" : "$"}`;
+  const rounded = roundMoney(Math.abs(value));
+  const integer = Math.trunc(rounded);
+  const cents = Math.round((rounded - integer) * 100);
+  const decimals = cents === 0 ? null : String(cents).padStart(2, "0");
+  const symbol = code === "USD" ? "US$" : code === "ARS" ? "$" : "";
+  const wallet = code === "ARS" || code === "USD";
   return (
     <span
       className={cn(
-        "tabular-nums",
+        "inline-flex items-start whitespace-nowrap tabular-nums",
+        moneyClass[size],
         resolved === "income" && "text-income",
         resolved === "expense" && "text-expense",
         resolved === "neutral" && "text-[#1c1f26]",
         className
       )}
     >
-      {canFlow ? (
-        <NumberFlow
-          value={abs}
-          locales="es-AR"
-          format={{ minimumFractionDigits: digits, maximumFractionDigits: digits }}
-          prefix={prefix}
-          respectMotionPreference
-          transformTiming={FLOW_TIMING}
-          spinTiming={FLOW_TIMING}
-          opacityTiming={{ duration: 200, easing: "ease-out" }}
-        />
+      {wallet ? (
+        <>
+          <span className={moneyPart}>
+            {sign}
+            {symbol}
+          </span>
+          {animate ? (
+            <NumberFlow
+              value={integer}
+              locales="es-AR"
+              format={{ maximumFractionDigits: 0 }}
+              respectMotionPreference
+              transformTiming={FLOW_TIMING}
+              spinTiming={FLOW_TIMING}
+              opacityTiming={{ duration: 200, easing: "ease-out" }}
+            />
+          ) : (
+            <span>{integer.toLocaleString("es-AR")}</span>
+          )}
+          {decimals ? <span className={moneyPart}>,{decimals}</span> : null}
+        </>
       ) : (
         <>
           {sign}
-          {formatMoney(abs, currency)}
+          {formatMoney(rounded, currency)}
         </>
       )}
     </span>
@@ -112,9 +137,9 @@ export function Amount({
 }
 
 const STAT_SIZE = {
-  sm: "text-[clamp(0.82rem,3.2vw,1rem)]",
-  md: "num text-[clamp(1.25rem,5vw,1.7rem)]",
-  lg: "num text-[clamp(1.7rem,6.4vw,2.55rem)] leading-none",
+  sm: moneyClass.primary,
+  md: moneyClass.primary,
+  lg: moneyClass.hero,
 } as const;
 
 export function Stat({
@@ -134,11 +159,9 @@ export function Stat({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-[13px] text-[#9aa1ab]">{label}</p>
-      <p className={cn("mt-1 truncate font-semibold tracking-tight tabular-nums", STAT_SIZE[size], tone ?? "text-[#1c1f26]")}>
-        {value}
-      </p>
-      {hint ? <p className="mt-0.5 truncate text-[13px] text-[#6d7480]">{hint}</p> : null}
+      <p className="text-[13px] leading-none text-[#9aa1ab]">{label}</p>
+      <div className={cn("mt-1.5 whitespace-nowrap", STAT_SIZE[size], tone)}>{value}</div>
+      {hint ? <p className="mt-1 text-[13px] text-[#6d7480]">{hint}</p> : null}
     </div>
   );
 }
@@ -152,8 +175,15 @@ export function StatRow({
   columns?: 2 | 3 | 4;
   className?: string;
 }) {
-  const cols = columns === 2 ? "grid-cols-2" : columns === 4 ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-3";
-  return <div className={cn("grid gap-3", cols, className)}>{children}</div>;
+  const minimum = columns > 3 ? "9.5rem" : "12.5rem";
+  return (
+    <div
+      className={cn("grid gap-x-4 gap-y-4", className)}
+      style={{ gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${minimum}), 1fr))` }}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function Card({
@@ -355,7 +385,7 @@ export function ListRow({
         <p className="truncate text-[14px] font-medium text-[#1c1f26]">{title}</p>
         {meta ? <p className="truncate text-[12px] text-[#9aa1ab]">{meta}</p> : null}
       </div>
-      {amount ? <div className="shrink-0 text-right text-[14px] font-semibold">{amount}</div> : null}
+      {amount ? <div className={cn("shrink-0 text-right whitespace-nowrap", moneyClass.secondary)}>{amount}</div> : null}
       {trailing ? <div className="flex shrink-0 items-center gap-1">{trailing}</div> : null}
     </div>
   );

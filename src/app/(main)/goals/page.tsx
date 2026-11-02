@@ -31,7 +31,7 @@ export default function GoalsPage() {
         subtitle={
           goals.length > 0 ? (
             <span>
-              <Amount value={totalSaved} tone="income" animate /> / <Amount value={totalTarget} animate />
+              <Amount value={totalSaved} size="secondary" tone="income" /> / <Amount value={totalTarget} size="secondary" />
             </span>
           ) : (
             "Lo que estás juntando"

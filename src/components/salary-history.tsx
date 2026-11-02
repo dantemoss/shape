@@ -17,7 +17,7 @@ export function SalaryHistory() {
   return (
     <Card
       title="Historial de cobros"
-      action={<Amount value={totalCobrado} tone="income" animate className="text-[13px] font-semibold" />}
+      action={<Amount value={totalCobrado} size="secondary" tone="income" />}
     >
       <ul className="divide-y divide-black/[0.04]">
         {salaryPayments.map((payment) => (
@@ -31,7 +31,7 @@ export function SalaryHistory() {
               }
               title={payment.note ?? "Cobro registrado"}
               meta={`${formatIso(payment.date, "EEEE d 'de' MMMM yyyy")}${payment.incomeId ? " · vinculado al ingreso" : " · sin ingreso vinculado"}`}
-              amount={<Amount value={payment.amount} tone="income" signed />}
+              amount={<Amount value={payment.amount} size="secondary" tone="income" signed />}
               trailing={
                 <button
                   type="button"

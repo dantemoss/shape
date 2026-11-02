@@ -120,8 +120,8 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
           />
         </div>
 
-        <p className="num text-[clamp(2rem,7vw,2.6rem)] leading-none text-[#16181d]">
-          <Amount value={config.amount} animate />
+        <p>
+          <Amount value={config.amount} size="hero" animate />
         </p>
 
         <StatRow className="mt-5 border-t border-black/[0.06] pt-4">

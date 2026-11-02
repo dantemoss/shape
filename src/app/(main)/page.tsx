@@ -187,6 +187,7 @@ export default function DashboardPage() {
                     amount={
                       <Amount
                         value={Math.abs(transaction.amount)}
+                        size="secondary"
                         currency={transaction.currency}
                         tone={transaction.type === "income" ? "income" : "neutral"}
                         signed

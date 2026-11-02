@@ -1,9 +1,9 @@
 "use client";
 
 import { useId } from "react";
-import { formatChartPesos } from "@/lib/chart-format";
 import type { DonutSlice, SpendWindow } from "@/lib/chart-series";
-import { ChartCard, DeltaPill, EmptyChart, HeroNumber, Segmented } from "./ui";
+import { Amount } from "@/components/primitives";
+import { ChartCard, DeltaPill, EmptyChart, Segmented } from "./ui";
 
 const COMPARE: Record<SpendWindow, string> = {
   week: "vs la semana anterior",
@@ -51,7 +51,7 @@ export function ExpenseDonutCard({
         <div className="flex min-h-0 flex-1 flex-col gap-5 min-[420px]:flex-row min-[420px]:items-center">
           <div className="min-w-0 flex-1">
             <p className="text-[13px] text-[#9aa1ab]">Total de gastos</p>
-            <HeroNumber className="mt-1">{formatChartPesos(total)}</HeroNumber>
+            <div className="mt-1.5"><Amount value={total} size="hero" tone="expense" /></div>
             {delta != null ? (
               <p className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[#9aa1ab]">
                 <DeltaPill value={delta} positiveIsGood={false} />
@@ -74,9 +74,7 @@ export function ExpenseDonutCard({
                     />
                     <span className="truncate text-[14px] text-[#3a4150]">{slice.label}</span>
                   </span>
-                  <span className="shrink-0 text-[14px] font-semibold tabular-nums tracking-tight text-[#1c1f26]">
-                    {formatChartPesos(slice.value)}
-                  </span>
+                  <Amount value={slice.value} size="secondary" />
                 </li>
               ))}
             </ul>

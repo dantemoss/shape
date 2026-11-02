@@ -103,13 +103,13 @@ export default function SubscriptionsPage() {
               {monthlyARS > 0 ? (
                 <span className="inline-flex items-center gap-1.5">
                   <CategoryDot color="#e5484d" />
-                  <Amount value={Math.round(monthlyARS)} tone="expense" animate /> /mes
+                  <Amount value={Math.round(monthlyARS)} size="secondary" tone="expense" /> /mes
                 </span>
               ) : null}
               {monthlyUSD > 0 ? (
                 <span className="inline-flex items-center gap-1.5">
                   <CategoryDot color="#6d7480" />
-                  <Amount value={monthlyUSD} currency="USD" /> /mes
+                  <Amount value={monthlyUSD} size="secondary" currency="USD" /> /mes
                 </span>
               ) : null}
               <span>
@@ -261,7 +261,7 @@ function SubscriptionRow({
       }
       title={sub.name}
       meta={`${SUB_CATEGORY_LABELS[sub.category]} · ${SUB_PERIOD_LABELS[sub.period as SubPeriod]} · ${renewal}`}
-      amount={<Amount value={sub.price} currency={sub.currency} tone="expense" />}
+      amount={<Amount value={sub.price} size="secondary" currency={sub.currency} tone="expense" />}
       trailing={
         <>
           <button type="button" onClick={onToggle} title={sub.active ? "Pausar" : "Activar"} aria-label={sub.active ? "Pausar" : "Activar"}>
@@ -303,8 +303,8 @@ function SummaryCard({
         <Stat label={nextName ?? "Próxima"} value={format(nextRenewal, "d 'de' MMMM", { locale: es })} size="md" />
       ) : (
         <div className="space-y-1">
-          {(amountARS ?? 0) > 0 ? <Amount value={Math.round(amountARS!)} tone="expense" className="block text-[1.15rem] font-semibold" /> : null}
-          {(amountUSD ?? 0) > 0 ? <Amount value={amountUSD!} currency="USD" className="block text-[14px] font-semibold" /> : null}
+          {(amountARS ?? 0) > 0 ? <Amount value={Math.round(amountARS!)} tone="expense" /> : null}
+          {(amountUSD ?? 0) > 0 ? <div className="mt-1"><Amount value={amountUSD!} currency="USD" /></div> : null}
         </div>
       )}
     </Card>

@@ -152,7 +152,7 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
         icon={<IssuerAvatar issuerKey={card.issuerKey} size="sm" />}
         title={card.label}
         meta={`${card.network}${card.lastFourDigits ? ` · ${card.lastFourDigits}` : ""}`}
-        amount={<Amount value={available} tone={available >= 0 ? "income" : "expense"} />}
+        amount={<Amount value={available} size="secondary" tone={available >= 0 ? "income" : "expense"} />}
       />
     );
   }
@@ -282,7 +282,7 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
         <div className="border border-border rounded-xl p-3.5 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium">Cuotas activas</p>
-            <Amount value={Math.round(totalMonthlyInstallments)} tone="expense" className="text-[12px] font-semibold" />
+            <Amount value={Math.round(totalMonthlyInstallments)} size="secondary" tone="expense" />
           </div>
           {activeInstallments.map((inst) => {
             const remaining = inst.totalInstallments - inst.paidInstallments;

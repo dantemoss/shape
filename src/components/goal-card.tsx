@@ -51,7 +51,7 @@ export function GoalCard({ goal, onRemove, onAddAmount }: GoalCardProps) {
       </div>
       <div className="space-y-3">
         <StatRow columns={2}>
-          <Stat label="Ahorrado" value={<Amount value={goal.currentAmount} tone={isComplete ? "income" : "neutral"} animate />} size="md" />
+          <Stat label="Ahorrado" size="lg" value={<Amount value={goal.currentAmount} size="hero" tone={isComplete ? "income" : "neutral"} animate />} />
           <Stat label="Objetivo" value={<Amount value={goal.targetAmount} />} className="text-right" />
         </StatRow>
 
@@ -69,7 +69,7 @@ export function GoalCard({ goal, onRemove, onAddAmount }: GoalCardProps) {
         {/* Falta */}
         {!isComplete && (
           <p className="text-[13px] text-[#6d7480]">
-            Faltan <Amount value={remaining} className="font-semibold" />
+            Faltan <Amount value={remaining} size="secondary" />
           </p>
         )}
 

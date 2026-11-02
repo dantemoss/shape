@@ -5,7 +5,8 @@ import { Landmark } from "lucide-react";
 import { formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { BalancePoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
+import { Amount } from "@/components/primitives";
+import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
 const PAD_L = 8;
@@ -47,7 +48,7 @@ export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
                   <Landmark size={13} className="text-[#1c1f26]" />
                   Saldo
                 </p>
-                <HeroNumber className="mt-1">{formatChartPesos(selected?.balance ?? 0)}</HeroNumber>
+                <div className="mt-1.5"><Amount value={selected?.balance ?? 0} tone={(selected?.balance ?? 0) < 0 ? "expense" : "neutral"} /></div>
               </div>
             </div>
             {selected?.changePct != null ? (

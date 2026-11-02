@@ -126,16 +126,20 @@ import { GeistMono } from "geist/font/mono";
 
 `src/app/layout.tsx` pone las variables en `<html>`. `--font-sans` apunta a la sans. El cuerpo usa `font-weight: 400`. Next 16.2.9 rompe el build de Vercel si Google responde URLs con `&`.
 
-| Rol | Clase | Notas |
+| Rol | Clase (`moneyClass` en `Amount`) | Notas |
 | --- | --- | --- |
-| Monto hero | `num text-[clamp(2rem,7vw,2.6rem)]` | `.num` es 700, tracking `-0.045em`, tabular-nums. Un hero por tarjeta |
-| Monto de tarjeta | `HeroNumber`: `num text-[clamp(1.7rem,6.4vw,2.55rem)]` | |
+| Monto hero | `clamp(2.25rem, 5.2vw, 3rem)` · 36–48px | Un solo protagonista por tarjeta. Semibold, tracking `-0.045em` |
+| Stat primario | `clamp(1.375rem, 2vw, 1.75rem)` · 22–28px | Entró, salió, saldo de una fila, totales de tarjeta. Tracking `-0.03em` |
+| Monto de lista | `1rem` / `1.0625rem` desde `sm` · 16–17px | Filas. `size="secondary"` |
+| Etiqueta | `text-[13px]`, color de etiqueta, arriba del monto, `mt-1.5` | Sin mayúsculas, sin tracking ancho |
 | Título de página | `text-[1.35rem] font-semibold tracking-[-0.03em]` | |
 | Título de tarjeta | `text-[17px] font-semibold tracking-[-0.03em]` | |
-| Etiqueta | `text-[13px]`, color de etiqueta | Sin mayúsculas, sin tracking ancho |
 | Cuerpo | `text-[14px] leading-snug` | |
-| Caption | `text-[12px]` o `text-[11px]` | |
-| Stat | `text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tabular-nums` | |
+| Caption | `text-[12px]` o `text-[13px]` | |
+
+El monto no se parte ni se trunca. `whitespace-nowrap` y cifras tabulares. En una fila angosta, `StatRow` baja a menos columnas (`minmax` de 12.5rem) para que un número como `$12.072.199` entre a 360 sin bajar del mínimo de la escala.
+
+El signo y los decimales van al 62% del entero, más livianos (`opacity-80`). Si los centavos son cero, no se muestran. El entero queda en es-AR (`12.072.199`). Ingreso en `text-income`, gasto en `text-expense`, el resto en `#1c1f26`.
 
 Prohibido en UI nueva: `font-mono` para etiquetas, fechas o montos, y `uppercase tracking-wider` en micro-etiquetas. Los montos pasan por el helper del parámetro de locale.
 
@@ -267,8 +271,8 @@ Están en `src/components/primitives.tsx`. shadcn sigue siendo la base de botón
 | `PageHeader` | Título de página, subtítulo y acción. Va con `pageStackClass`. |
 | `Card` | Título, subtítulo, acción, cuerpo `flex-1`. |
 | `CardMenu` | Botón `···` con ítems (`href` o `onSelect`). |
-| `Stat` / `StatRow` | Etiqueta, valor y hint. `size`: `sm`, `md`, `lg`. |
-| `Amount` | Monto es-AR con `formatMoney`. `tone`: `income`, `expense`, `neutral`, `auto`. `signed` pone `+` o `−`. `animate` usa NumberFlow en el hero y en totales. |
+| `Stat` / `StatRow` | Etiqueta de 13px arriba del valor. `sm` y `md` usan el stat primario; `lg`, el hero. La fila no aprieta tres montos enormes en 360. |
+| `Amount` | Monto es-AR. `size`: `hero`, `primary` (default), `secondary`. Signo y centavos más chicos. `tone`: `income`, `expense`, `neutral`, `auto`. `signed` pone `+` o `−`. `animate` mueve solo el entero. |
 | `IconWell` | Pozo neutro. `size`: `sm`, `md`, `lg`. La clase suelta sigue en `iconWell` (`src/components/viz/ui.tsx`). |
 | `CategoryDot` | Punto de 6px. |
 | `Chip` | Pastilla gris (`Sueldo cobrado`, `US$42 aparte`). |
