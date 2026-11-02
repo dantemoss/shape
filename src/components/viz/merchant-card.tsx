@@ -1,7 +1,8 @@
 "use client";
 
 import { useId } from "react";
-import { formatChartPesos, formatSignedPercent } from "@/lib/chart-format";
+import { formatSignedPercent } from "@/lib/chart-format";
+import { Amount } from "@/components/primitives";
 import type { MerchantCardModel } from "@/lib/chart-series";
 import { smoothArea, smoothLine, yAt } from "./geometry";
 import { DeltaPill, EmptyChart } from "./ui";
@@ -29,10 +30,7 @@ export function MerchantCard({ model }: { model: MerchantCardModel }) {
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
-              <p className="num text-[clamp(2rem,8vw,3.1rem)] leading-none text-[#16181d]">
-                <span className="mr-1 align-top text-[0.42em] font-semibold text-[#9aa1ab]">$</span>
-                {formatChartPesos(model.total).replace("$", "")}
-              </p>
+              <Amount value={model.total} size="hero" />
               {model.todayChangePct != null ? (
                 <p className="mb-1 flex items-center gap-1.5 text-[13px]">
                   <DeltaPill value={model.todayChangePct} positiveIsGood={false} />
@@ -45,7 +43,7 @@ export function MerchantCard({ model }: { model: MerchantCardModel }) {
                 <li key={row.name} className="flex items-center gap-3">
                   <span className="h-1 w-4 shrink-0 rounded-full" style={{ background: COLORS[index % COLORS.length] }} />
                   <span className="min-w-0 flex-1 truncate text-[14px] text-[#3a4150]">{row.name}</span>
-                  <span className="shrink-0 text-[14px] font-semibold tabular-nums">{formatChartPesos(row.amount)}</span>
+                  <Amount value={row.amount} size="secondary" />
                   {row.changePct != null ? (
                     <span className={row.changePct > 0 ? "w-16 shrink-0 text-right text-[12px] font-medium text-[#e5484d]" : "w-16 shrink-0 text-right text-[12px] font-medium text-[#1f9d55]"}>
                       {formatSignedPercent(row.changePct, 0)}

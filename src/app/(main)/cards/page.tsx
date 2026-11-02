@@ -134,7 +134,7 @@ export default function CardsPage() {
                       {instCount > 0 ? ` · ${instCount} cuota${instCount > 1 ? "s" : ""}` : ""}
                     </p>
                   </div>
-                  <Amount value={available} tone={available < 0 ? "expense" : "income"} className="text-[13px] font-semibold" />
+                  <Amount value={available} size="secondary" tone={available < 0 ? "expense" : "income"} />
                 </button>
               );
             })}
@@ -206,7 +206,7 @@ export default function CardsPage() {
                             </div>
                             <div className="flex items-center justify-between gap-2 text-[12px] text-[#9aa1ab]">
                               <span className="min-w-0 truncate">{inst.paidInstallments}/{inst.totalInstallments} pagadas · quedan {remaining}</span>
-                              <Amount value={Math.round(monthly)} tone="expense" className="shrink-0 font-semibold" />
+                              <Amount value={Math.round(monthly)} size="secondary" tone="expense" />
                             </div>
                             <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
                               <div
@@ -254,7 +254,7 @@ export default function CardsPage() {
                               </IconWell>
                             }
                             title={inst.description}
-                            amount={<Amount value={inst.totalAmount} />}
+                            amount={<Amount value={inst.totalAmount} size="secondary" />}
                             trailing={
                               <button
                                 type="button"

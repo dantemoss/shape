@@ -4,7 +4,8 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, formatSignedPercent, paddedDomain } from "@/lib/chart-format";
 import type { AreaPoint } from "@/lib/chart-series";
 import { clampPercent, smoothArea, smoothLine, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
+import { Amount } from "@/components/primitives";
+import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
 const PAD_L = 8;
@@ -54,7 +55,7 @@ export function FlowAreaCard({
           <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[13px] text-[#9aa1ab]">{currentLabel}</p>
-              <HeroNumber className="mt-1">{formatChartPesos(lastCurrent?.current ?? 0)}</HeroNumber>
+              <div className="mt-1.5"><Amount value={lastCurrent?.current ?? 0} /></div>
             </div>
             {delta != null ? (
               <p className={delta >= 0 ? "text-[1.35rem] font-bold tracking-tight text-[#1f9d55]" : "text-[1.35rem] font-bold tracking-tight text-[#e5484d]"}>

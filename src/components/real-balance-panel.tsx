@@ -106,8 +106,8 @@ export function RealBalancePanel() {
       </div>
 
       {snapshot.account.hasBaseline ? (
-        <p className="num text-[clamp(2rem,7vw,2.6rem)]">
-          <Amount value={balance} tone={balance < 0 ? "expense" : "neutral"} animate />
+        <p>
+          <Amount value={balance} size="hero" tone={balance < 0 ? "expense" : "neutral"} animate />
         </p>
       ) : (
         <p className="text-[1.6rem] font-semibold tracking-tight text-[#9aa1ab]">Todavía no hay saldo</p>
@@ -252,7 +252,7 @@ function BaselineDialog({
           </div>
           {preview?.account.hasBaseline && (
             <p className="text-[14px] text-[#3a4150]">
-              Con esta base, hoy tendrías <Amount value={preview.account.balance} tone={preview.account.balance < 0 ? "expense" : "neutral"} />.
+              Con esta base, hoy tendrías <Amount value={preview.account.balance} size="secondary" tone={preview.account.balance < 0 ? "expense" : "neutral"} />.
             </p>
           )}
           <Button type="submit" className="w-full" disabled={parsed == null || !date}>
@@ -330,7 +330,7 @@ function ReconcileDialog({
           )}
           {delta != null && (
             <p className="text-sm">
-              Vamos a anotar un ajuste de <Amount value={delta} tone={delta < 0 ? "expense" : "neutral"} className="font-medium" /> con fecha de hoy.
+              Vamos a anotar un ajuste de <Amount value={delta} size="secondary" tone={delta < 0 ? "expense" : "neutral"} /> con fecha de hoy.
             </p>
           )}
           <Button type="submit" className="w-full" disabled={target == null || delta == null}>

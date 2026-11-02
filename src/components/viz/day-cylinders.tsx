@@ -13,7 +13,7 @@ import {
   Utensils,
   Wallet,
 } from "lucide-react";
-import { formatChartPesos } from "@/lib/chart-format";
+import { Amount } from "@/components/primitives";
 import type { AlignedDay } from "@/lib/chart-series";
 import type { ExpenseCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -183,10 +183,12 @@ export function DayCylindersCard({
                         <span className="truncate">{movement.meta}</span>
                       </span>
                     </span>
-                    <span className={cn("shrink-0 text-[14px] font-semibold tabular-nums", movement.type === "income" ? "text-[#1f9d55]" : "text-[#1c1f26]")}>
-                      {movement.type === "expense" ? "−" : "+"}
-                      {formatChartPesos(movement.amount)}
-                    </span>
+                    <Amount
+                      value={movement.amount}
+                      size="secondary"
+                      tone={movement.type === "income" ? "income" : "neutral"}
+                      signed
+                    />
                   </div>
                 );
               })

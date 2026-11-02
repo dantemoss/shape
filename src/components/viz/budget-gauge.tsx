@@ -1,7 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
-import { formatChartPesos } from "@/lib/chart-format";
+import { Amount } from "@/components/primitives";
 import { ChartCard, EmptyChart } from "./ui";
 
 const CX = 160;
@@ -43,8 +44,8 @@ export function BudgetGaugeCard({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="mb-3 flex shrink-0 flex-wrap items-end justify-between gap-4">
-            <Stat dash="#1f9d55" label={left >= 0 ? "Te queda" : "De más"} value={formatChartPesos(Math.abs(left))} />
-            <Stat dash="#c5cad3" label="Sueldo esperado" value={formatChartPesos(expected)} align="right" />
+            <Stat dash="#1f9d55" label={left >= 0 ? "Te queda" : "De más"} value={<Amount value={Math.abs(left)} tone={left >= 0 ? "income" : "expense"} />} />
+            <Stat dash="#c5cad3" label="Sueldo esperado" value={<Amount value={expected} />} align="right" />
           </div>
           <p className="mb-2 shrink-0 text-[12px] text-[#9aa1ab]">{periodLabel}</p>
           <div className="flex flex-1 flex-col justify-end">
@@ -69,7 +70,7 @@ export function BudgetGaugeCard({
           </svg>
           <div className="mt-1 shrink-0 text-center">
             <p className="text-[13px] text-[#9aa1ab]">Gastado del sueldo</p>
-            <p className="num mt-1 text-[clamp(1.55rem,3vw,2rem)] text-[#16181d]">{formatChartPesos(spent)}</p>
+            <div className="mt-1.5"><Amount value={spent} size="hero" tone={shownPct >= 100 ? "expense" : "neutral"} /></div>
             <p className={shownPct >= 100 ? "mt-1 text-[13px] font-medium text-[#e5484d]" : "mt-1 text-[13px] font-medium text-[#1f9d55]"}>
               {shownPct.toLocaleString("es-AR")}% del esperado
             </p>
@@ -89,7 +90,7 @@ function Stat({
 }: {
   dash: string;
   label: string;
-  value: string;
+  value: ReactNode;
   align?: "left" | "right";
 }) {
   return (
@@ -101,9 +102,7 @@ function Stat({
         <span className="h-[3px] w-3.5 rounded-full" style={{ background: dash }} />
         {label}
       </p>
-      <p className="mt-1 truncate text-[clamp(1.05rem,2.4vw,1.45rem)] font-bold tracking-[-0.04em] text-[#16181d] tabular-nums">
-        {value}
-      </p>
+      <div className="mt-1.5 whitespace-nowrap">{value}</div>
     </div>
   );
 }

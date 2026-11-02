@@ -1,34 +1,31 @@
 "use client";
 
-import { formatPesos } from "@/lib/money";
+import { Amount, Stat, StatRow } from "@/components/primitives";
 import { useMoneySnapshot } from "@/lib/use-money";
-import { cn } from "@/lib/utils";
-
 /** Los mismos tres números en el dashboard, Movimientos e Higiene. */
 export function MoneyAgreement({ className, showSaldo = true }: { className?: string; showSaldo?: boolean }) {
   const snapshot = useMoneySnapshot();
-  const saldo = snapshot.account.hasBaseline ? formatPesos(snapshot.account.balance) : "sin cargar";
 
   return (
-    <div className={cn("grid grid-cols-1 gap-3", showSaldo ? "min-[420px]:grid-cols-3" : "min-[420px]:grid-cols-2", className)}>
-      {showSaldo && (
-        <figure className="min-w-0">
-          <figcaption className="text-[12px] text-[#9aa1ab]">Saldo real</figcaption>
-          <span className={cn("mt-0.5 block truncate text-[15px] font-semibold tabular-nums", snapshot.account.balance < 0 && "text-expense")}>
-            {saldo}
-          </span>
-        </figure>
-      )}
-      <figure className="min-w-0">
-        <figcaption className="text-[12px] text-[#9aa1ab]">Ingresos del mes</figcaption>
-        <span className="mt-0.5 block truncate text-[15px] font-semibold text-income tabular-nums">{formatPesos(snapshot.calendarMonth.income)}</span>
-      </figure>
-      <figure className="min-w-0">
-        <figcaption className="text-[12px] text-[#9aa1ab]">Gastos del mes</figcaption>
-        <span className="mt-0.5 block truncate text-[15px] font-semibold text-expense tabular-nums">{formatPesos(snapshot.calendarMonth.expense)}</span>
-      </figure>
+    <div className={className}>
+      <StatRow columns={showSaldo ? 3 : 2}>
+        {showSaldo ? (
+          <Stat
+            label="Saldo real"
+            value={
+              snapshot.account.hasBaseline ? (
+                <Amount value={snapshot.account.balance} tone={snapshot.account.balance < 0 ? "expense" : "neutral"} animate />
+              ) : (
+                "Sin cargar"
+              )
+            }
+          />
+        ) : null}
+        <Stat label="Ingresos del mes" value={<Amount value={snapshot.calendarMonth.income} tone="income" />} />
+        <Stat label="Gastos del mes" value={<Amount value={snapshot.calendarMonth.expense} tone="expense" />} />
+      </StatRow>
       {(snapshot.usd.income > 0 || snapshot.usd.expense > 0) && (
-        <p className="col-span-full text-[12px] text-[#8b919c]">
+        <p className="mt-3 text-[13px] text-[#8b919c]">
           USD aparte {formatUsd(snapshot.usd.income, snapshot.usd.expense)}. No entra al saldo.
         </p>
       )}

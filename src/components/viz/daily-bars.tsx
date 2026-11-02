@@ -5,7 +5,8 @@ import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-form
 import type { AlignedDay } from "@/lib/chart-series";
 import { averageElapsedSpend, elapsedSpend } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
+import { Amount } from "@/components/primitives";
+import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
 const PAD_L = 46;
@@ -42,11 +43,11 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
           <div className="mb-3 grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <p className="text-[13px] text-[#9aa1ab]">Gasto del período</p>
-              <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(elapsedSpend(days))}</HeroNumber>
+              <div className="mt-1.5"><Amount value={elapsedSpend(days)} tone="expense" /></div>
             </div>
             <div className="min-w-0">
               <p className="text-[13px] text-[#9aa1ab]">Promedio por día</p>
-              <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(averageElapsedSpend(days))}</HeroNumber>
+              <div className="mt-1.5"><Amount value={averageElapsedSpend(days)} /></div>
             </div>
           </div>
           <div ref={plot.ref} className={chartPlotFrameClass}>

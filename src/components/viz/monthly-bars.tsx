@@ -4,7 +4,8 @@ import { useId, useState } from "react";
 import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-format";
 import type { MonthFlowPoint } from "@/lib/chart-series";
 import { clampPercent, topRoundedBar, yAt } from "./geometry";
-import { ChartCard, EmptyChart, HeroNumber, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
+import { Amount } from "@/components/primitives";
+import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
 
 const W = 360;
 const PAD_L = 6;
@@ -39,11 +40,11 @@ export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
             <div className="mb-3 grid shrink-0 grid-cols-2 gap-3">
               <div className="min-w-0">
                 <p className="text-[13px] text-[#9aa1ab]">Ingresos · {selected.label}</p>
-                <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(selected.income)}</HeroNumber>
+                <div className="mt-1.5"><Amount value={selected.income} tone="income" /></div>
               </div>
               <div className="min-w-0">
                 <p className="text-[13px] text-[#9aa1ab]">Gastos · {selected.label}</p>
-                <HeroNumber className="mt-1 text-[clamp(1.35rem,5vw,2rem)]">{formatChartPesos(selected.expense)}</HeroNumber>
+                <div className="mt-1.5"><Amount value={selected.expense} tone="expense" /></div>
               </div>
             </div>
           ) : null}

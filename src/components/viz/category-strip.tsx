@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatChartPesos } from "@/lib/chart-format";
+import { Amount, Stat, StatRow } from "@/components/primitives";
 import type { StripSegment } from "@/lib/chart-series";
 import { ChartCard, EmptyChart } from "./ui";
 
@@ -36,18 +36,10 @@ export function CategoryStripCard({
         </Link>
       }
     >
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="min-w-0">
-          <p className="text-[13px] text-[#9aa1ab]">Ingresos del mes</p>
-          <p className="num mt-1 truncate text-[clamp(1.25rem,4.5vw,1.7rem)]">{formatChartPesos(income)}</p>
-          <p className="mt-1 text-[12px] font-medium text-[#1f9d55]">+{incomeCount} este mes</p>
-        </div>
-        <div className="min-w-0">
-          <p className="text-[13px] text-[#9aa1ab]">Gastos del mes</p>
-          <p className="num mt-1 truncate text-[clamp(1.25rem,4.5vw,1.7rem)]">{formatChartPesos(expense)}</p>
-          <p className="mt-1 text-[12px] font-medium text-[#1f9d55]">+{expenseCount} este mes</p>
-        </div>
-      </div>
+      <StatRow columns={2} className="mb-4">
+        <Stat label="Ingresos del mes" value={<Amount value={income} tone="income" />} hint={`+${incomeCount} este mes`} />
+        <Stat label="Gastos del mes" value={<Amount value={expense} tone="expense" />} hint={`+${expenseCount} este mes`} />
+      </StatRow>
       {segments.length === 0 ? (
         <EmptyChart>Sin gastos en pesos este mes.</EmptyChart>
       ) : (

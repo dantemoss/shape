@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Lightbulb, RefreshCw } from "lucide-react";
 import { MoneyAgreement } from "@/components/money-agreement";
-import { Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat } from "@/components/primitives";
+import { Amount, Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat } from "@/components/primitives";
 import { BalanceLineCard } from "@/components/viz/balance-line";
 import { CategoryStripCard } from "@/components/viz/category-strip";
 import { FlowAreaCard } from "@/components/viz/flow-area";
@@ -130,14 +130,14 @@ export default function HealthPage() {
           <MoneyAgreement />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:col-span-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:col-span-2">
           <Kpi label="Salud" value={String(score)} hint={scoreText} tone={scoreTone} />
-          <Kpi label="Gastos del mes" value={formatChartPesos(snapshot.calendarMonth.expense)} hint={monthComp.previous > 0 ? `${Math.abs(Math.round(monthComp.changePercent))}% vs el mes anterior` : "Mes calendario"} tone={monthComp.change > 0 ? "text-[#e5484d]" : "text-[#1f9d55]"} />
+          <Kpi label="Gastos del mes" value={<Amount value={snapshot.calendarMonth.expense} tone={monthComp.change > 0 ? "expense" : "income"} />} hint={monthComp.previous > 0 ? `${Math.abs(Math.round(monthComp.changePercent))}% vs el mes anterior` : "Mes calendario"} />
           <Kpi
             label={snapshot.payPeriod ? "Del sueldo" : "Mes anterior"}
-            value={salary > 0 ? `${spendPct}%` : formatChartPesos(monthComp.previous)}
+            value={salary > 0 ? `${spendPct}%` : <Amount value={monthComp.previous} tone={spendPct >= 80 ? "expense" : "income"} />}
             hint={salary > 0 ? "de lo esperado" : "en gastos"}
-            tone={spendPct >= 80 ? "text-[#e5484d]" : "text-[#1f9d55]"}
+            tone={salary > 0 ? (spendPct >= 80 ? "text-[#e5484d]" : "text-[#1f9d55]") : undefined}
           />
           <Kpi
             label="Recurrentes"
@@ -201,7 +201,7 @@ export default function HealthPage() {
                       }
                       title={item.description}
                       meta={`${CATEGORY_LABELS[item.category]} · ${item.count} veces`}
-                      amount={<span className="tabular-nums">{formatChartPesos(item.avgAmount)}</span>}
+                      amount={<Amount value={item.avgAmount} size="secondary" tone="expense" />}
                     />
                   </li>
                 ))}
@@ -220,7 +220,7 @@ export default function HealthPage() {
   );
 }
 
-function Kpi({ label, value, hint, tone }: { label: string; value: string; hint: string; tone?: string }) {
+function Kpi({ label, value, hint, tone }: { label: string; value: React.ReactNode; hint: string; tone?: string }) {
   return (
     <div className="viz-card !p-4">
       <Stat label={label} value={value} hint={hint} tone={tone} size="md" />
