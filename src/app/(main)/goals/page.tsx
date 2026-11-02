@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useShapeStore } from "@/lib/store";
 import { GoalCard } from "@/components/goal-card";
 import { GoalForm } from "@/components/goal-form";
+import { Amount, EmptyState, IconWell, PageHeader, pageStackClass } from "@/components/primitives";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Target } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,52 +21,54 @@ export default function GoalsPage() {
   const removeGoal = useShapeStore((s) => s.removeGoal);
   const updateGoalAmount = useShapeStore((s) => s.updateGoalAmount);
 
-  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
-  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
+  const totalTarget = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+  const totalSaved = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
 
   return (
-    <div className="min-h-screen">
-      <div className="page-head">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="text-lg font-medium">Metas</h1>
-          {goals.length > 0 && (
-            <span className="text-sm text-muted-foreground font-mono">
-              <span className="text-income">${totalSaved.toLocaleString("es-AR")}</span>
-              {" / $"}{totalTarget.toLocaleString("es-AR")}
+    <div className="min-w-0">
+      <PageHeader
+        title="Metas"
+        subtitle={
+          goals.length > 0 ? (
+            <span>
+              <Amount value={totalSaved} tone="income" animate /> / <Amount value={totalTarget} animate />
             </span>
-          )}
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button className="gap-2" />}>
-            <Plus size={14} />
-            Nueva meta
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Nueva meta</DialogTitle>
-            </DialogHeader>
-            <GoalForm onSuccess={() => setOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
+          ) : (
+            "Lo que estás juntando"
+          )
+        }
+        action={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
+              <Plus size={14} />
+              Nueva meta
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Nueva meta</DialogTitle>
+              </DialogHeader>
+              <GoalForm onSuccess={() => setOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
-      <div className="px-4 sm:px-8 py-4 sm:py-6">
+      <div className={pageStackClass}>
         {goals.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground border border-dashed border-border rounded-2xl">
-            <p className="text-4xl mb-4">🎯</p>
-            <p className="text-sm font-medium">Todavía no tenés metas</p>
-            <p className="text-xs mt-1">Creá una para empezar a ahorrar para lo que querés</p>
-          </div>
+          <EmptyState
+            icon={
+              <IconWell size="lg">
+                <Target size={18} />
+              </IconWell>
+            }
+            title="Todavía no tenés metas"
+          >
+            Creá una para empezar a ahorrar para lo que querés.
+          </EmptyState>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl">
-            {goals.map((goal, i) => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                index={i}
-                onRemove={removeGoal}
-                onAddAmount={updateGoalAmount}
-              />
+          <div className="grid max-w-3xl grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
+            {goals.map((goal, index) => (
+              <GoalCard key={goal.id} goal={goal} index={index} onRemove={removeGoal} onAddAmount={updateGoalAmount} />
             ))}
           </div>
         )}

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Lightbulb, RefreshCw } from "lucide-react";
 import { MoneyAgreement } from "@/components/money-agreement";
+import { Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat } from "@/components/primitives";
 import { BalanceLineCard } from "@/components/viz/balance-line";
 import { CategoryStripCard } from "@/components/viz/category-strip";
 import { FlowAreaCard } from "@/components/viz/flow-area";
@@ -101,18 +102,18 @@ export default function HealthPage() {
   if (allTx.length === 0) {
     return (
       <div className="min-w-0">
-        <header className="page-head">
-          <div>
-            <h1 className="text-[1.35rem] font-semibold tracking-[-0.03em]">Higiene</h1>
-            <p className="text-[13px] text-[#9aa1ab]">Cómo venís con la plata</p>
-          </div>
-        </header>
-        <div className="px-4 py-16 text-center text-[14px] text-[#8d949e]">
-          <p className="font-medium text-[#1c1f26]">Todavía no hay movimientos</p>
-          <p className="mt-1">Cuando cargues alguno, aparece el análisis.</p>
-          <Link href="/" className="mt-4 inline-flex text-[13px] font-medium text-[#1c1f26] underline-offset-2 hover:underline">
-            Volver al inicio
-          </Link>
+        <PageHeader title="Higiene" subtitle="Cómo venís con la plata" />
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+          <EmptyState
+            title="Todavía no hay movimientos"
+            action={
+              <Link href="/" className="text-[13px] font-medium text-[#1c1f26] underline-offset-2 hover:underline">
+                Volver al inicio
+              </Link>
+            }
+          >
+            Cuando cargues alguno, aparece el análisis.
+          </EmptyState>
         </div>
       </div>
     );
@@ -122,12 +123,7 @@ export default function HealthPage() {
 
   return (
     <div className="min-w-0">
-      <header className="page-head">
-        <div className="min-w-0">
-          <h1 className="text-[1.35rem] font-semibold tracking-[-0.03em]">Higiene</h1>
-          <p className="text-[13px] text-[#9aa1ab]">Saldo, ritmo y hábitos</p>
-        </div>
-      </header>
+      <PageHeader title="Higiene" subtitle="Saldo, ritmo y hábitos" />
 
       <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
         <div className="viz-card xl:col-span-2">
@@ -166,20 +162,19 @@ export default function HealthPage() {
         />
 
         <div className="grid items-stretch gap-4 lg:grid-cols-2">
-          <section className="viz-card flex h-full flex-col">
-            <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Para mirar</h2>
-            <div className="mt-3 space-y-2">
+          <Card title="Para mirar" className="h-full">
+            <div className="space-y-2">
               {insights.slice(0, 4).map((insight, index) => {
                 const config = INSIGHT[insight.type];
                 const Icon = config.icon;
                 return (
                   <div key={index} className={cn("flex items-start gap-3 rounded-2xl px-3 py-3", config.box)}>
-                    <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26]">
+                    <IconWell size="sm" className="mt-0.5 bg-white">
                       <Icon size={14} />
-                    </span>
+                    </IconWell>
                     <div className="min-w-0">
                       <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[#1c1f26]">
-                        <span className="size-1.5 rounded-full" style={{ background: config.dot }} />
+                        <CategoryDot color={config.dot} />
                         {insight.title}
                       </p>
                       <p className="mt-0.5 text-[13px] leading-relaxed text-[#6d7480]">{insight.description}</p>
@@ -188,29 +183,26 @@ export default function HealthPage() {
                 );
               })}
             </div>
-          </section>
+          </Card>
 
-          <section className="viz-card flex h-full flex-col">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Se repiten</h2>
-              <span className="inline-flex items-center gap-1 text-[12px] text-[#9aa1ab]">
-                <RefreshCw size={12} />
-                {recurring.length}
-              </span>
-            </div>
+          <Card title="Se repiten" className="h-full" action={<span className="text-[12px] text-[#9aa1ab]">{recurring.length}</span>}>
             {recurring.length === 0 ? (
-              <p className="mt-4 text-[13px] text-[#9aa1ab]">No hay gastos repetidos todavía.</p>
+              <EmptyState title="No hay gastos repetidos todavía." className="py-8" />
             ) : (
-              <ul className="mt-3 space-y-2">
+              <ul className="space-y-2">
                 {recurring.slice(0, 6).map((item) => (
-                  <li key={item.description} className="flex items-center gap-3 rounded-2xl bg-[#f6f7f9] px-3 py-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-medium">{item.description}</p>
-                      <p className="text-[12px] text-[#9aa1ab]">
-                        {CATEGORY_LABELS[item.category]} · {item.count} veces
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-[14px] font-semibold tabular-nums">{formatChartPesos(item.avgAmount)}</p>
+                  <li key={item.description}>
+                    <ListRow
+                      className="rounded-2xl bg-[#f6f7f9] px-3 py-3"
+                      icon={
+                        <IconWell size="sm">
+                          <RefreshCw size={13} />
+                        </IconWell>
+                      }
+                      title={item.description}
+                      meta={`${CATEGORY_LABELS[item.category]} · ${item.count} veces`}
+                      amount={<span className="tabular-nums">{formatChartPesos(item.avgAmount)}</span>}
+                    />
                   </li>
                 ))}
               </ul>
@@ -220,7 +212,7 @@ export default function HealthPage() {
                 La categoría más pesada del mes es {breakdown[0].label}.
               </p>
             ) : null}
-          </section>
+          </Card>
         </div>
         </div>
       </div>
@@ -231,9 +223,7 @@ export default function HealthPage() {
 function Kpi({ label, value, hint, tone }: { label: string; value: string; hint: string; tone?: string }) {
   return (
     <div className="viz-card !p-4">
-      <p className="text-[12px] text-[#9aa1ab]">{label}</p>
-      <p className={cn("num mt-1 truncate text-[clamp(1.25rem,5vw,1.7rem)]", tone)}>{value}</p>
-      <p className="mt-1 truncate text-[12px] text-[#9aa1ab]">{hint}</p>
+      <Stat label={label} value={value} hint={hint} tone={tone} size="md" />
     </div>
   );
 }

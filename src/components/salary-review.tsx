@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Card, InfoTip } from "@/components/primitives";
 import { formatIso } from "@/lib/format-date";
 import { formatPesos } from "@/lib/money";
 import { reviewSalaryRecords } from "@/lib/salary-links";
@@ -27,13 +28,16 @@ export function SalaryReview() {
   if (!hasWork) return null;
 
   return (
-    <section className="border border-border rounded-2xl p-5 bg-card space-y-4">
-      <div>
-        <h2 className="text-sm font-medium">Cobros para revisar</h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          No borramos nada solos. Vincular une el cobro con su ingreso: si después borrás uno, se va el otro. Sacar del saldo deja el movimiento guardado, pero deja de sumar.
-        </p>
-      </div>
+    <Card
+      title="Cobros para revisar"
+      action={
+        <InfoTip
+          label="Cómo se revisan los cobros"
+          text="No borramos nada solos. Vincular une el cobro con su ingreso: si después borrás uno, se va el otro. Sacar del saldo deja el movimiento guardado, pero deja de sumar."
+        />
+      }
+    >
+      <div className="space-y-4">
 
       {review.duplicatePeriods.map((group) => (
         <p key={group.periodKey} className="text-sm">
@@ -118,6 +122,7 @@ export function SalaryReview() {
           </div>
         );
       })}
-    </section>
+      </div>
+    </Card>
   );
 }

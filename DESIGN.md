@@ -1,27 +1,28 @@
-# Diseño de Shape
+# Sistema visual
 
-Fuente única para cualquiera que toque la UI. Si este archivo y el código discrepan, el código manda y hay que actualizar este documento en el mismo cambio.
+Reglas para cualquiera que toque la UI. Si este archivo y el código discrepan, el código manda y hay que actualizar el documento en el mismo cambio.
 
-No copies archivos, componentes ni el registro de Mebius. La licencia de Mebius no permite publicar esos archivos, y este repositorio es público. La referencia es solo visual. El código es original.
+Para reutilizarlo en otro proyecto: cambiá **Parámetros** y la sección **Shape**. El resto (principios, tokens, tipografía, layout, íconos, gráficos, texto, herramientas, movimiento y checklist) se queda.
 
-## 1. Principios
+## Parámetros
 
-Shape se siente calmo, preciso y con aire. Tarjetas blancas, números grandes, un solo acento por gráfico, mucho gris.
+| Parámetro | Esta instancia |
+| --- | --- |
+| Producto | Shape, finanzas personales |
+| Voz | Español rioplatense, voseo |
+| Locale de números y fechas | `es-AR` |
+| Moneda principal | ARS. USD se muestra aparte |
+| Fuente | Geist, paquete `geist`. Sans en la UI |
+| Marca | `#2F48A1` (`--brand`) |
+| Radio base | `--radius: 1rem`. Tarjeta: 26px, 28px desde `sm` |
+| Densidad | Cómoda. Escala 4, 8, 12, 16, 22. Grilla `gap-4`. No apretar ni dejar huecos muertos |
+| Ingreso / gasto | Verde de ingreso, rojo de gasto. Solo en el monto, el arco o la barra |
 
-No hagas "AI slop":
+### Valores de Shape
 
-- No pongas un ícono del mismo tono que el círculo de atrás.
-- No uses fondos shader, gradientes de demostración ni tipografía mono en la interfaz.
-- No dejes etiquetas en mayúsculas chiquitas (`text-[10px] uppercase tracking-wider`).
-- No estires un gráfico al ancho de la ventana.
-- No repitas el mismo número en dos lugares de la misma pantalla.
-- Una idea por línea. La explicación larga va detrás de un ícono de info, no en un párrafo.
+Están en `src/app/globals.css`. Tailwind v4 los expone con `@theme inline` (`bg-background`, `text-income`, `border-border`).
 
-## 2. Tokens
-
-Están en `src/app/globals.css`. Tailwind v4 los expone con `@theme inline` (`bg-background`, `text-income`, `border-border`, etc.).
-
-### Superficies
+Superficies:
 
 | Token | Valor en `:root` | Uso |
 | --- | --- | --- |
@@ -30,7 +31,7 @@ Están en `src/app/globals.css`. Tailwind v4 los expone con `@theme inline` (`bg
 | `--secondary` / `--muted` / `--accent` | `oklch(0.965 0.003 260)` | Fondos suaves |
 | `--sidebar` | `oklch(0.97 0 0)` | Sidebar |
 
-Literales que usa la UI actual y hay que respetar:
+Literales de superficie que ya usa la UI:
 
 | Uso | Valor |
 | --- | --- |
@@ -40,14 +41,12 @@ Literales que usa la UI actual y hay que respetar:
 | Fila de leyenda | `#f6f7f9` |
 | Activo del nav | `#f3f4f6` |
 
-### Texto
+Texto:
 
 | Token | Valor | Uso |
 | --- | --- | --- |
 | `--foreground` | `oklch(0.22 0.02 265)` | Texto principal del tema |
 | `--muted-foreground` | `oklch(0.58 0.012 260)` | Texto secundario del tema |
-
-Literales de las tarjetas:
 
 | Rol | Color |
 | --- | --- |
@@ -56,16 +55,9 @@ Literales de las tarjetas:
 | Etiqueta | `#9aa1ab` |
 | Caption | `#8b919c` / `#b0b6bf` |
 
-### Bordes
+Bordes: `--border` y `--input` son `oklch(0.92 0.004 260)`. `--ring` es `oklch(0.72 0.02 260)`. El borde de ícono y de tarjeta es `border-black/[0.06]` o `ring-1 ring-black/[0.04]`. Sin borde de color.
 
-| Token | Valor |
-| --- | --- |
-| `--border` / `--input` | `oklch(0.92 0.004 260)` |
-| `--ring` | `oklch(0.72 0.02 260)` |
-
-Borde de ícono y de tarjeta: `border-black/[0.06]` o `ring-1 ring-black/[0.04]`. No uses un borde de color.
-
-### Acento, ingresos y gastos
+Acento, ingresos y gastos:
 
 | Token | Valor | Uso |
 | --- | --- | --- |
@@ -76,21 +68,253 @@ Borde de ícono y de tarjeta: `border-black/[0.06]` o `ring-1 ring-black/[0.04]`
 | `--expense` / `--destructive` | `oklch(0.577 0.245 27.325)` | Montos que salen y acciones destructivas |
 | `--expense-foreground` | `oklch(0.97 0.02 27)` | Texto sobre fondo expense |
 
-Verdes y rojos literales de gráficos (no los mezcles con el ícono):
+Verdes y rojos de gráficos. No los pongas en el pozo del ícono:
 
 | Uso | Hex |
 | --- | --- |
 | Arco de avance, dentro del límite | `#1f9d55` |
-| Arco pasado de límite, pill de suba mala | `#e5484d` |
+| Arco pasado de límite | `#e5484d` |
 | Pista gris del medidor | `#e6e8ee` |
 | Barra de gasto diario | `#16a34a` → `#4ade80` |
 | Bloques de presupuesto | `#f97316` lleno, `#f1f2f4` vacío |
 
-El color de un monto puede ser verde o rojo. El círculo del ícono no.
+Radios: `--radius` es `1rem`. `--radius-sm` a `--radius-4xl` van de `0.6` a `2.6` veces `--radius` (`0.6`, `0.8`, `1`, `1.4`, `1.8`, `2.2`, `2.6`). Chips, `···` y segmentos son `rounded-full`. Filas internas, `rounded-2xl`.
+
+Espaciado: página `px-4 py-4` y desde `sm` `px-6 py-6`. Grilla `gap-4`. Tarjeta `18px 16px 16px`, desde `sm` `22px 22px 18px`. Cabecera de página `14px 16px`, desde `sm` `16px 28px`. Entre título y cuerpo de tarjeta, `mb-4`.
+
+Sombra de tarjeta:
+
+```css
+box-shadow:
+  0 1px 2px rgba(15, 23, 42, 0.04),
+  0 18px 40px rgba(15, 23, 42, 0.045);
+```
+
+Popover y menú: `0 12px 32px rgba(15, 23, 42, 0.12)` más `ring-1 ring-black/[0.06]`.
+
+El modo `.dark` existe y no está activo. No diseñes pantallas oscuras salvo que el cambio lo pida.
+
+## 1. Principios
+
+Calmo, preciso, con aire. Tarjetas claras, números grandes, un solo acento por gráfico, mucho gris.
+
+No hagas "AI slop":
+
+- No pongas un ícono del mismo tono que su contenedor.
+- No uses fondos shader, partículas, WebGL, canvas ni gradientes de demostración.
+- No uses tipografía mono en la interfaz.
+- No dejes etiquetas en mayúsculas chiquitas (`text-[10px] uppercase tracking-wider`).
+- No estires un gráfico al ancho de la ventana.
+- No repitas el mismo número en dos lugares de la misma pantalla.
+- Una idea por línea. La explicación larga va detrás de un ícono de info.
+- No copies código de una referencia con licencia que prohíba publicarlo. La referencia es visual. El código es original.
+
+## 2. Tokens
+
+Nombrá roles (`--background`, `--brand`, `--income`), no hex sueltos en cada componente. Los valores de esta instancia están en Parámetros. No inventes una escala de espacio ni de radio nueva.
+
+El color de un monto puede ser el de ingreso o el de gasto. El círculo del ícono no.
+
+## 3. Tipografía
+
+La sans del parámetro entra por paquete local, no por `next/font/google`. En Shape:
+
+```tsx
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+```
+
+`src/app/layout.tsx` pone las variables en `<html>`. `--font-sans` apunta a la sans. El cuerpo usa `font-weight: 400`. Next 16.2.9 rompe el build de Vercel si Google responde URLs con `&`.
+
+| Rol | Clase | Notas |
+| --- | --- | --- |
+| Monto hero | `num text-[clamp(2rem,7vw,2.6rem)]` | `.num` es 700, tracking `-0.045em`, tabular-nums. Un hero por tarjeta |
+| Monto de tarjeta | `HeroNumber`: `num text-[clamp(1.7rem,6.4vw,2.55rem)]` | |
+| Título de página | `text-[1.35rem] font-semibold tracking-[-0.03em]` | |
+| Título de tarjeta | `text-[17px] font-semibold tracking-[-0.03em]` | |
+| Etiqueta | `text-[13px]`, color de etiqueta | Sin mayúsculas, sin tracking ancho |
+| Cuerpo | `text-[14px] leading-snug` | |
+| Caption | `text-[12px]` o `text-[11px]` | |
+| Stat | `text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tabular-nums` | |
+
+Prohibido en UI nueva: `font-mono` para etiquetas, fechas o montos, y `uppercase tracking-wider` en micro-etiquetas. Los montos pasan por el helper del parámetro de locale.
+
+En Shape: `formatPesos` y `formatMoney` en `src/lib/money.ts`, `formatChartPesos`, `formatAxisPesos` y `formatSignedPercent` en `src/lib/chart-format.ts`. Fechas con `formatIso` (`src/lib/format-date.ts`). No pongas `capitalize` de Tailwind sobre una fecha: convierte "de" en "De".
+
+## 4. Layout
+
+Anatomía de tarjeta:
+
+1. Título.
+2. Subtítulo opcional, una línea.
+3. Acción a la derecha: menú `···` o control segmentado. El `···` abre acciones. No es adorno.
+4. Cuerpo. En una grilla, el cuerpo es `flex-1` y la tarjeta es `h-full`.
+
+Escritorio:
+
+- Contenedor `max-w-6xl`, dos columnas desde `xl` (1280px), `items-stretch`, `gap-4`.
+- Las dos tarjetas de una fila tienen el mismo alto. El gráfico crece y llena la tarjeta. No dejes un blanco abajo.
+- Una fila de ancho completo lleva `xl:col-span-2`.
+- El gráfico mide su caja y el viewBox usa la misma relación de aspecto. No uses `h-auto w-full` en un SVG de serie.
+- Sidebar desde `md`.
+
+Móvil:
+
+- 360 y 390 no desbordan. `overflow-x: clip` no autoriza a recortar contenido.
+- `min-w-0` en grillas y textos largos.
+- `viewportFit: "cover"`. La barra inferior reserva `env(safe-area-inset-bottom)` y no tapa el contenido.
+- El ítem activo es texto oscuro sobre superficie gris.
+
+## 5. Íconos
+
+Pozo neutro, borde sutil, ícono oscuro:
+
+```txt
+flex shrink-0 items-center justify-center rounded-full
+border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]
+```
+
+El ícono nunca es del mismo tono que su contenedor. El color de categoría es un punto de 6px (`size-1.5`) al lado del texto.
+
+Permitido: monto en color de ingreso o gasto, botón sólido de marca o de confirmación con ícono claro, punto o arco o barra de un gráfico.
+
+Prohibido: `bg-income/10 text-income` (o el equivalente de gasto, o un hex del mismo matiz) en el círculo. Nav activo con ícono de color sobre pastilla del mismo color.
+
+## 6. Gráficos
+
+Un solo sistema de SVG propio. Sin Recharts, sin visx, sin otra librería de charts. No reescribas la lógica de los números para dibujarlos.
+
+Dona:
+
+- Arcos con `stroke-dasharray` sobre un círculo. Arranque a las 12 (`rotate(-90)`).
+- `strokeLinecap="round"`. Cada cap sobresale medio grosor. El tramo sin pintar es `stroke + clearGap`. Si no, los caps se pisan.
+- Proporción real del valor. Un mínimo chico para que la categoría se vea, sin pasarse del perímetro.
+- Un solo trazo por segmento.
+
+Medidor:
+
+- Un path semicircular. Pista gris y arco de avance del mismo `strokeWidth` y `strokeLinecap="round"`.
+- El avance es `strokeDasharray` de `π * radio`, recortado al porcentaje. Rojo si pasa de 100.
+- El monto y el porcentaje van debajo del arco.
+- No uses marcas rotadas. Se pixelan y se montan.
+
+Barras: el período inactivo en gris, el elegido con el acento. Eje con el helper corto (`$30 mil`, `$1,2 M`).
+
+Tooltip: en móvil se abre con toque, no solo con hover. Tiene que quedar dentro de la tarjeta. Un dato por fila.
+
+El viewBox y la caja medida tienen la misma relación de aspecto. `preserveAspectRatio="none"` no deforma si el aspecto coincide. No dibujes dos veces el mismo punto.
+
+## 7. Texto
+
+La voz sale del parámetro. En Shape: rioplatense, voseo ("cobrás", "tenés", "configurá"). Sin "tú" ni "vosotros".
+
+Corto. Una idea por línea. La explicación va en el ícono de info (toque y hover). El menú `···` es para acciones, no para ayuda.
+
+No repitas un número que ya está en la misma pantalla.
+
+## 8. Herramientas y cuándo usarlas
+
+No uses todas las librerías a la vez. Elegí por contexto. Evitá un diseño pesado de ver o de usar.
+
+| Herramienta | Cuándo |
+| --- | --- |
+| [shadcn/ui](https://ui.shadcn.com/docs/components) | Base de todas las primitivas. Ya está instalado. Botón, diálogo, input, tooltip y el resto salen de `src/components/ui`. No los reescribas y no los reemplaces por otro kit. |
+| [Aceternity UI](https://ui.aceternity.com/) y [React Bits](https://reactbits.dev/) | Un componente copiado, solo cuando un momento puntual lo necesita. Sin fondos animados, WebGL, canvas, partículas ni shaders pesados. Antes de copiar, mirá la licencia y lo que suma al bundle. |
+| [bencho.dev](https://bencho.dev/) | Referencia visual y de componentes. Mirá la licencia antes de copiar código. |
+| [PrimeReact](https://primereact.dev/components) | No convive con shadcn por defecto: es otro sistema y pesa más. Solo un widget complejo (tabla de datos, calendario de rango) que shadcn no cubra, tematizado con estos tokens e importado por componente. |
+| [NumberFlow](https://number-flow.barvian.me/) | El número que cambia: saldo hero y totales. Es liviano. Preferilo para esos números. No lo pongas en cada fila de una lista. |
+| [GSAP](https://gsap.com/) | Solo una secuencia que CSS no puede hacer. `import()` dinámico, fuera del bundle inicial. El microinteracción por defecto es una transición CSS. |
+| [React Email](https://react.email/) | Solo correos (por ejemplo un resumen semanal). Nunca entra al bundle de la app. |
+
+Performance: import por componente, `import()` dinámico para lo pesado, y ninguna dependencia nueva sin un motivo en la descripción del PR. Si agregás una, mirá el peso en la salida de `next build`.
+
+## 9. Movimiento
+
+Sutil y nunca forzado.
+
+- Duración corta, entre 150 y 300 ms. Ease-out.
+- Sin bounce ni spring que se pase del destino.
+- Respetá `prefers-reduced-motion`. NumberFlow lleva `respectMotionPreference`.
+- Una aparición o un cambio de número. No una escena.
+
+## 10. Checklist antes de abrir un PR
+
+- [ ] Leíste este archivo. El cambio respeta parámetros, tokens, tipografía e íconos.
+- [ ] No copiaste código de una referencia con licencia incompatible, ni agregaste Recharts o visx.
+- [ ] No hay `font-mono` ni etiquetas en mayúsculas en lo que tocaste.
+- [ ] El ícono no es del mismo tono que su fondo. El color de categoría es un punto.
+- [ ] En el breakpoint ancho, las tarjetas de una fila tienen el mismo alto y el gráfico llena el espacio.
+- [ ] A 360 y a 390 no hay scroll horizontal. La barra inferior no tapa contenido.
+- [ ] Los números nuevos pasan por el helper del locale.
+- [ ] No repetiste un dato que ya muestra otra tarjeta de esa pantalla.
+- [ ] La animación, si hay, dura 150–300 ms, ease-out, y respeta `prefers-reduced-motion`.
+- [ ] No sumaste una dependencia sin decir por qué. Si la sumaste, miraste el bundle.
+- [ ] `npm run build` pasa.
+- [ ] Hay captura a 1440 y a 390 de lo que cambió.
+
+## Shape
+
+Inventario de este repo. En otro proyecto esta sección se reemplaza.
+
+No copies archivos, componentes ni el registro de Mebius. La licencia de Mebius no permite publicarlos, y este repositorio es público.
+
+### Primitivas
+
+Están en `src/components/primitives.tsx`. shadcn sigue siendo la base de botón, diálogo, input y tooltip. Estas primitivas arman la anatomía de Shape encima. Reutilizalas antes de crear otra.
+
+| Primitiva | Para qué |
+| --- | --- |
+| `PageHeader` | Título de página, subtítulo y acción. Va con `pageStackClass`. |
+| `Card` | Título, subtítulo, acción, cuerpo `flex-1`. |
+| `CardMenu` | Botón `···` con ítems (`href` o `onSelect`). |
+| `Stat` / `StatRow` | Etiqueta, valor y hint. `size`: `sm`, `md`, `lg`. |
+| `Amount` | Monto es-AR con `formatMoney`. `tone`: `income`, `expense`, `neutral`, `auto`. `signed` pone `+` o `−`. `animate` usa NumberFlow en el hero y en totales. |
+| `IconWell` | Pozo neutro. `size`: `sm`, `md`, `lg`. La clase suelta sigue en `iconWell` (`src/components/viz/ui.tsx`). |
+| `CategoryDot` | Punto de 6px. |
+| `Chip` | Pastilla gris (`Sueldo cobrado`, `US$42 aparte`). |
+| `SegmentedControl` | Segmentos. `viz/ui` lo reexporta como `Segmented`. |
+| `InfoTip` | Ícono de info. Hover con mouse y toque. |
+| `ListRow` | Pozo, título, meta, monto y acciones. |
+| `EmptyState` | Vacío corto, sin emoji ni borde punteado. |
+
+`ChartCard` arma un `Card` y, si no hay `action`, pone `DotLink`. No le cambies la firma: `title`, `subtitle`, `href`, `action`, `children`, `className`.
+
+### Gráficos de Shape
+
+SVG en `src/components/viz`. Los datos salen de `src/lib/chart-series.ts` y de `useMoneySnapshot`.
+
+| Componente | Archivo | Props | Cuándo |
+| --- | --- | --- | --- |
+| `MonthlyBarsCard` | `src/components/viz/monthly-bars.tsx` | `points: MonthFlowPoint[]` | Ingresos vs gastos por mes. `monthlyFlow`. |
+| `DailyBarsCard` | `src/components/viz/daily-bars.tsx` | `days: AlignedDay[]`, `periodLabel` | Gasto diario del período contra el anterior. `alignedSpendDays`. |
+| `ExpenseDonutCard` | `src/components/viz/expense-donut.tsx` | `total`, `previous`, `slices`, `window`, `onWindow` | Reparto de gastos. `expenseDonut`. |
+| `BudgetGaugeCard` | `src/components/viz/budget-gauge.tsx` | `spent`, `expected`, `left`, `pct`, `periodLabel` | Porcentaje del sueldo esperado. `allowance`. |
+| `BudgetBlocksCard` | `src/components/viz/budget-blocks.tsx` | `spent`, `expected`, `left`, `daysLeft`, `perDay` | "Te quedan $X para N días". |
+| `DayCylindersCard` | `src/components/viz/day-cylinders.tsx` | `days`, `movements`, `periodLabel` | Tocá un día y ves sus movimientos. |
+| `MerchantCard` | `src/components/viz/merchant-card.tsx` | `model: MerchantCardModel` | Comercios. `merchantCard`. |
+| `BalanceLineCard` | `src/components/viz/balance-line.tsx` | `points: BalancePoint[]` | Saldo al cierre de cada mes. `balanceSeries`. |
+| `FlowAreaCard` | `src/components/viz/flow-area.tsx` | `points`, `currentLabel`, `delta` | Este período contra el anterior. `periodArea`. |
+| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments` | Tira del mes. `categoryStrip`. |
+
+En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `TipAnchor`, `EmptyChart`, `HeroNumber`, `DeltaPill`, `useChartPlot`. Geometría en `src/components/viz/geometry.ts`.
+
+La dona de Shape usa grosor 18 y hueco visible 9 (`layoutDonut`). El medidor usa radio 78 y el mismo grosor (`budget-gauge.tsx`). El plot usa `chartPlotFrameClass` y `chartPlotSvgClass`.
+
+Pares que tienen que quedar parejos:
+
+| Pantalla | Fila |
+| --- | --- |
+| Inicio | Flujo de caja / Gasto diario |
+| Inicio | Gastos / Del sueldo |
+| Inicio | Día por día / Comercios |
+| Higiene | Saldo / Este período y el anterior |
+| Higiene | Para mirar / Se repiten |
+
+Nav inferior, solo `< md`, cinco ítems: Inicio, Movimientos, Sueldo, Higiene, Más. El contenido reserva `pb-[calc(4.6rem+env(safe-area-inset-bottom))]`. Sidebar `md:w-56`, contenido `md:ml-56`.
 
 ### Paleta de categorías
 
-Punto chico, nunca el relleno del ícono. Definida en `DOT` de `src/components/viz/day-cylinders.tsx`:
+Punto chico, nunca el relleno del ícono. `DOT` en `src/components/viz/day-cylinders.tsx`:
 
 | Categoría | Color |
 | --- | --- |
@@ -105,285 +329,34 @@ Punto chico, nunca el relleno del ícono. Definida en `DOT` de `src/components/v
 | savings | `#1f9d55` |
 | other | `#6d7480` |
 
-Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C14E`. El resto va con trama `#F3EEE4`.
+Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C14E`. El resto va con trama `#F3EEE4`. Tira (`STRIP_COLORS`): `#8B7CF6`, `#6B93F5`, `#F0A05A`, `#3DCA86`, `#67B7F0`, `#F0734A`. Comercios, solo el punto: `#3b82f6`, `#f97316`, `#8b5cf6`, `#14b8a6`.
 
-Tira (`STRIP_COLORS`): `#8B7CF6`, `#6B93F5`, `#F0A05A`, `#3DCA86`, `#67B7F0`, `#F0734A`.
-
-Comercios, solo el punto de la fila: `#3b82f6`, `#f97316`, `#8b5cf6`, `#14b8a6`.
-
-### Radios
-
-| Token | Valor |
-| --- | --- |
-| `--radius` | `1rem` |
-| `--radius-sm` … `--radius-4xl` | `0.6` a `2.6` veces `--radius` |
-| `.viz-card` | `26px`; desde `sm`, `28px` |
-| Chips, `···`, segmentos | `rounded-full` |
-| Filas internas | `rounded-2xl` |
-
-### Espaciado
-
-| Lugar | Valor |
-| --- | --- |
-| Página | `px-4 py-4`, desde `sm` `px-6 py-6` |
-| Grilla | `gap-4` |
-| `.viz-card` | `18px 16px 16px`; desde `sm`, `22px 22px 18px` |
-| `.page-head` | `14px 16px`; desde `sm`, `16px 28px` |
-| Entre título y cuerpo de tarjeta | `mb-4` en el header de `ChartCard` |
-
-No inventes una escala nueva. Usá 4, 8, 12, 16, 22.
-
-### Sombras
-
-Tarjeta:
-
-```css
-box-shadow:
-  0 1px 2px rgba(15, 23, 42, 0.04),
-  0 18px 40px rgba(15, 23, 42, 0.045);
-```
-
-Popover y menú: `0 12px 32px rgba(15, 23, 42, 0.12)` más `ring-1 ring-black/[0.06]`.
-
-El modo `.dark` existe en `globals.css`. La app no lo activa. No diseñes pantallas oscuras salvo que el cambio lo pida.
-
-## 3. Tipografía
-
-Geist entra por el paquete `geist`, no por `next/font/google`.
-
-```tsx
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-```
-
-`src/app/layout.tsx` pone `GeistSans.variable` y `GeistMono.variable` en `<html>`. Las variables CSS son `--font-geist-sans` y `--font-geist-mono`. `--font-sans` apunta a la sans. El cuerpo usa `font-weight: 400`.
-
-No uses `next/font/google` para estas fuentes. Next 16.2.9 rompe el build de Vercel cuando Google responde URLs con `&`.
-
-### Escala
-
-| Rol | Clase actual | Notas |
-| --- | --- | --- |
-| Monto hero | `num text-[clamp(2rem,7vw,2.6rem)]` | `.num` es 700, tracking `-0.045em`, tabular-nums |
-| Monto de tarjeta | `HeroNumber`: `num text-[clamp(1.7rem,6.4vw,2.55rem)] text-[#16181d]` | Un hero por tarjeta |
-| Título de página | `text-[1.35rem] font-semibold tracking-[-0.03em]` | |
-| Título de tarjeta | `text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]` | |
-| Etiqueta | `text-[13px] text-[#9aa1ab]` | Sin mayúsculas, sin tracking ancho |
-| Cuerpo | `text-[14px] leading-snug text-[#6d7480]` | |
-| Caption | `text-[12px]` o `text-[11px] text-[#b0b6bf]` | |
-| Stat | `text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tabular-nums` | |
-
-`HeroNumber` está en `src/components/viz/ui.tsx`.
-
-### Prohibido en UI nueva
-
-- `font-mono` para etiquetas, fechas o montos de tarjeta. Los pesos van con `formatPesos`, `formatChartPesos` o `formatMoney`.
-- `uppercase tracking-wider` en micro-etiquetas.
-- Más de un tamaño hero en la misma tarjeta.
-
-Queda `font-mono` en pantallas viejas (formularios, tarjetas de crédito). No lo copies. Si tocás esa pantalla, pasala a sans.
-
-### Números
-
-Siempre es-AR.
-
-| Helper | Archivo | Cuándo |
-| --- | --- | --- |
-| `formatPesos` | `src/lib/money.ts` | Montos de la app. Enteros sin decimales; si hay centavos, dos. Signo `−`. |
-| `formatMoney` | `src/lib/money.ts` | Cuando la moneda puede ser USD (`US$`) |
-| `formatChartPesos` | `src/lib/chart-format.ts` | El mismo criterio, para gráficos |
-| `formatAxisPesos` | `src/lib/chart-format.ts` | Ejes: `$30 mil`, `$1,2 M` |
-| `formatSignedPercent` | `src/lib/chart-format.ts` | `+1,5%` / `−0,4%` |
-
-No uses `toLocaleString("en-US")` ni `$1,234.56`.
-
-Fechas con `formatIso` (`src/lib/format-date.ts`) y `date-fns/locale/es`. No pongas `capitalize` de Tailwind sobre una fecha: convierte "de" en "De".
-
-## 4. Layout
-
-### Anatomía de tarjeta
-
-Usá `ChartCard` (`src/components/viz/ui.tsx`) o la clase `.viz-card`.
-
-1. Título a 17px.
-2. Subtítulo opcional, 13px, `#9aa1ab`.
-3. Acción a la derecha: `DotLink` (un `···` redondo) o un `Segmented`. El `···` de Saldo real abre el menú de ajustar y corregir; no lo dejes como adorno.
-4. Cuerpo. Si la tarjeta está en una grilla, el cuerpo es `flex-1`.
-
-`ChartCard` ya es `flex h-full min-h-0 flex-col`. El children va en un contenedor `flex-1`.
-
-### Escritorio
-
-Contenedor de Inicio e Higiene:
-
-```txt
-mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4
-px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2
-```
-
-- Dos columnas desde `xl` (1280px).
-- `items-stretch`. Las dos tarjetas de la fila tienen el mismo alto.
-- Una fila de ancho completo lleva `xl:col-span-2` (saldo, bloques de presupuesto, últimos movimientos, tira de categorías).
-- El gráfico vive en `chartPlotFrameClass` (`relative min-h-[210px] w-full flex-1`) y el SVG en `chartPlotSvgClass` (`absolute inset-0 h-full w-full`). `useChartPlot` recalcula el alto del viewBox para que el dibujo llene la tarjeta sin deformarse y sin dejar un blanco abajo.
-- No uses `h-auto w-full` en un SVG de serie: en una columna ancha el alto se dispara.
-- Sidebar desde `md`: `w-56`, contenido `md:ml-56`.
-
-Pares que ya tienen que quedar parejos:
-
-| Pantalla | Fila |
-| --- | --- |
-| Inicio | Flujo de caja / Gasto diario |
-| Inicio | Gastos / Del sueldo |
-| Inicio | Día por día / Comercios |
-| Higiene | Saldo / Este período y el anterior |
-| Higiene | Para mirar / Se repiten |
-
-### Móvil
-
-- Anchos que no pueden desbordar: 360 y 390.
-- `html, body` tienen `overflow-x: clip` y `max-width: 100%`. Eso no autoriza a recortar contenido: el contenido tiene que entrar.
-- `min-w-0` en grillas, flex y textos largos. `truncate` en el nombre, no en el monto si podés bajar el tamaño.
-- Viewport: `viewportFit: "cover"` en `src/app/layout.tsx`.
-- Barra inferior, solo `< md`. El contenido reserva `pb-[calc(4.6rem+env(safe-area-inset-bottom))]`. La barra también usa `env(safe-area-inset-bottom)` y los inset izquierdo y derecho.
-- Cinco ítems: Inicio, Movimientos, Sueldo, Higiene, Más. El resto sale en la hoja de Más.
-- Ítem activo: texto `#16181d` sobre superficie gris. Inactivo: `#8b919c`. Sin ícono azul sobre fondo azul.
-
-## 5. Íconos
-
-Clase obligatoria, `iconWell` en `src/components/viz/ui.tsx`:
-
-```txt
-flex size-9 shrink-0 items-center justify-center rounded-full
-border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]
-```
-
-El ícono es `#1c1f26`. El fondo es gris. Nunca verdes sobre verde, nunca violeta sobre violeta, nunca rojo sobre rojo.
-
-El color de categoría es un punto de 6px (`size-1.5`) al lado del texto, con `DOT`.
-
-Permitido:
-
-- Monto en `text-income` o `text-expense`.
-- Botón sólido de marca o de confirmación, con ícono claro sobre fondo oscuro.
-- Punto, arco o barra de un gráfico.
-
-Prohibido:
-
-- `bg-income/10 text-income` (o expense, o un hex del mismo matiz) en el círculo del ícono.
-- Nav activo con ícono de color sobre pastilla del mismo color.
-
-## 6. Gráficos
-
-Un solo sistema: SVG en `src/components/viz`. No agregues Recharts, visx ni otra librería. Los datos salen de `src/lib/chart-series.ts` y de `useMoneySnapshot`. No reescribas la lógica de plata.
-
-### Inventario
-
-| Componente | Archivo | Props | Cuándo |
-| --- | --- | --- | --- |
-| `MonthlyBarsCard` | `src/components/viz/monthly-bars.tsx` | `points: MonthFlowPoint[]` | Ingresos vs gastos por mes. `monthlyFlow`. |
-| `DailyBarsCard` | `src/components/viz/daily-bars.tsx` | `days: AlignedDay[]`, `periodLabel` | Gasto diario del período contra el anterior. `alignedSpendDays`. |
-| `ExpenseDonutCard` | `src/components/viz/expense-donut.tsx` | `total`, `previous`, `slices: DonutSlice[]`, `window`, `onWindow` | Reparto de gastos. `expenseDonut`. |
-| `BudgetGaugeCard` | `src/components/viz/budget-gauge.tsx` | `spent`, `expected`, `left`, `pct`, `periodLabel` | Porcentaje del sueldo esperado. `allowance`. |
-| `BudgetBlocksCard` | `src/components/viz/budget-blocks.tsx` | `spent`, `expected`, `left`, `daysLeft`, `perDay` | "Te quedan $X para N días". |
-| `DayCylindersCard` | `src/components/viz/day-cylinders.tsx` | `days`, `movements: CylinderMovement[]`, `periodLabel` | Tocá un día y ves sus movimientos. |
-| `MerchantCard` | `src/components/viz/merchant-card.tsx` | `model: MerchantCardModel` | Comercios con campo `merchant`. `merchantCard`. |
-| `BalanceLineCard` | `src/components/viz/balance-line.tsx` | `points: BalancePoint[]` | Saldo al cierre de cada mes. `balanceSeries`. |
-| `FlowAreaCard` | `src/components/viz/flow-area.tsx` | `points: AreaPoint[]`, `currentLabel`, `delta` | Este período contra el anterior. `periodArea`. |
-| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments` | Tira del mes. `categoryStrip`. |
-
-Piezas compartidas en `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `TipAnchor`, `EmptyChart`, `HeroNumber`, `DeltaPill`, `useChartPlot`.
-
-Geometría en `src/components/viz/geometry.ts`: `topRoundedBar`, `smoothLine`, `smoothArea`, `yAt`, `clampPercent`.
-
-### Reglas
-
-Dona (`layoutDonut` en `expense-donut.tsx`):
-
-- Arcos con `stroke-dasharray` sobre un círculo. Arranque a las 12 (`rotate(-90)`).
-- `strokeLinecap="round"`. Cada cap sobresale medio grosor. El tramo sin pintar es `stroke + clearGap` (hoy grosor 18 y hueco visible 9). Si no, los caps se pisan.
-- Proporción real del valor. Un mínimo (`minDash`, tope 7) para que la categoría chica se vea, sin pasarse del perímetro.
-- Un solo trazo por segmento. No superpongas otro arco decorativo.
-
-Medidor (`budget-gauge.tsx`):
-
-- Un solo path semicircular. Pista `#e6e8ee` y avance `#1f9d55` (rojo `#e5484d` si el porcentaje pasa de 100).
-- Mismo `strokeWidth` (18) y mismo `strokeLinecap="round"`.
-- El avance es `strokeDasharray` de la longitud `π * radio`, recortado al porcentaje.
-- El monto y el porcentaje van debajo del arco, no encima.
-- No vuelvas a las marcas rotadas. Se pixelan y se montan.
-
-Barras:
-
-- Mes inactivo en gris. El mes elegido lleva el acento (cian ingresos, magenta gastos) y el tooltip.
-- El diario: barra verde adelante, gris del período anterior atrás.
-- Eje con `formatAxisPesos`.
-
-Tooltip:
-
-- `HoverTip` dentro de `TipAnchor`.
-- En móvil se abre con toque (`onClick` en la columna), no solo con hover.
-- Tiene que quedar dentro de la tarjeta. `clampPercent` evita que se salga por los costados.
-- Un dato por fila: barra de color, monto, etiqueta corta.
-
-Precisión:
-
-- El viewBox y el alto medido por `useChartPlot` tienen la misma relación de aspecto. `preserveAspectRatio="none"` no deforma porque el aspecto coincide.
-- No agregues un segundo dibujo del mismo punto (marca llena más marca vacía).
-
-## 7. Texto
-
-Español rioplatense, voseo: "cobrás", "tenés", "configurá". No uses "tú" ni "vosotros".
-
-Corto. Una idea por línea.
-
-- Bien: "Te quedan $1.147.192 del sueldo · cobrás en 6 días".
-- Mal: un párrafo que explique la base, el sueldo esperado y los ajustes en la cara de la tarjeta.
-
-La explicación va en el ícono de info (toque y hover), como en Saldo real. El menú `···` es para acciones, no para texto de ayuda.
-
-No repitas un número que ya está en la misma pantalla. El porcentaje del sueldo vive en Del sueldo, no en el saldo.
-
-## 8. Inventario de componentes
-
-Antes de crear un componente, buscá si este ya hace el trabajo.
+### Componentes de pantalla
 
 | Archivo | Para qué |
 | --- | --- |
-| `src/components/viz/ui.tsx` | Tarjeta, tooltip, número, ícono neutro, plot que se estira |
-| `src/components/viz/*` | Gráficos de la sección 6 |
-| `src/components/real-balance-panel.tsx` | Tarjeta de saldo en Inicio. Incluye los diálogos de ajustar y corregir |
-| `src/components/money-agreement.tsx` | Los tres números iguales en Movimientos e Higiene. No lo dupliques dentro del saldo |
+| `src/components/real-balance-panel.tsx` | Tarjeta de saldo en Inicio. Diálogos de ajustar y corregir |
+| `src/components/money-agreement.tsx` | Los tres números en Movimientos e Higiene. No lo dupliques en el saldo |
 | `src/components/sidebar.tsx` | Nav de escritorio y barra inferior |
-| `src/components/transaction-list.tsx` | Lista de movimientos, agrupada por día |
+| `src/components/transaction-list.tsx` | Lista de movimientos |
 | `src/components/transaction-form.tsx` | Alta de movimiento |
 | `src/components/salary-setup.tsx` | Alta y edición del sueldo |
-| `src/components/salary-countdown.tsx` | Cobro que viene y registro de que cobró |
+| `src/components/salary-countdown.tsx` | Cobro que viene |
 | `src/components/salary-history.tsx` | Cobros anteriores |
 | `src/components/salary-review.tsx` | Sueldos para revisar |
 | `src/components/goal-card.tsx` / `goal-form.tsx` | Una meta y su formulario |
 | `src/components/subscription-form.tsx` | Alta de suscripción |
 | `src/components/card-form.tsx` / `installment-form.tsx` | Tarjeta y cuotas |
-| `src/components/credit-card-visual.tsx` | La tarjeta dibujada |
+| `src/components/credit-card-visual.tsx` | La tarjeta dibujada. La cara plástica puede llevar el número con tracking ancho. Los montos de al lado van con `Amount` |
 | `src/components/login-form.tsx` | Entrar y crear cuenta |
 | `src/components/status-banners.tsx` | Error de sync e importación |
-| `src/components/shape-provider.tsx` | Sesión. Con `NEXT_PUBLIC_SHAPE_PREVIEW=1` carga datos locales |
+| `src/components/shape-provider.tsx` | Sesión. `NEXT_PUBLIC_SHAPE_PREVIEW=1` carga datos locales |
 | `src/components/user-guard.tsx` | Manda a login si no hay sesión |
-| `src/components/ui/*` | Primitivas (botón, diálogo, input, tooltip). No las reescribas |
 
-`balance-card.tsx`, `metric-card.tsx`, `goals-mini.tsx` y `recent-transactions.tsx` no están en las pantallas actuales. No los uses como modelo.
+`balance-card.tsx`, `metric-card.tsx`, `goals-mini.tsx` y `recent-transactions.tsx` no están en las pantallas. No los uses como modelo.
+
+`transaction-list.tsx`, `transaction-form.tsx` y `money-agreement.tsx` también los usa Movimientos. Si les cambiás la firma, anotalo en el PR.
 
 Pantallas: `src/app/(main)/page.tsx` (Inicio), `transactions`, `salary`, `health` (Higiene), `cards`, `subscriptions`, `goals`, `profile`, y `src/app/login/page.tsx`.
 
-## 9. Checklist antes de abrir un PR
-
-- [ ] Leíste este archivo y el cambio respeta los tokens, la tipografía y los íconos.
-- [ ] No copiaste código de Mebius ni agregaste Recharts o visx.
-- [ ] No hay `font-mono` ni etiquetas en mayúsculas en lo que tocaste.
-- [ ] El ícono no es del mismo tono que su fondo. El color de categoría es un punto.
-- [ ] En `xl`, las tarjetas de una fila tienen el mismo alto y el gráfico llena el espacio.
-- [ ] A 360 y a 390 no hay scroll horizontal.
-- [ ] La barra inferior no tapa contenido y respeta el safe area.
-- [ ] Los números nuevos pasan por los helpers es-AR.
-- [ ] No repetiste un dato que ya muestra otra tarjeta de esa pantalla.
-- [ ] `npm run build` pasa.
-- [ ] Hay captura a 1440 y a 390 de lo que cambió.
+El porcentaje del sueldo vive en Del sueldo, no en el saldo.

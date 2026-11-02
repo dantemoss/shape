@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import NumberFlow from "@number-flow/react";
-import { Ellipsis, Info, Wallet } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Wallet } from "lucide-react";
+import { Amount, CardMenu, Chip, IconWell, InfoTip, Stat, StatRow } from "@/components/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +18,6 @@ import { adjustmentForTarget, buildMoneySnapshot, formatPesos } from "@/lib/mone
 import { useShapeStore } from "@/lib/store";
 import { useMoneySnapshot } from "@/lib/use-money";
 import { todayISO } from "@/lib/dates";
-import { cn } from "@/lib/utils";
 
 function parseAmount(raw: string): number | null {
   const normalized = raw.trim().replace(/\s/g, "").replace(",", ".");
@@ -82,24 +80,34 @@ export function RealBalancePanel() {
   return (
     <div className="viz-card">
       <div className="mb-4 flex items-center gap-2">
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]">
+        <IconWell size="sm">
           <Wallet size={13} />
-        </div>
+        </IconWell>
         <span className="text-[15px] font-medium text-[#1c1f26]">Saldo real</span>
-        <InfoNote text={info} />
+        <InfoTip text={info} label="Cómo se calcula el saldo" />
         <div className="ml-auto">
           <CardMenu
-            ledgerReady={ledgerReady}
-            hasBaseline={snapshot.account.hasBaseline}
-            onReconcile={() => setReconcileOpen(true)}
-            onBaseline={() => setBaselineOpen(true)}
+            label="Más opciones del saldo"
+            items={[
+              { label: "Ver movimientos", href: "/transactions" },
+              {
+                label: "Ajustar a mi saldo real",
+                disabled: !ledgerReady || !snapshot.account.hasBaseline,
+                onSelect: () => setReconcileOpen(true),
+              },
+              {
+                label: snapshot.account.hasBaseline ? "Corregir saldo inicial" : "Cargar saldo inicial",
+                disabled: !ledgerReady,
+                onSelect: () => setBaselineOpen(true),
+              },
+            ]}
           />
         </div>
       </div>
 
       {snapshot.account.hasBaseline ? (
-        <p className={cn("num text-[clamp(2rem,7vw,2.6rem)]", balance < 0 && "text-expense")}>
-          $<NumberFlow value={balance} locales="es-AR" format={{ maximumFractionDigits: 2 }} />
+        <p className="num text-[clamp(2rem,7vw,2.6rem)]">
+          <Amount value={balance} tone={balance < 0 ? "expense" : "neutral"} animate />
         </p>
       ) : (
         <p className="text-[1.6rem] font-semibold tracking-tight text-[#9aa1ab]">Todavía no hay saldo</p>
@@ -109,24 +117,20 @@ export function RealBalancePanel() {
 
       {(salaryChip || usd) && (
         <div className="mt-3 flex flex-wrap gap-2">
-          {salaryChip ? (
-            <span className="rounded-full bg-[#f4f5f7] px-2.5 py-1 text-[12px] font-medium text-[#1c1f26]">{salaryChip}</span>
-          ) : null}
-          {usd ? (
-            <span className="rounded-full bg-[#f4f5f7] px-2.5 py-1 text-[12px] font-medium text-[#1c1f26]">{usd}</span>
-          ) : null}
+          {salaryChip ? <Chip>{salaryChip}</Chip> : null}
+          {usd ? <Chip>{usd}</Chip> : null}
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-3 gap-3 border-t border-black/[0.06] pt-4">
-        <Stat label="Entró este mes" value={formatPesos(snapshot.calendarMonth.income)} tone="text-income" />
-        <Stat label="Salió este mes" value={formatPesos(snapshot.calendarMonth.expense)} tone="text-expense" />
+      <StatRow className="mt-5 border-t border-black/[0.06] pt-4">
+        <Stat label="Entró este mes" value={<Amount value={snapshot.calendarMonth.income} tone="income" />} />
+        <Stat label="Salió este mes" value={<Amount value={snapshot.calendarMonth.expense} tone="expense" />} />
         <Stat
           label="Próximo cobro"
           value={period ? formatIso(period.end, "d 'de' MMM") : "Sin fecha"}
           hint={payWhen ?? undefined}
         />
-      </div>
+      </StatRow>
 
       {!ledgerReady ? (
         <p className="mt-4 text-[13px] leading-snug text-[#8b919c]">
@@ -161,133 +165,6 @@ export function RealBalancePanel() {
           setReconcileOpen(false);
         }}
       />
-    </div>
-  );
-}
-
-function Stat({ label, value, hint, tone }: { label: string; value: string; hint?: string; tone?: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="text-[13px] text-[#9aa1ab]">{label}</p>
-      <p className={cn("mt-1 truncate text-[clamp(0.82rem,3.2vw,1rem)] font-semibold tracking-tight tabular-nums", tone ?? "text-[#1c1f26]")}>
-        {value}
-      </p>
-      {hint ? <p className="mt-0.5 text-[13px] text-[#6d7480]">{hint}</p> : null}
-    </div>
-  );
-}
-
-function InfoNote({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  const [hover, setHover] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
-  const shown = open || hover;
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [open]);
-
-  return (
-    <span
-      ref={ref}
-      className="relative"
-      onPointerEnter={(event) => {
-        if (event.pointerType === "mouse") setHover(true);
-      }}
-      onPointerLeave={(event) => {
-        if (event.pointerType === "mouse") setHover(false);
-      }}
-    >
-      <button
-        type="button"
-        aria-label="Cómo se calcula el saldo"
-        aria-expanded={shown}
-        onClick={() => setOpen((value) => !value)}
-        className="flex size-6 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26]"
-      >
-        <Info size={13} />
-      </button>
-      {shown ? (
-        <span className="absolute top-8 left-0 z-30 w-[min(18rem,calc(100vw-3rem))] rounded-2xl bg-white p-3 text-[13px] leading-relaxed text-[#3a4150] shadow-[0_12px_32px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.06]">
-          {text}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
-function CardMenu({
-  ledgerReady,
-  hasBaseline,
-  onReconcile,
-  onBaseline,
-}: {
-  ledgerReady: boolean;
-  hasBaseline: boolean;
-  onReconcile: () => void;
-  onBaseline: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: PointerEvent) => {
-      if (!ref.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [open]);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        aria-label="Más opciones del saldo"
-        aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
-        className="flex size-9 items-center justify-center rounded-full bg-[#f5f6f8] text-[#a0a6b0] ring-1 ring-black/[0.04]"
-      >
-        <Ellipsis size={16} />
-      </button>
-      {open ? (
-        <div className="absolute top-11 right-0 z-30 w-56 rounded-2xl bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.06]">
-          <Link
-            href="/transactions"
-            onClick={() => setOpen(false)}
-            className="block rounded-xl px-3 py-2.5 text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9]"
-          >
-            Ver movimientos
-          </Link>
-          <button
-            type="button"
-            disabled={!ledgerReady || !hasBaseline}
-            onClick={() => {
-              setOpen(false);
-              onReconcile();
-            }}
-            className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9] disabled:opacity-40"
-          >
-            Ajustar a mi saldo real
-          </button>
-          <button
-            type="button"
-            disabled={!ledgerReady}
-            onClick={() => {
-              setOpen(false);
-              onBaseline();
-            }}
-            className="block w-full rounded-xl px-3 py-2.5 text-left text-[14px] text-[#1c1f26] hover:bg-[#f6f7f9] disabled:opacity-40"
-          >
-            {hasBaseline ? "Corregir saldo inicial" : "Cargar saldo inicial"}
-          </button>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -374,8 +251,8 @@ function BaselineDialog({
             <Input id="account-date" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
           </div>
           {preview?.account.hasBaseline && (
-            <p className="text-sm font-mono">
-              Con esta base, hoy tendrías {formatPesos(preview.account.balance)}.
+            <p className="text-[14px] text-[#3a4150]">
+              Con esta base, hoy tendrías <Amount value={preview.account.balance} tone={preview.account.balance < 0 ? "expense" : "neutral"} />.
             </p>
           )}
           <Button type="submit" className="w-full" disabled={parsed == null || !date}>
@@ -453,7 +330,7 @@ function ReconcileDialog({
           )}
           {delta != null && (
             <p className="text-sm">
-              Vamos a anotar un ajuste de <span className="font-mono font-medium">{formatPesos(delta)}</span> con fecha de hoy.
+              Vamos a anotar un ajuste de <Amount value={delta} tone={delta < 0 ? "expense" : "neutral"} className="font-medium" /> con fecha de hoy.
             </p>
           )}
           <Button type="submit" className="w-full" disabled={target == null || delta == null}>

@@ -16,7 +16,6 @@ import { MerchantCard } from "@/components/viz/merchant-card";
 import { MonthlyBarsCard } from "@/components/viz/monthly-bars";
 import { argentinaHour } from "@/lib/dates";
 import { formatIso } from "@/lib/format-date";
-import { formatMoney } from "@/lib/money";
 import {
   alignedSpendDays,
   allowance,
@@ -30,8 +29,7 @@ import {
 import { useShapeStore } from "@/lib/store";
 import { CATEGORY_LABELS } from "@/lib/types";
 import { useMoneySnapshot } from "@/lib/use-money";
-import { iconWell } from "@/components/viz/ui";
-import { cn } from "@/lib/utils";
+import { Amount, Card, EmptyState, IconWell, ListRow, PageHeader } from "@/components/primitives";
 
 function sentenceCase(value: string): string {
   return value.charAt(0).toLocaleUpperCase("es-AR") + value.slice(1);
@@ -102,13 +100,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-w-0">
-      <header className="page-head">
-        <div className="min-w-0">
-          <h1 className="truncate text-[1.35rem] font-semibold tracking-[-0.03em]">
-            {userProfile ? greeting(userProfile.name) : "Inicio"}
-          </h1>
-          <p className="text-[13px] text-[#9aa1ab]">{sentenceCase(formatIso(snapshot.today, "EEEE d 'de' MMMM"))}</p>
-        </div>
+      <PageHeader
+        title={userProfile ? greeting(userProfile.name) : "Inicio"}
+        subtitle={sentenceCase(formatIso(snapshot.today, "EEEE d 'de' MMMM"))}
+        action={
         <Dialog open={newTxOpen} onOpenChange={setNewTxOpen}>
           <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
             <Plus size={15} />
@@ -122,7 +117,8 @@ export default function DashboardPage() {
             <TransactionForm onSuccess={() => setNewTxOpen(false)} />
           </DialogContent>
         </Dialog>
-      </header>
+        }
+      />
 
       <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
         <div className="xl:col-span-2">
@@ -164,42 +160,44 @@ export default function DashboardPage() {
         <DayCylindersCard days={days} movements={movements} periodLabel={periodLabel} />
         <MerchantCard model={merchants} />
 
-        <section className="viz-card xl:col-span-2">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-[17px] font-semibold tracking-[-0.03em]">Últimos movimientos</h2>
+        <Card
+          className="xl:col-span-2"
+          title="Últimos movimientos"
+          action={
             <Link href="/transactions" className="text-[13px] font-medium text-[#6d7480]">
               Ver todo
             </Link>
-          </div>
+          }
+        >
           {recent.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-[#9aa1ab]">Todavía no hay movimientos.</p>
+            <EmptyState title="Todavía no hay movimientos." />
           ) : (
             <ul className="divide-y divide-black/[0.04]">
               {recent.map((transaction) => (
-                <li key={transaction.id} className="flex items-center gap-3 py-3">
-                  <span className={iconWell}>
-                    {transaction.type === "income" ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[14px] font-medium">{transaction.description}</span>
-                    <span className="block truncate text-[12px] text-[#9aa1ab]">
-                      {CATEGORY_LABELS[transaction.category]} · {formatIso(transaction.date, "d MMM")}
-                    </span>
-                  </span>
-                  <span
-                    className={cn(
-                      "shrink-0 text-[14px] font-semibold tabular-nums",
-                      transaction.type === "income" ? "text-[#1f9d55]" : "text-[#1c1f26]"
-                    )}
-                  >
-                    {transaction.type === "expense" ? "−" : "+"}
-                    {formatMoney(Math.abs(transaction.amount), transaction.currency)}
-                  </span>
+                <li key={transaction.id}>
+                  <ListRow
+                    className="py-3"
+                    icon={
+                      <IconWell>
+                        {transaction.type === "income" ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}
+                      </IconWell>
+                    }
+                    title={transaction.description}
+                    meta={`${CATEGORY_LABELS[transaction.category]} · ${formatIso(transaction.date, "d MMM")}`}
+                    amount={
+                      <Amount
+                        value={Math.abs(transaction.amount)}
+                        currency={transaction.currency}
+                        tone={transaction.type === "income" ? "income" : "neutral"}
+                        signed
+                      />
+                    }
+                  />
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Card>
       </div>
     </div>
   );

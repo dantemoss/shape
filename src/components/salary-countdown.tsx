@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CheckCircle2, Plus } from "lucide-react";
+import { Amount, IconWell, InfoTip, Stat, StatRow } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -39,10 +40,10 @@ function DaySegments({ elapsed, total }: { elapsed: number; total: number }) {
           />
         ))}
       </div>
-      <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
-        <span>día 1</span>
-        <span className="text-income font-medium">día {elapsed} de {total}</span>
-        <span>día {total}</span>
+      <div className="flex justify-between text-[12px] text-[#9aa1ab]">
+        <span>Día 1</span>
+        <span className="font-medium text-[#1c1f26]">Día {elapsed} de {total}</span>
+        <span>Día {total}</span>
       </div>
     </div>
   );
@@ -90,49 +91,19 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
   if (!next) return null;
 
   return (
-    <div className="space-y-4 flex flex-col items-center w-full">
-      {/* ── Card principal ── */}
-      <div
-        className={cn(
-          "relative w-full overflow-hidden rounded-2xl border",
-          next.isToday ? "border-income/40" : "border-border"
-        )}
-        style={{ backgroundColor: "oklch(1 0 0)" }}
-      >
-        {/* Imagen de fondo — azul, en el margen derecho, fusionada */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: "url('/salary-bg.png')",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right -10px top",
-            backgroundSize: "48% auto",
-            opacity: 0.07,
-            maskImage: "linear-gradient(to left, black 0%, black 20%, transparent 65%)",
-            WebkitMaskImage: "linear-gradient(to left, black 0%, black 20%, transparent 65%)",
-          }}
-        />
-
-        {/* Botón icono — esquina superior derecha */}
+    <div className="flex w-full flex-col gap-4">
+      <div className="viz-card relative">
         {!registerOpen && (
-          <div className="absolute top-5 right-5 z-20">
+          <div className="absolute top-4 right-4 z-20">
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <button
-                    onClick={() => setRegisterOpen(true)}
-                    className={cn(
-                      "w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150",
-                      "border shadow-sm hover:-translate-y-0.5 hover:shadow-md",
-                      next.isToday
-                        ? "bg-income text-income-foreground border-income/40"
-                        : "bg-background text-muted-foreground border-border hover:text-foreground"
-                    )}
-                  />
+                  <button type="button" onClick={() => setRegisterOpen(true)} aria-label="Registrar como recibido" />
                 }
               >
-                <CheckCircle2 size={16} />
+                <IconWell>
+                  <CheckCircle2 size={16} />
+                </IconWell>
               </TooltipTrigger>
               <TooltipContent side="top" align="end">
                 Registrar como recibido
@@ -141,72 +112,37 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
           </div>
         )}
 
-        {/* Contenido — empujado hacia abajo */}
-        <div className="relative z-10 px-5 pt-8 pb-6 sm:px-8">
-          {/* Label sin ícono */}
-          <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-8">
-            {config.label}
-          </p>
+        <div className="mb-4 flex items-center gap-2 pr-12">
+          <p className="truncate text-[15px] font-medium text-[#1c1f26]">{config.label}</p>
+          <InfoTip
+            label="Cómo entra el sueldo"
+            text="Es el monto esperado de cobro. No entra al saldo hasta que lo marcás como cobrado."
+          />
+        </div>
 
-          {/* Monto — grande, hacia abajo */}
-          <div className="mb-8">
-            <p className="num text-[clamp(2.1rem,11vw,3.25rem)] leading-none">
-              $<NumberFlow
-                value={config.amount}
-                locales="es-AR"
-                format={{ maximumFractionDigits: 0 }}
-              />
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              monto esperado de cobro. No entra al saldo hasta que lo marcás como cobrado.
-            </p>
-          </div>
+        <p className="num text-[clamp(2rem,7vw,2.6rem)] leading-none text-[#16181d]">
+          <Amount value={config.amount} animate />
+        </p>
 
-          {/* Grid de stats */}
-          <div className="mb-7 grid grid-cols-3 gap-2 sm:gap-6">
-            <div>
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
-                Próximo cobro
-              </p>
-              <p className="text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold">
-                {format(next.date, "d 'de' MMM", { locale: es })}
-              </p>
-            </div>
+        <StatRow className="mt-5 border-t border-black/[0.06] pt-4">
+          <Stat label="Próximo cobro" value={format(next.date, "d 'de' MMM", { locale: es })} />
+          <Stat
+            label={next.isToday ? "Es hoy" : "Días restantes"}
+            value={next.isToday ? "Hoy" : <NumberFlow value={next.daysLeft} />}
+            hint={next.isToday ? undefined : "días"}
+            tone={next.isToday || next.daysLeft <= 3 ? "text-income" : undefined}
+          />
+          <Stat label="Período" value={<>{Math.round(progress)}%</>} />
+        </StatRow>
 
-            <div>
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
-                {next.isToday ? "¡Es hoy!" : "Días restantes"}
-              </p>
-              <p className={cn(
-                "text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold tabular-nums",
-                next.isToday || next.daysLeft <= 3 ? "text-income" : "text-foreground"
-              )}>
-                {next.isToday ? "🎉" : <NumberFlow value={next.daysLeft} />}
-                {!next.isToday && (
-                  <span className="text-sm font-normal text-muted-foreground ml-1">días</span>
-                )}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider mb-1.5">
-                Período
-              </p>
-              <p className="text-[clamp(1rem,4.2vw,1.5rem)] leading-none font-semibold tabular-nums">
-                <NumberFlow value={Math.round(progress)} />
-                <span className="text-sm font-normal text-muted-foreground ml-0.5">%</span>
-              </p>
-            </div>
-          </div>
-
-          {/* Segmentos de días */}
+        <div className="mt-5">
           <DaySegments elapsed={next.period.daysElapsed} total={next.period.periodDays} />
         </div>
       </div>
 
       {/* ── Formulario de registro ── */}
       {registerOpen && (
-        <div className="w-full border border-border rounded-2xl p-6 bg-card">
+        <div className="viz-card">
           <h3 className="text-sm font-medium mb-4 flex items-center gap-2">
             <Plus size={14} />
             Registrar cobro
@@ -222,7 +158,7 @@ export function SalaryCountdown({ config }: SalaryCountdownProps) {
                   step="0.01"
                   value={registerAmount}
                   onChange={(e) => setRegisterAmount(e.target.value)}
-                  className="pl-7 font-mono"
+                  className="pl-7 tabular-nums"
                   autoFocus
                 />
               </div>

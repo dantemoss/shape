@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CreditCard, CardInstallment, ISSUERS } from "@/lib/types";
 import { logoUrl, NETWORK_DOMAINS } from "@/lib/logodev";
+import { Amount, ListRow, Stat, StatRow } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 import { Trash2 } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -146,22 +147,13 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-muted/30 transition-colors">
-        <IssuerAvatar issuerKey={card.issuerKey} size="sm" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{card.label}</p>
-          <p className="text-[10px] text-muted-foreground font-mono">
-            {card.network.toUpperCase()}
-            {card.lastFourDigits ? ` •••• ${card.lastFourDigits}` : ""}
-          </p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-[10px] text-muted-foreground">Disponible</p>
-          <p className={cn("text-sm font-mono", available >= 0 ? "text-income" : "text-expense")}>
-            ${available.toLocaleString("es-AR")}
-          </p>
-        </div>
-      </div>
+      <ListRow
+        className="rounded-2xl px-3 py-3 ring-1 ring-black/[0.06]"
+        icon={<IssuerAvatar issuerKey={card.issuerKey} size="sm" />}
+        title={card.label}
+        meta={`${card.network}${card.lastFourDigits ? ` · ${card.lastFourDigits}` : ""}`}
+        amount={<Amount value={available} tone={available >= 0 ? "income" : "expense"} />}
+      />
     );
   }
 
@@ -253,26 +245,17 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
       </div>
 
       {/* ── Stats strip ── */}
-      <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-xl border border-border">
-        <div className="min-w-0 p-3">
-          <p className="mb-1 text-[10px] font-mono tracking-wider text-muted-foreground uppercase">Límite</p>
-          <p className="text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all tabular-nums">${card.creditLimit.toLocaleString("es-AR")}</p>
-        </div>
-        <div className="min-w-0 p-3">
-          <p className="mb-1 text-[10px] font-mono tracking-wider text-expense uppercase">Usado</p>
-          <p className="text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all text-expense tabular-nums">${card.usedAmount.toLocaleString("es-AR")}</p>
-        </div>
-        <div className="min-w-0 p-3">
-          <p className="mb-1 text-[10px] font-mono tracking-wider text-income uppercase">Disponible</p>
-          <p className={cn("text-[clamp(0.7rem,3vw,0.875rem)] font-medium break-all tabular-nums", available >= 0 ? "text-income" : "text-expense")}>
-            ${Math.abs(available).toLocaleString("es-AR")}
-          </p>
-        </div>
+      <div className="viz-card !p-4">
+        <StatRow>
+          <Stat label="Límite" value={<Amount value={card.creditLimit} />} />
+          <Stat label="Usado" value={<Amount value={card.usedAmount} tone="expense" />} />
+          <Stat label="Disponible" value={<Amount value={Math.abs(available)} tone={available >= 0 ? "income" : "expense"} />} />
+        </StatRow>
       </div>
 
       {/* ── Barra de uso ── */}
       <div className="space-y-1.5">
-        <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+        <div className="flex justify-between text-[12px] text-[#9aa1ab]">
           <span>Uso del límite</span>
           <span className={cn(usedPct >= 80 ? "text-expense" : usedPct >= 60 ? "text-yellow-600" : "text-income")}>
             {Math.round(usedPct)}%
@@ -299,9 +282,7 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
         <div className="border border-border rounded-xl p-3.5 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium">Cuotas activas</p>
-            <span className="text-[10px] font-mono text-muted-foreground">
-              ~${Math.round(totalMonthlyInstallments).toLocaleString("es-AR")}/mes
-            </span>
+            <Amount value={Math.round(totalMonthlyInstallments)} tone="expense" className="text-[12px] font-semibold" />
           </div>
           {activeInstallments.map((inst) => {
             const remaining = inst.totalInstallments - inst.paidInstallments;
@@ -310,7 +291,7 @@ export function CreditCardVisual({ card, installments, onRemove, compact }: Cred
               <div key={inst.id}>
                 <div className="flex justify-between text-[11px] mb-1">
                   <span className="text-muted-foreground truncate max-w-[60%]">{inst.description}</span>
-                  <span className="font-mono text-muted-foreground">{remaining} restantes</span>
+                  <span className="text-[#9aa1ab]">{remaining} restantes</span>
                 </div>
                 <div className="w-full h-1 bg-border rounded-full overflow-hidden">
                   <div className="h-full rounded-full bg-income" style={{ width: `${pct}%` }} />
