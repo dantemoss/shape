@@ -13,7 +13,6 @@ import { useShapeStore } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { cn } from "@/lib/utils";
-import { PageHeader, pageStackClass } from "@/components/primitives";
 import { ShapeLogo } from "@/components/shape-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,13 +132,16 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-full bg-[#fbfafe] dark:bg-background md:bg-transparent">
-      <div className="hidden md:block">
-        <PageHeader title="Mi perfil" />
-      </div>
-      <form onSubmit={handleSave} className={cn(pageStackClass, "pt-[max(1rem,env(safe-area-inset-top))]")}>
+      <form
+        onSubmit={handleSave}
+        className="mx-auto w-full max-w-[680px] px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-6 sm:px-6 md:px-0 md:pt-6 md:pb-10"
+      >
+        <h1 className="mb-4 hidden text-[1.35rem] font-semibold tracking-[-0.03em] text-[#16181d] md:block dark:text-foreground">
+          Mi perfil
+        </h1>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" tabIndex={-1} onChange={handleFileChange} />
 
-        <section className="profile-card profile-rise hidden max-w-[680px] overflow-hidden rounded-[28px] border border-white/12 bg-[#14161c] text-[#f4f5f7] shadow-[0_1px_2px_rgba(15,23,42,0.06),0_18px_40px_rgba(15,23,42,0.08)] md:block">
+        <section className="profile-card profile-rise hidden overflow-hidden rounded-[28px] border border-black/10 bg-[#14161c] text-[#f4f5f7] shadow-[0_1px_2px_rgba(15,23,42,0.05),0_18px_40px_rgba(15,23,42,0.08)] md:block">
           <div className="profile-band" />
           <div className="px-5 pb-5">
             <div className="flex items-start justify-between gap-4">
@@ -342,17 +344,14 @@ function DeskField({ label, htmlFor, children }: { label: string; htmlFor: strin
 
 function Tile({ href, title, caption, icon }: { href: string; title: string; caption: string; icon: React.ReactNode }) {
   return (
-    <Link href={href} className="flex flex-col rounded-[20px] bg-[#f3f4f6] px-3.5 py-3 dark:bg-muted">
-      <span className="flex items-center justify-between gap-2">
-        <span className="text-[15px] font-semibold leading-tight text-[#16181d] dark:text-foreground">{title}</span>
-        <span className="flex shrink-0 items-center gap-1">
-          <span className="flex size-8 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26] dark:bg-card dark:text-foreground">
-            {icon}
-          </span>
-          <ChevronRight size={16} className="text-[#9aa1ab]" />
+    <Link href={href} className="min-w-0 overflow-hidden rounded-[20px] bg-[#f3f4f6] px-3 py-3 dark:bg-muted">
+      <span className="flex items-start justify-between gap-2">
+        <span className="min-w-0 flex-1 text-[15px] font-semibold leading-tight text-[#16181d] dark:text-foreground">{title}</span>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26] dark:bg-card dark:text-foreground">
+          {icon}
         </span>
       </span>
-      <span className="mt-1 text-[13px] leading-snug text-[#9aa1ab]">{caption}</span>
+      <span className="mt-1 block break-words text-[13px] leading-snug tabular-nums text-[#9aa1ab]">{caption}</span>
     </Link>
   );
 }
