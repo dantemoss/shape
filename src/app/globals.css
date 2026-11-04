@@ -372,3 +372,155 @@ svg text {
     transform: translate3d(10%, 0, 0) rotate(24deg);
   }
 }
+
+/* Cielo del perfil, en el contenido de escritorio y en la banda de la ficha. Índigo de la marca. */
+.profile-sky,
+.profile-band {
+  background-color: #7f96e6;
+  background-image:
+    radial-gradient(32% 28% at 22% 30%, rgba(255, 255, 255, 0.38), transparent 68%),
+    radial-gradient(40% 34% at 80% 12%, rgba(198, 214, 255, 0.7), transparent 66%),
+    radial-gradient(46% 40% at 60% 78%, rgba(47, 72, 161, 0.72), transparent 70%),
+    radial-gradient(36% 30% at 8% 80%, rgba(90, 112, 210, 0.55), transparent 68%),
+    linear-gradient(165deg, #9eb4f2 0%, #7c96e8 42%, #5d78d6 100%);
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+@media (min-width: 768px) {
+  .profile-page {
+    background-color: #7f96e6;
+    background-image:
+      radial-gradient(32% 28% at 22% 30%, rgba(255, 255, 255, 0.38), transparent 68%),
+      radial-gradient(40% 34% at 80% 12%, rgba(198, 214, 255, 0.7), transparent 66%),
+      radial-gradient(46% 40% at 60% 78%, rgba(47, 72, 161, 0.72), transparent 70%),
+      radial-gradient(36% 30% at 8% 80%, rgba(90, 112, 210, 0.55), transparent 68%),
+      linear-gradient(165deg, #9eb4f2 0%, #7c96e8 42%, #5d78d6 100%);
+    background-attachment: fixed;
+    background-size: cover;
+  }
+}
+
+.profile-band {
+  position: relative;
+  height: 112px;
+}
+
+.profile-band::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, #14161c);
+  pointer-events: none;
+}
+
+.profile-card {
+  color-scheme: dark;
+}
+
+.profile-card [data-slot="input"] {
+  height: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.75rem;
+  background: #1c1f2a;
+  padding-inline: 0.75rem;
+  font-size: 0.875rem;
+  color: #f4f5f7;
+  caret-color: #c5d2ff;
+}
+
+.profile-card [data-slot="input"]::placeholder {
+  color: #9aa3b2;
+}
+
+.profile-card [data-slot="input"]:focus-visible {
+  border-color: #9aafeb;
+  box-shadow: 0 0 0 3px rgba(47, 72, 161, 0.45);
+}
+
+.profile-card [data-slot="input"]:read-only {
+  color: #d5d8e2;
+}
+
+.profile-card ::selection {
+  background: #2f48a1;
+  color: #fff;
+}
+
+@keyframes profile-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .profile-rise {
+    animation: profile-rise 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* Puntero de escritorio. PNG primero: el SVG a veces cae en la mano del sistema. En táctil no existe. */
+@media (hover: hover) and (pointer: fine) {
+  html {
+    cursor: url("/cursors/arrow.png") 5 3, url("/cursors/arrow.svg") 5 3, auto;
+  }
+
+  a[href],
+  button,
+  summary,
+  select,
+  label[for],
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="range"] {
+    cursor: url("/cursors/pointer.png") 22 4, url("/cursors/pointer.svg") 22 4, pointer;
+  }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  input:not([type]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+
+  input:disabled,
+  textarea:disabled,
+  button:disabled,
+  select:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  @media (hover: hover) and (pointer: fine) {
+    .cursor-pointer {
+      cursor: url("/cursors/pointer.png") 22 4, url("/cursors/pointer.svg") 22 4, pointer;
+    }
+
+    .cursor-default {
+      cursor: url("/cursors/arrow.png") 5 3, url("/cursors/arrow.svg") 5 3, auto;
+    }
+  }
+}

@@ -12,14 +12,31 @@ import { ConfigMissing, LoadingScreen } from "@/components/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, User } from "lucide-react";
+import { Camera, Eye, EyeOff, User } from "lucide-react";
 import { ShapeLogo } from "@/components/shape-logo";
+
+function visibleAuthError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : "";
+  const text = raw.toLowerCase();
+  if (
+    text.includes("next_public") ||
+    text.includes("supabase") ||
+    text.includes("anon_key") ||
+    text.includes("fetch") ||
+    text.includes("network") ||
+    text.includes("failed to")
+  ) {
+    return "No pudimos entrar. Probá de nuevo en un momento.";
+  }
+  return raw || "No pudimos conectar con tu cuenta.";
+}
 
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +85,8 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
       await bootstrap(result.userId);
       router.replace("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No pudimos conectar con tu cuenta.");
+      console.error(err);
+      setError(visibleAuthError(err));
       setLoading(false);
     }
   }
@@ -190,17 +208,28 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                placeholder="Mínimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="text-base"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  placeholder="Mínimo 6 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="pr-10 text-base"
+                />
+                <button
+                  type="button"
+                  className="absolute top-1/2 right-1 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             {error && <p className="text-sm text-expense">{error}</p>}
