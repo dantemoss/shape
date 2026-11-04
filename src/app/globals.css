@@ -288,3 +288,69 @@ svg text {
 .logo-dark {
   filter: brightness(0) invert(1);
 }
+
+/* Cara metálica. El brillo es transform; el puntero mueve --px/--py. */
+@property --px {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 72%;
+}
+
+@property --py {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 18%;
+}
+
+.metal-face {
+  --px: 72%;
+  --py: 18%;
+  background-color: #12151b;
+  background-image:
+    radial-gradient(58% 70% at var(--px) var(--py), rgba(255, 255, 255, 0.32), transparent 42%),
+    linear-gradient(118deg, rgba(255, 255, 255, 0.14), transparent 28%),
+    radial-gradient(72% 64% at 100% 0%, color-mix(in srgb, var(--tint, #9aa3b2) 34%, transparent), transparent 56%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px),
+    linear-gradient(165deg, #4c5566 0%, #222733 40%, #313846 68%, #101318 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 12px 28px rgba(15, 23, 42, 0.16);
+  transition: --px 220ms ease-out, --py 220ms ease-out;
+}
+
+.metal-sheen {
+  position: absolute;
+  inset: -30% -55%;
+  background: linear-gradient(
+    102deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.2) 48%,
+    rgba(190, 214, 255, 0.16) 52%,
+    transparent 62%
+  );
+  transform: translate3d(-38%, 0, 0);
+  animation: metal-sheen 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes metal-sheen {
+  0%,
+  100% {
+    transform: translate3d(-38%, 0, 0);
+  }
+  50% {
+    transform: translate3d(38%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .metal-face {
+    transition: none;
+  }
+  .metal-sheen {
+    animation: none;
+    opacity: 0.45;
+    transform: translate3d(0, 0, 0);
+  }
+}

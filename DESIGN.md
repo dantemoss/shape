@@ -240,6 +240,7 @@ Sutil y nunca forzado.
 - Sin bounce ni spring que se pase del destino.
 - Respetá `prefers-reduced-motion`. NumberFlow lleva `respectMotionPreference`.
 - Una aparición o un cambio de número. No una escena.
+- La cara metálica de una tarjeta puede tener un brillo lento de varios segundos, solo con `transform`, y un reflejo que sigue al puntero en 220 ms. No es una transición de interfaz. Con `prefers-reduced-motion` el brillo queda quieto.
 
 ## 10. Checklist antes de abrir un PR
 
@@ -313,6 +314,8 @@ Pares que tienen que quedar parejos:
 | Inicio | Día por día / Comercios |
 | Higiene | Saldo / Este período y el anterior |
 | Higiene | Para mirar / Se repiten |
+| Tarjetas | Cada tarjeta con la de al lado, desde `xl`. Una sola usa `max-w-xl` |
+| Suscripciones | Este mes / Próximos cobros |
 
 Nav inferior, solo `< md`, cinco ítems: Inicio, Movimientos, Sueldo, Higiene, Más. El contenido reserva `pb-[calc(4.6rem+env(safe-area-inset-bottom))]`. Sidebar `md:w-56`, contenido `md:ml-56`.
 
@@ -350,8 +353,10 @@ Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C1
 | `src/components/salary-review.tsx` | Sueldos para revisar |
 | `src/components/goal-card.tsx` / `goal-form.tsx` | Una meta y su formulario |
 | `src/components/subscription-form.tsx` | Alta de suscripción |
-| `src/components/card-form.tsx` / `installment-form.tsx` | Tarjeta y cuotas |
-| `src/components/credit-card-visual.tsx` | La tarjeta dibujada. La cara plástica puede llevar el número con tracking ancho. Los montos de al lado van con `Amount` |
+| `src/components/service-mark.tsx` | Isotipo de un servicio en `IconWell`. El color de la marca queda en el trazo; el pozo sigue neutro. Si no hay marca, monograma. Las siluetas CC0 están en `src/components/marks/` |
+| `src/components/card-form.tsx` / `installment-form.tsx` | Tarjeta y cuotas. La tarjeta guarda día de cierre y de vencimiento, opcionales |
+| `src/components/credit-card-visual.tsx` | Cara metálica (`MetalCardFace`). Lleva alias, últimos 4 con tracking y el logo de la red. El monto del resumen va afuera, con `Amount` |
+| `src/components/network-mark.tsx` | Visa y Amex (silueta CC0) y Mastercard (geometría propia, colores de la marca) |
 | `src/components/login-form.tsx` | Entrar y crear cuenta |
 | `src/components/status-banners.tsx` | Error de sync e importación |
 | `src/components/shape-provider.tsx` | Sesión. `NEXT_PUBLIC_SHAPE_PREVIEW=1` carga datos locales |

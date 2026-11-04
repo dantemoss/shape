@@ -2,17 +2,34 @@
 
 import { useState } from "react";
 import { useShapeStore } from "@/lib/store";
-import { CreditCardVisual, IssuerAvatar } from "@/components/credit-card-visual";
+import { MetalCardFace } from "@/components/credit-card-visual";
 import { CardForm } from "@/components/card-form";
 import { InstallmentForm } from "@/components/installment-form";
-import { Amount, Card, EmptyState, IconWell, ListRow, PageHeader, Stat, StatRow, pageStackClass } from "@/components/primitives";
-import { Button } from "@/components/ui/button";
-import { Plus, CheckCircle2, Trash2, CreditCard as CardIcon } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Amount,
+  Card,
+  CardMenu,
+  EmptyState,
+  IconWell,
+  InfoTip,
+  ListRow,
+  PageHeader,
+  pageStackClass,
+} from "@/components/primitives";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import { cardGlance, cuotaLine } from "@/lib/card-cycle";
+import { formatIso } from "@/lib/format-date";
+import { ISSUERS, type CardInstallment, type CreditCard } from "@/lib/types";
+import { todayISO } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { CheckCircle2, CreditCard as CardIcon, Plus, Trash2 } from "lucide-react";
 
 export default function CardsPage() {
   const creditCards = useShapeStore((s) => s.creditCards);
@@ -21,24 +38,18 @@ export default function CardsPage() {
   const payInstallment = useShapeStore((s) => s.payInstallment);
   const removeCardInstallment = useShapeStore((s) => s.removeCardInstallment);
 
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(
-    creditCards[0]?.id ?? null
+  const [addOpen, setAddOpen] = useState(false);
+  const [editing, setEditing] = useState<CreditCard | null>(null);
+  const [installmentCardId, setInstallmentCardId] = useState<string | null>(null);
+  const [removeId, setRemoveId] = useState<string | null>(null);
+  const today = todayISO();
+
+  const activeInstallments = cardInstallments.filter(
+    (installment) => installment.paidInstallments < installment.totalInstallments
   );
-  const [addCardOpen, setAddCardOpen] = useState(false);
-  const [addInstOpen, setAddInstOpen] = useState(false);
-
-  const selectedCard = creditCards.find((c) => c.id === selectedCardId) ?? creditCards[0] ?? null;
-  const selectedInstallments = selectedCard
-    ? cardInstallments.filter((i) => i.cardId === selectedCard.id)
-    : [];
-  const activeInstallments = selectedInstallments.filter((i) => i.paidInstallments < i.totalInstallments);
-
-  const totalUsed = creditCards.reduce((s, c) => s + c.usedAmount, 0);
-  const totalLimit = creditCards.reduce((s, c) => s + c.creditLimit, 0);
-  const totalAvailable = totalLimit - totalUsed;
-  const totalMonthly = cardInstallments
-    .filter((i) => i.paidInstallments < i.totalInstallments)
-    .reduce((s, i) => s + i.totalAmount / i.totalInstallments, 0);
+  const finishedInstallments = cardInstallments.filter(
+    (installment) => installment.paidInstallments >= installment.totalInstallments
+  );
 
   return (
     <div className="min-w-0">
@@ -47,10 +58,10 @@ export default function CardsPage() {
         subtitle={
           creditCards.length > 0
             ? `${creditCards.length} ${creditCards.length === 1 ? "tarjeta" : "tarjetas"}`
-            : "Límite y cuotas"
+            : "Resumen, cierre y cuotas"
         }
         action={
-          <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
             <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
               <Plus size={14} />
               Nueva tarjeta
@@ -59,15 +70,14 @@ export default function CardsPage() {
               <DialogHeader>
                 <DialogTitle>Agregar tarjeta</DialogTitle>
               </DialogHeader>
-              <CardForm onSuccess={() => setAddCardOpen(false)} />
+              <CardForm onSuccess={() => setAddOpen(false)} />
             </DialogContent>
           </Dialog>
         }
       />
 
-      {creditCards.length === 0 ? (
-        /* ── Empty state ── */
-        <div className={pageStackClass}>
+      <div className={pageStackClass}>
+        {creditCards.length === 0 ? (
           <EmptyState
             icon={
               <IconWell size="lg">
@@ -76,7 +86,7 @@ export default function CardsPage() {
             }
             title="Sin tarjetas todavía"
             action={
-              <Dialog open={addCardOpen} onOpenChange={setAddCardOpen}>
+              <Dialog open={addOpen} onOpenChange={setAddOpen}>
                 <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
                   <Plus size={14} />
                   Agregar primera tarjeta
@@ -85,197 +95,227 @@ export default function CardsPage() {
                   <DialogHeader>
                     <DialogTitle>Agregar tarjeta</DialogTitle>
                   </DialogHeader>
-                  <CardForm onSuccess={() => setAddCardOpen(false)} />
+                  <CardForm onSuccess={() => setAddOpen(false)} />
                 </DialogContent>
               </Dialog>
             }
           >
-            Agregá tus tarjetas de crédito para ver el límite disponible y seguir las cuotas pendientes.
+            Cargá el cierre, el vencimiento y el límite para ver el próximo resumen.
           </EmptyState>
-        </div>
-      ) : (
-        <div className="flex flex-col md:flex-row flex-1 min-h-0">
-          {/* ── Sidebar de tarjetas ── */}
-          <div className="md:w-72 shrink-0 border-b md:border-b-0 md:border-r border-border p-4 space-y-3 overflow-y-auto">
-            {/* Resumen global */}
-            <Card title="Resumen">
-              <StatRow columns={2}>
-                <Stat label="Límite total" value={<Amount value={totalLimit} animate />} />
-                <Stat label="Disponible" value={<Amount value={totalAvailable} tone={totalAvailable < 0 ? "expense" : "income"} animate />} />
-              </StatRow>
-              {totalMonthly > 0 ? (
-                <div className="mt-3 border-t border-black/[0.06] pt-3">
-                  <Stat label="Cuotas este mes" value={<Amount value={Math.round(totalMonthly)} tone="expense" />} />
-                </div>
-              ) : null}
-            </Card>
-
-            <p className="px-1 text-[13px] text-[#9aa1ab]">Mis tarjetas</p>
-            {creditCards.map((card) => {
-              const available = card.creditLimit - card.usedAmount;
-              const active = selectedCard?.id === card.id;
-              const instCount = cardInstallments.filter((i) => i.cardId === card.id && i.paidInstallments < i.totalInstallments).length;
-
-              return (
-                <button
+        ) : (
+          <div className="space-y-4">
+            <div
+              className={cn(
+                "grid items-stretch gap-4",
+                creditCards.length === 1 ? "mx-auto w-full max-w-xl grid-cols-1" : "grid-cols-1 xl:grid-cols-2"
+              )}
+            >
+              {creditCards.map((card) => (
+                <WalletCard
                   key={card.id}
-                  onClick={() => setSelectedCardId(card.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
-                    active ? "border-foreground/20 bg-foreground/5" : "border-border hover:bg-muted/30"
-                  )}
-                >
-                  <IssuerAvatar issuerKey={card.issuerKey} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{card.label}</p>
-                    <p className="truncate text-[12px] text-[#9aa1ab]">
-                      {card.network}
-                      {card.lastFourDigits ? ` · ${card.lastFourDigits}` : ""}
-                      {instCount > 0 ? ` · ${instCount} cuota${instCount > 1 ? "s" : ""}` : ""}
-                    </p>
-                  </div>
-                  <Amount value={available} size="secondary" tone={available < 0 ? "expense" : "income"} />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* ── Detalle de tarjeta ── */}
-          {selectedCard && (
-            <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
-              <div className="max-w-md mx-auto space-y-6">
-                {/* Card visual */}
-                <CreditCardVisual
-                  card={selectedCard}
-                  installments={selectedInstallments}
-                  onRemove={(id) => {
-                    removeCreditCard(id);
-                    setSelectedCardId(creditCards.find((c) => c.id !== id)?.id ?? null);
-                  }}
+                  card={card}
+                  today={today}
+                  installments={cardInstallments}
+                  onEdit={() => setEditing(card)}
+                  onAddInstallment={() => setInstallmentCardId(card.id)}
+                  onRemove={() => setRemoveId(card.id)}
                 />
+              ))}
+            </div>
 
-                {/* Cuotas pendientes con acciones */}
-                {activeInstallments.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-medium">Gestionar cuotas</p>
-                      <Dialog open={addInstOpen} onOpenChange={setAddInstOpen}>
-                        <DialogTrigger render={<Button variant="outline" size="sm" className="gap-1.5 h-7 text-xs" />}>
-                          <Plus size={11} />
-                          Agregar
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-sm">
-                          <DialogHeader><DialogTitle>Nueva cuota</DialogTitle></DialogHeader>
-                          <InstallmentForm cardId={selectedCard.id} onSuccess={() => setAddInstOpen(false)} />
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    <div className="space-y-2">
-                      {activeInstallments.map((inst) => {
-                        const remaining = inst.totalInstallments - inst.paidInstallments;
-                        const monthly = inst.totalAmount / inst.totalInstallments;
-                        const pct = (inst.paidInstallments / inst.totalInstallments) * 100;
-                        return (
-                          <div key={inst.id} className="border border-border rounded-xl p-3.5 space-y-2.5">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-medium flex-1 leading-tight">{inst.description}</p>
-                              <div className="flex items-center gap-1 shrink-0">
-                                <Tooltip>
-                                  <TooltipTrigger render={
-                                    <button
-                                      onClick={() => payInstallment(inst.id)}
-                                      className="flex size-7 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26] transition-colors hover:bg-white"
-                                    />
-                                  }>
-                                    <CheckCircle2 size={13} />
-                                  </TooltipTrigger>
-                                  <TooltipContent>Marcar cuota como pagada</TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                  <TooltipTrigger render={
-                                    <button
-                                      onClick={() => removeCardInstallment(inst.id)}
-                                      className="flex size-7 items-center justify-center rounded-full border border-black/[0.06] bg-[#f4f5f7] text-[#1c1f26] transition-colors hover:bg-white"
-                                    />
-                                  }>
-                                    <Trash2 size={13} />
-                                  </TooltipTrigger>
-                                  <TooltipContent>Eliminar cuota</TooltipContent>
-                                </Tooltip>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between gap-2 text-[12px] text-[#9aa1ab]">
-                              <span className="min-w-0 truncate">{inst.paidInstallments}/{inst.totalInstallments} pagadas · quedan {remaining}</span>
-                              <Amount value={Math.round(monthly)} size="secondary" tone="expense" />
-                            </div>
-                            <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-income transition-all duration-500"
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Si no hay cuotas activas, mostrar botón para agregar */}
-                {activeInstallments.length === 0 && (
-                  <Dialog open={addInstOpen} onOpenChange={setAddInstOpen}>
-                    <DialogTrigger render={
-                      <Button variant="outline" className="w-full gap-2 border-dashed" />
-                    }>
-                      <Plus size={14} />
-                      Agregar cuota en cuotas
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-sm">
-                      <DialogHeader><DialogTitle>Nueva cuota</DialogTitle></DialogHeader>
-                      <InstallmentForm cardId={selectedCard.id} onSuccess={() => setAddInstOpen(false)} />
-                    </DialogContent>
-                  </Dialog>
-                )}
-
-                {/* Cuotas terminadas */}
-                {selectedInstallments.filter((i) => i.paidInstallments >= i.totalInstallments).length > 0 && (
-                  <div>
-                    <p className="mb-2 text-[13px] text-[#9aa1ab]">Completadas</p>
-                    <div className="space-y-1.5">
-                      {selectedInstallments
-                        .filter((i) => i.paidInstallments >= i.totalInstallments)
-                        .map((inst) => (
-                          <ListRow
-                            key={inst.id}
-                            className="rounded-2xl bg-[#f6f7f9] px-3 py-2"
-                            icon={
+            {activeInstallments.length > 0 || finishedInstallments.length > 0 ? (
+              <Card title="Cuotas" subtitle="Lo que falta pagar en cada plan">
+                <div className="space-y-2">
+                  {activeInstallments.map((installment) => {
+                    const card = creditCards.find((item) => item.id === installment.cardId);
+                    const remaining = installment.totalInstallments - installment.paidInstallments;
+                    const monthly = installment.totalAmount / installment.totalInstallments;
+                    return (
+                      <ListRow
+                        key={installment.id}
+                        className="rounded-2xl bg-[#f6f7f9] px-3 py-2.5"
+                        title={installment.description}
+                        meta={`${card?.label ?? "Tarjeta"} · ${installment.paidInstallments}/${installment.totalInstallments} · quedan ${remaining}`}
+                        amount={<Amount value={monthly} size="secondary" tone="expense" />}
+                        trailing={
+                          <>
+                            <button
+                              type="button"
+                              aria-label="Marcar cuota como pagada"
+                              onClick={() => payInstallment(installment.id)}
+                              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F48A1]/40"
+                            >
                               <IconWell size="sm">
                                 <CheckCircle2 size={13} />
                               </IconWell>
-                            }
-                            title={inst.description}
-                            amount={<Amount value={inst.totalAmount} size="secondary" />}
-                            trailing={
-                              <button
-                                type="button"
-                                onClick={() => removeCardInstallment(inst.id)}
-                                aria-label="Eliminar cuota"
-                              >
-                                <IconWell size="sm">
-                                  <Trash2 size={12} />
-                                </IconWell>
-                              </button>
-                            }
-                          />
-                        ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Eliminar cuota"
+                              onClick={() => removeCardInstallment(installment.id)}
+                              className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F48A1]/40"
+                            >
+                              <IconWell size="sm">
+                                <Trash2 size={12} />
+                              </IconWell>
+                            </button>
+                          </>
+                        }
+                      />
+                    );
+                  })}
+                  {finishedInstallments.map((installment) => (
+                    <ListRow
+                      key={installment.id}
+                      className="px-3 py-2"
+                      icon={
+                        <IconWell size="sm">
+                          <CheckCircle2 size={13} />
+                        </IconWell>
+                      }
+                      title={installment.description}
+                      meta="Completa"
+                      amount={<Amount value={installment.totalAmount} size="secondary" />}
+                      trailing={
+                        <button
+                          type="button"
+                          aria-label="Eliminar cuota"
+                          onClick={() => removeCardInstallment(installment.id)}
+                        >
+                          <IconWell size="sm">
+                            <Trash2 size={12} />
+                          </IconWell>
+                        </button>
+                      }
+                    />
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar tarjeta</DialogTitle>
+          </DialogHeader>
+          {editing ? <CardForm key={editing.id} card={editing} onSuccess={() => setEditing(null)} /> : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={installmentCardId !== null} onOpenChange={(open) => !open && setInstallmentCardId(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nueva cuota</DialogTitle>
+          </DialogHeader>
+          {installmentCardId ? (
+            <InstallmentForm cardId={installmentCardId} onSuccess={() => setInstallmentCardId(null)} />
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={removeId !== null} onOpenChange={(open) => !open && setRemoveId(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Eliminar tarjeta</DialogTitle>
+          </DialogHeader>
+          <p className="text-[14px] leading-snug text-[#3a4150]">Se borra la tarjeta y las cuotas que tiene cargadas.</p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" className="rounded-full" onClick={() => setRemoveId(null)}>
+              Cancelar
+            </Button>
+            <Button
+              className="rounded-full bg-expense text-white hover:bg-expense/90"
+              onClick={() => {
+                if (removeId) removeCreditCard(removeId);
+                setRemoveId(null);
+              }}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+function WalletCard({
+  card,
+  today,
+  installments,
+  onEdit,
+  onAddInstallment,
+  onRemove,
+}: {
+  card: CreditCard;
+  today: string;
+  installments: CardInstallment[];
+  onEdit: () => void;
+  onAddInstallment: () => void;
+  onRemove: () => void;
+}) {
+  const glance = cardGlance(card, installments, today);
+  const issuer = ISSUERS[card.issuerKey] ?? ISSUERS.otro;
+  const over = glance.available !== null && (glance.available < 0 || (glance.usedPct ?? 0) >= 80);
+  const tip = glance.statementFromInstallments
+    ? "Suma las cuotas que entran antes del próximo cierre."
+    : "No hay cuotas en este cierre. El número es el saldo usado.";
+
+  return (
+    <Card className="relative h-full">
+      <div className="absolute top-4 right-4 z-10 sm:top-[22px] sm:right-[22px]">
+        <CardMenu
+          label={`Opciones de ${card.label || issuer.name}`}
+          items={[
+            { label: "Editar", onSelect: onEdit },
+            { label: "Agregar cuota", onSelect: onAddInstallment },
+            { label: "Eliminar", onSelect: onRemove },
+          ]}
+        />
+      </div>
+      <div className="flex h-full min-w-0 flex-col">
+        <MetalCardFace card={card} />
+        <div className="mt-4 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[13px] leading-none text-[#9aa1ab]">Próximo resumen</p>
+            <InfoTip text={tip} />
+          </div>
+          <div className="mt-1.5">
+            <Amount value={glance.statement} size="hero" tone="expense" animate />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
+          <p className="min-w-0 text-[14px] leading-snug text-[#1c1f26]">{glance.closeLabel ?? "Sin día de cierre"}</p>
+          <p className="min-w-0 text-[14px] leading-snug text-[#1c1f26]">{glance.dueLabel ?? "Sin día de vencimiento"}</p>
+          <p className="text-[12px] text-[#9aa1ab]">{glance.closeISO ? formatIso(glance.closeISO, "d MMM") : ""}</p>
+          <p className="text-[12px] text-[#9aa1ab]">{glance.dueISO ? formatIso(glance.dueISO, "d MMM") : ""}</p>
+        </div>
+        <p className="mt-3 text-[13px] leading-snug text-[#6d7480]">{cuotaLine(glance.thisMonth, glance.later)}</p>
+        {glance.available !== null && glance.usedPct !== null ? (
+          <div className="mt-auto pt-4">
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
+              <span className="text-[13px] text-[#9aa1ab]">Disponible</span>
+              <Amount value={glance.available} size="secondary" tone={glance.available < 0 ? "expense" : "neutral"} />
+            </div>
+            <div
+              className="h-1 overflow-hidden rounded-full bg-[#e6e8ee]"
+              role="meter"
+              aria-label="Uso del límite"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(glance.usedPct)}
+            >
+              <div
+                className="h-full rounded-full motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out"
+                style={{ width: `${glance.usedPct}%`, background: over ? "#e5484d" : "#1f9d55" }}
+              />
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </Card>
   );
 }

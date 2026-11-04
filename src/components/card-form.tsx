@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShapeStore } from "@/lib/store";
-import { ISSUERS, type CardNetwork } from "@/lib/types";
-import { logoUrl, NETWORK_DOMAINS } from "@/lib/logodev";
+import { ISSUERS, type CardNetwork, type CreditCard } from "@/lib/types";
+import { logoUrl } from "@/lib/logodev";
 import { IssuerAvatar } from "@/components/credit-card-visual";
+import { NetworkMark } from "@/components/network-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,35 +40,60 @@ const variants = {
 
 interface CardFormProps {
   onSuccess?: () => void;
+  card?: CreditCard;
 }
 
-export function CardForm({ onSuccess }: CardFormProps) {
+function dayValue(value: number | null | undefined): string {
+  return value ? String(value) : "";
+}
+
+function parseMoney(value: string): number {
+  return parseFloat(value.replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+function parseDay(value: string): number | null {
+  if (!value.trim()) return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 31) return null;
+  return parsed;
+}
+
+export function CardForm({ onSuccess, card }: CardFormProps) {
   const addCreditCard = useShapeStore((s) => s.addCreditCard);
+  const updateCreditCard = useShapeStore((s) => s.updateCreditCard);
 
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
 
-  const [network, setNetwork] = useState<CardNetwork>("visa");
-  const [issuerKey, setIssuerKey] = useState("otro");
-  const [label, setLabel] = useState("");
-  const [lastFour, setLastFour] = useState("");
-  const [limit, setLimit] = useState("");
-  const [used, setUsed] = useState("");
+  const [network, setNetwork] = useState<CardNetwork>(card?.network ?? "visa");
+  const [issuerKey, setIssuerKey] = useState(card?.issuerKey ?? "otro");
+  const [label, setLabel] = useState(card?.label ?? "");
+  const [lastFour, setLastFour] = useState(card?.lastFourDigits ?? "");
+  const [limit, setLimit] = useState(card ? String(card.creditLimit || "") : "");
+  const [used, setUsed] = useState(card ? String(card.usedAmount || "") : "");
+  const [closing, setClosing] = useState(dayValue(card?.closingDay));
+  const [due, setDue] = useState(dayValue(card?.dueDay));
 
   function next() { setDir(1); setStep((s) => s + 1); }
   function back() { setDir(-1); setStep((s) => s - 1); }
 
   function handleSubmit() {
     const issuerInfo = ISSUERS[issuerKey] ?? ISSUERS.otro;
-    addCreditCard({
+    const closingDay = parseDay(closing);
+    const dueDay = parseDay(due);
+    const payload = {
       label: label.trim() || `${issuerInfo.name} ${network.charAt(0).toUpperCase() + network.slice(1)}`,
       network,
       issuerKey,
-      creditLimit: parseFloat(limit.replace(/\./g, "").replace(",", ".")) || 0,
-      usedAmount: parseFloat(used.replace(/\./g, "").replace(",", ".")) || 0,
+      creditLimit: parseMoney(limit),
+      usedAmount: parseMoney(used),
       lastFourDigits: lastFour.trim() || undefined,
       color: issuerInfo.color,
-    });
+      closingDay: closingDay ?? (card?.closingDay ? null : undefined),
+      dueDay: dueDay ?? (card?.dueDay ? null : undefined),
+    };
+    if (card) updateCreditCard(card.id, payload);
+    else addCreditCard(payload);
     onSuccess?.();
   }
 
@@ -89,24 +115,9 @@ export function CardForm({ onSuccess }: CardFormProps) {
             )}
           >
             {/* Network logos: SVGs directos sin fondo */}
-            {key === "visa" && (
-              <div className="h-8 flex items-center">
-                <span className="text-[22px] font-medium italic tracking-tight" style={{ color: "#1A1F71", fontFamily: "Arial, sans-serif" }}>VISA</span>
-              </div>
-            )}
-            {key === "mastercard" && (
-              <div className="h-8 flex items-center">
-                <span className="flex">
-                  <span className="w-7 h-7 rounded-full bg-[#EB001B] block" />
-                  <span className="w-7 h-7 rounded-full bg-[#F79E1B] block -ml-3.5 opacity-95" />
-                </span>
-              </div>
-            )}
-            {key === "amex" && (
-              <div className="h-8 flex items-center">
-                <span className="text-base font-medium tracking-wide" style={{ color: "#2E77BC" }}>AMEX</span>
-              </div>
-            )}
+            <span className="flex h-8 items-center">
+              <NetworkMark network={key} tone="on-light" />
+            </span>
             <span className="text-xs text-muted-foreground">{lbl}</span>
           </button>
         ))}
@@ -119,7 +130,7 @@ export function CardForm({ onSuccess }: CardFormProps) {
       <p className="text-sm text-muted-foreground text-center">¿Qué banco o fintech la emite?</p>
       <div className="space-y-3">
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono mb-2">Bancos</p>
+          <p className="mb-2 text-[13px] text-[#9aa1ab]">Bancos</p>
           <div className="grid grid-cols-3 gap-1.5">
             {BANK_ISSUERS.map(([key, info]) => (
               <button
@@ -147,7 +158,7 @@ export function CardForm({ onSuccess }: CardFormProps) {
           </div>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono mb-2">Fintechs</p>
+          <p className="mb-2 text-[13px] text-[#9aa1ab]">Fintechs</p>
           <div className="grid grid-cols-3 gap-1.5">
             {FINTECH_ISSUERS.map(([key, info]) => (
               <button
@@ -191,11 +202,7 @@ export function CardForm({ onSuccess }: CardFormProps) {
           <p className="text-sm font-medium">{issuerInfo.name}</p>
           <p className="text-xs text-muted-foreground">{network.charAt(0).toUpperCase() + network.slice(1)}</p>
         </div>
-        <img
-          src={logoUrl(NETWORK_DOMAINS[network], 40)}
-          alt={network}
-          className="h-6 w-auto object-contain logo-light"
-        />
+        <NetworkMark network={network} tone="on-light" />
       </div>
 
       <div className="space-y-3">
@@ -217,6 +224,30 @@ export function CardForm({ onSuccess }: CardFormProps) {
             value={lastFour}
             onChange={(e) => setLastFour(e.target.value.replace(/\D/g, ""))}
           />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="closing" className="text-xs">Día de cierre</Label>
+            <Input
+              id="closing"
+              inputMode="numeric"
+              placeholder="25"
+              maxLength={2}
+              value={closing}
+              onChange={(e) => setClosing(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="due" className="text-xs">Día de vencimiento</Label>
+            <Input
+              id="due"
+              inputMode="numeric"
+              placeholder="10"
+              maxLength={2}
+              value={due}
+              onChange={(e) => setDue(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
@@ -253,7 +284,7 @@ export function CardForm({ onSuccess }: CardFormProps) {
           <ChevronLeft size={14} /> Atrás
         </Button>
         <Button className="flex-1" onClick={handleSubmit}>
-          Guardar tarjeta
+          {card ? "Guardar cambios" : "Guardar tarjeta"}
         </Button>
       </div>
     </div>,

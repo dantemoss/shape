@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Binario del motor de Impeccable. El launcher lo descarga según el sistema.
+.cursor/skills/impeccable/scripts/bin/

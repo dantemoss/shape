@@ -266,6 +266,8 @@ function normalizeCard(value: unknown): CreditCard | null {
     usedAmount: readNonNegative(record.usedAmount) ?? 0,
     lastFourDigits: lastFour || undefined,
     color: color || undefined,
+    closingDay: readMonthDay(record.closingDay),
+    dueDay: readMonthDay(record.dueDay),
     createdAt: readTimestamp(record.createdAt),
   };
 }
@@ -366,6 +368,12 @@ function readInt(value: unknown): number | null {
 function readPositiveInt(value: unknown): number | null {
   const parsed = readInt(value);
   return parsed !== null && parsed > 0 ? parsed : null;
+}
+
+function readMonthDay(value: unknown): number | undefined {
+  const parsed = readInt(value);
+  if (parsed === null || parsed < 1 || parsed > 31) return undefined;
+  return parsed;
 }
 
 function readDate(value: unknown): string | null {
