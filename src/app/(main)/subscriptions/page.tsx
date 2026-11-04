@@ -1,144 +1,121 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useShapeStore } from "@/lib/store";
-import {
-  SUB_PERIOD_LABELS, SUB_CATEGORY_LABELS,
-  type Subscription, type SubPeriod,
-} from "@/lib/types";
-import { logoUrl } from "@/lib/logodev";
 import { SubscriptionForm } from "@/components/subscription-form";
-import { Amount, Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat, pageStackClass } from "@/components/primitives";
+import { ServiceMark } from "@/components/service-mark";
+import {
+  Amount,
+  Card,
+  Chip,
+  EmptyState,
+  IconWell,
+  InfoTip,
+  ListRow,
+  PageHeader,
+  pageStackClass,
+} from "@/components/primitives";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { addDaysISO, addMonthsISO, daysBetween, todayISO } from "@/lib/dates";
+import { categoryForName, detectRecurringCharges } from "@/lib/recurring-charges";
+import { domainForName } from "@/lib/service-marks";
+import { SUB_PERIOD_LABELS, type SubPeriod, type Subscription } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Plus, Trash2, RefreshCw, DollarSign,
-  Pause, Play, TrendingUp,
-} from "lucide-react";
-import { format, addMonths, addWeeks, addYears, differenceInDays } from "date-fns";
-import { es } from "date-fns/locale";
-import { parseDateOnly, todayISO } from "@/lib/dates";
+import { Pause, Play, Plus, RefreshCw, Trash2 } from "lucide-react";
 
-/* ── Helpers ──────────────────────────────────────── */
-function getNextRenewal(sub: Subscription, today = todayISO()): Date {
-  const start = parseDateOnly(sub.startDate);
-  const now = parseDateOnly(today);
-
-  let next = new Date(start);
-  const advance = sub.period === "monthly"
-    ? (d: Date) => addMonths(d, 1)
-    : sub.period === "yearly"
-    ? (d: Date) => addYears(d, 1)
-    : (d: Date) => addWeeks(d, 1);
-
-  while (next <= now) next = advance(next);
+function nextRenewal(sub: Subscription, today: string): string {
+  let next = sub.startDate;
+  let guard = 0;
+  if (sub.period === "weekly") {
+    while (next < today && guard < 520) {
+      next = addDaysISO(next, 7);
+      guard += 1;
+    }
+    return next;
+  }
+  const step = sub.period === "yearly" ? 12 : 1;
+  while (next < today && guard < 240) {
+    next = addMonthsISO(next, step);
+    guard += 1;
+  }
   return next;
 }
 
 function monthlyEquivalent(sub: Subscription): number {
   if (sub.period === "monthly") return sub.price;
-  if (sub.period === "weekly")  return sub.price * 4.33;
-  return sub.price / 12; // yearly
+  if (sub.period === "weekly") return sub.price * (52 / 12);
+  return sub.price / 12;
 }
 
-function daysLabel(days: number): string {
-  if (days === 0) return "Hoy";
-  if (days === 1) return "Mañana";
-  if (days <= 7)  return `${days}d`;
-  if (days <= 30) return `${days}d`;
-  return `${Math.round(days / 30)}m`;
+function whenLabel(days: number): string {
+  if (days <= 0) return "hoy";
+  if (days === 1) return "mañana";
+  return `en ${days} días`;
 }
 
-/* ─────────────────────────────────────────────────── */
 export default function SubscriptionsPage() {
-  const subscriptions    = useShapeStore((s) => s.subscriptions);
+  const subscriptions = useShapeStore((s) => s.subscriptions);
+  const transactions = useShapeStore((s) => s.transactions);
   const removeSubscription = useShapeStore((s) => s.removeSubscription);
   const updateSubscription = useShapeStore((s) => s.updateSubscription);
+  const addSubscription = useShapeStore((s) => s.addSubscription);
 
-  const [open, setOpen]   = useState(false);
+  const [open, setOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const today = todayISO();
 
-  /* Ordenadas por próxima renovación (más próxima primero) */
-  const sorted = useMemo(() =>
-    [...subscriptions].sort((a, b) => {
-      if (!a.active && b.active) return 1;
-      if (a.active && !b.active) return -1;
-      return getNextRenewal(a).getTime() - getNextRenewal(b).getTime();
-    }),
-    [subscriptions]
+  const sorted = useMemo(
+    () =>
+      [...subscriptions].sort((a, b) => {
+        if (a.active !== b.active) return a.active ? -1 : 1;
+        return nextRenewal(a, today).localeCompare(nextRenewal(b, today));
+      }),
+    [subscriptions, today]
   );
 
-  const active   = sorted.filter((s) => s.active);
-  const inactive = sorted.filter((s) => !s.active);
-
-  /* Totales mensuales en ARS (USD sin convertir — se muestra por separado) */
+  const active = sorted.filter((subscription) => subscription.active);
+  const inactive = sorted.filter((subscription) => !subscription.active);
   const monthlyARS = active
-    .filter((s) => s.currency === "ARS")
-    .reduce((sum, s) => sum + monthlyEquivalent(s), 0);
+    .filter((subscription) => subscription.currency === "ARS")
+    .reduce((sum, subscription) => sum + monthlyEquivalent(subscription), 0);
   const monthlyUSD = active
-    .filter((s) => s.currency === "USD")
-    .reduce((sum, s) => sum + monthlyEquivalent(s), 0);
+    .filter((subscription) => subscription.currency === "USD")
+    .reduce((sum, subscription) => sum + monthlyEquivalent(subscription), 0);
+
+  const { suggestions, increases } = useMemo(
+    () => detectRecurringCharges(transactions, subscriptions),
+    [transactions, subscriptions]
+  );
+  const increaseById = useMemo(() => new Map(increases.map((item) => [item.subscriptionId, item])), [increases]);
 
   function handleRemove(id: string) {
     if (confirmId === id) {
       removeSubscription(id);
       setConfirmId(null);
-    } else {
-      setConfirmId(id);
-      setTimeout(() => setConfirmId(null), 2500);
+      return;
     }
+    setConfirmId(id);
+    window.setTimeout(() => setConfirmId((current) => (current === id ? null : current)), 2500);
   }
+
+  const addButton = (
+    <Button className="gap-2 rounded-full" onClick={() => setOpen(true)}>
+      <Plus size={14} />
+      Nueva suscripción
+    </Button>
+  );
 
   return (
     <div className="min-w-0">
       <PageHeader
         title="Suscripciones"
-        subtitle={
-          active.length > 0 ? (
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {monthlyARS > 0 ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <CategoryDot color="#e5484d" />
-                  <Amount value={Math.round(monthlyARS)} size="secondary" tone="expense" /> /mes
-                </span>
-              ) : null}
-              {monthlyUSD > 0 ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <CategoryDot color="#6d7480" />
-                  <Amount value={monthlyUSD} size="secondary" currency="USD" /> /mes
-                </span>
-              ) : null}
-              <span>
-                {active.length} activa{active.length === 1 ? "" : "s"}
-              </span>
-            </span>
-          ) : (
-            "Lo que se renueva solo"
-          )
-        }
-        action={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
-              <Plus size={14} />
-              Nueva suscripción
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Agregar suscripción</DialogTitle>
-              </DialogHeader>
-              <SubscriptionForm onSuccess={() => setOpen(false)} />
-            </DialogContent>
-          </Dialog>
-        }
+        subtitle={active.length > 0 ? `${active.length} ${active.length === 1 ? "activa" : "activas"}` : "Lo que se renueva solo"}
+        action={addButton}
       />
 
-      {/* ── Contenido ── */}
-      <div className={cn(pageStackClass, "space-y-6")}>
-        {subscriptions.length === 0 ? (
+      <div className={cn(pageStackClass, "space-y-4")}>
+        {subscriptions.length === 0 && suggestions.length === 0 ? (
           <EmptyState
             icon={
               <IconWell size="lg">
@@ -147,134 +124,216 @@ export default function SubscriptionsPage() {
             }
             title="Sin suscripciones"
             action={
-              <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger render={<Button className="gap-2 rounded-full" />}>
-                  <Plus size={14} />
-                  Nueva suscripción
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Agregar suscripción</DialogTitle>
-                  </DialogHeader>
-                  <SubscriptionForm onSuccess={() => setOpen(false)} />
-                </DialogContent>
-              </Dialog>
+              <Button className="gap-2 rounded-full" onClick={() => setOpen(true)}>
+                <Plus size={14} />
+                Nueva suscripción
+              </Button>
             }
           >
-            Agregá tus suscripciones para ver cuánto gastás por mes y cuándo se renuevan.
+            Agregá lo que se cobra solo. Si un gasto se repite, te lo vamos a marcar.
           </EmptyState>
         ) : (
           <>
-            {/* ── Activas ── */}
-            {active.length > 0 && (
-              <section>
-                <p className="mb-3 px-1 text-[13px] text-[#9aa1ab]">Activas · {active.length}</p>
-                <div className="viz-card divide-y divide-black/[0.04] !py-1">
-                  {active.map((sub) => (
-                    <SubscriptionRow
-                      key={sub.id}
-                      sub={sub}
-                      confirmId={confirmId}
-                      onRemove={handleRemove}
-                      onToggle={() => updateSubscription(sub.id, { active: !sub.active })}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+            {active.length > 0 ? (
+              <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+                <Card
+                  className="h-full"
+                  title="Este mes"
+                  action={
+                    <InfoTip text="Los pesos y los dólares no se suman. Al año es doce veces el mes." />
+                  }
+                >
+                  <div className="flex h-full min-w-0 flex-col">
+                    {monthlyARS > 0 ? (
+                      <Amount value={monthlyARS} size="hero" tone="neutral" animate />
+                    ) : (
+                      <Amount value={monthlyUSD} size="hero" currency="USD" tone="neutral" animate />
+                    )}
+                    {monthlyARS > 0 && monthlyUSD > 0 ? (
+                      <div className="mt-3">
+                        <Amount value={monthlyUSD} size="primary" currency="USD" tone="neutral" />
+                      </div>
+                    ) : null}
+                    <p className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 pt-4 text-[14px] text-[#3a4150]">
+                      <span className="text-[#9aa1ab]">Al año</span>
+                      {monthlyARS > 0 ? <Amount value={monthlyARS * 12} size="secondary" tone="neutral" /> : null}
+                      {monthlyARS > 0 && monthlyUSD > 0 ? <span className="text-[#b0b6bf]">·</span> : null}
+                      {monthlyUSD > 0 ? (
+                        <Amount value={monthlyUSD * 12} size="secondary" currency="USD" tone="neutral" />
+                      ) : null}
+                    </p>
+                  </div>
+                </Card>
 
-            {/* ── Pausadas ── */}
-            {inactive.length > 0 && (
-              <section>
-                <p className="mb-3 px-1 text-[13px] text-[#9aa1ab]">Pausadas · {inactive.length}</p>
-                <div className="viz-card divide-y divide-black/[0.04] !py-1 opacity-70">
-                  {inactive.map((sub) => (
-                    <SubscriptionRow
-                      key={sub.id}
-                      sub={sub}
-                      confirmId={confirmId}
-                      onRemove={handleRemove}
-                      onToggle={() => updateSubscription(sub.id, { active: !sub.active })}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+                <Card className="h-full" title="Próximos cobros">
+                  <ul className="flex min-w-0 flex-1 flex-col gap-1">
+                    {active.map((subscription) => {
+                      const renewal = nextRenewal(subscription, today);
+                      const days = daysBetween(today, renewal);
+                      const increase = increaseById.get(subscription.id);
+                      return (
+                        <li key={subscription.id}>
+                          <SubscriptionRow
+                            subscription={subscription}
+                            when={whenLabel(days)}
+                            increased={Boolean(increase)}
+                            confirming={confirmId === subscription.id}
+                            onToggle={() => updateSubscription(subscription.id, { active: !subscription.active })}
+                            onRemove={() => handleRemove(subscription.id)}
+                          />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </Card>
+              </div>
+            ) : null}
 
-            {/* ── Resumen por período ── */}
-            {active.length > 1 && (
-              <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <SummaryCard
-                  label="Este mes"
-                  amountARS={monthlyARS}
-                  amountUSD={monthlyUSD}
-                  icon={<RefreshCw size={14} />}
-                />
-                <SummaryCard
-                  label="Al año"
-                  amountARS={monthlyARS * 12}
-                  amountUSD={monthlyUSD * 12}
-                  icon={<TrendingUp size={14} />}
-                />
-                <SummaryCard
-                  label="Próxima renovación"
-                  nextRenewal={active.length > 0 ? getNextRenewal(active[0]) : undefined}
-                  nextName={active[0]?.name}
-                  icon={<DollarSign size={14} />}
-                />
-              </section>
-            )}
+            {suggestions.length > 0 ? (
+              <Card
+                title="Para sumar"
+                subtitle="Mismo comercio, un monto parecido, una vez por mes"
+                action={<InfoTip text="Sale de tus gastos. Sumar la copia como suscripción y no vuelve a aparecer." />}
+              >
+                <ul className="flex flex-col gap-1">
+                  {suggestions.map((suggestion) => (
+                    <li key={`${suggestion.currency}:${suggestion.key}`}>
+                      <ListRow
+                        className="py-2"
+                        icon={<ServiceMark name={suggestion.label} />}
+                        title={suggestion.label}
+                        meta={
+                          <span className="inline-flex min-w-0 items-center gap-1.5">
+                            <span className="truncate">{suggestion.chargeCount} cobros</span>
+                            {suggestion.increased ? <Chip className="shrink-0">Subió</Chip> : null}
+                          </span>
+                        }
+                        amount={
+                          <Amount
+                            value={suggestion.latestAmount}
+                            size="secondary"
+                            currency={suggestion.currency}
+                            tone="neutral"
+                          />
+                        }
+                        trailing={
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="h-8 rounded-full px-3"
+                            onClick={() =>
+                              addSubscription({
+                                name: suggestion.label,
+                                domain: domainForName(suggestion.label),
+                                price: suggestion.latestAmount,
+                                currency: suggestion.currency,
+                                period: "monthly",
+                                startDate: suggestion.latestDate,
+                                active: true,
+                                category: categoryForName(suggestion.label),
+                              })
+                            }
+                          >
+                            Sumar
+                          </Button>
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
+
+            {inactive.length > 0 ? (
+              <Card title="Pausadas">
+                <ul className="flex flex-col gap-1">
+                  {inactive.map((subscription) => (
+                    <li key={subscription.id}>
+                      <SubscriptionRow
+                        subscription={subscription}
+                        when="pausada"
+                        increased={false}
+                        confirming={confirmId === subscription.id}
+                        onToggle={() => updateSubscription(subscription.id, { active: !subscription.active })}
+                        onRemove={() => handleRemove(subscription.id)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
           </>
         )}
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agregar suscripción</DialogTitle>
+          </DialogHeader>
+          <SubscriptionForm onSuccess={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-/* ── Sub-componentes ─────────────────────────────── */
-
 function SubscriptionRow({
-  sub, confirmId, onRemove, onToggle,
+  subscription,
+  when,
+  increased,
+  confirming,
+  onToggle,
+  onRemove,
 }: {
-  sub: Subscription;
-  confirmId: string | null;
-  onRemove: (id: string) => void;
+  subscription: Subscription;
+  when: string;
+  increased: boolean;
+  confirming: boolean;
   onToggle: () => void;
+  onRemove: () => void;
 }) {
-  const nextRenewal = getNextRenewal(sub);
-  const daysLeft    = differenceInDays(nextRenewal, new Date());
-  const isConfirming = confirmId === sub.id;
-
-  const renewal = sub.active ? `Renueva en ${daysLabel(daysLeft)}` : format(nextRenewal, "d MMM", { locale: es });
-
   return (
     <ListRow
-      className="py-3"
-      icon={
-        sub.domain ? (
-          <img src={logoUrl(sub.domain, 64)} alt="" className="size-9 shrink-0 rounded-full object-contain" />
-        ) : (
-          <IconWell>
-            <span className="text-[13px] font-semibold">{sub.name[0]}</span>
-          </IconWell>
-        )
+      className="py-2"
+      icon={<ServiceMark name={subscription.name} domain={subscription.domain} />}
+      title={subscription.name}
+      meta={
+        <span className="inline-flex min-w-0 items-center gap-1.5">
+          <span className="truncate">
+            {when}
+            {subscription.period !== "monthly" ? ` · ${SUB_PERIOD_LABELS[subscription.period as SubPeriod]}` : ""}
+          </span>
+          {increased ? (
+            <Chip className="shrink-0">
+              <span aria-label="El último cobro fue más alto que el anterior">Subió</span>
+            </Chip>
+          ) : null}
+        </span>
       }
-      title={sub.name}
-      meta={`${SUB_CATEGORY_LABELS[sub.category]} · ${SUB_PERIOD_LABELS[sub.period as SubPeriod]} · ${renewal}`}
-      amount={<Amount value={sub.price} size="secondary" currency={sub.currency} tone="expense" />}
+      amount={
+        <Amount value={subscription.price} size="secondary" currency={subscription.currency} tone="neutral" />
+      }
       trailing={
         <>
-          <button type="button" onClick={onToggle} title={sub.active ? "Pausar" : "Activar"} aria-label={sub.active ? "Pausar" : "Activar"}>
-            <IconWell size="sm">{sub.active ? <Pause size={12} /> : <Play size={12} />}</IconWell>
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-label={subscription.active ? "Pausar" : "Activar"}
+            className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F48A1]/40"
+          >
+            <IconWell size="sm">{subscription.active ? <Pause size={12} /> : <Play size={12} />}</IconWell>
           </button>
           <button
             type="button"
-            onClick={() => onRemove(sub.id)}
-            title={isConfirming ? "Tocá de nuevo para confirmar" : "Eliminar"}
-            aria-label={isConfirming ? "Confirmar eliminación" : "Eliminar"}
-            className={isConfirming ? "flex size-7 items-center justify-center rounded-full bg-expense text-white" : undefined}
+            onClick={onRemove}
+            aria-label={confirming ? "Confirmar eliminación" : "Eliminar"}
+            className={cn(
+              "rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F48A1]/40",
+              confirming && "flex h-8 items-center bg-expense px-2.5 text-[12px] font-medium text-white"
+            )}
           >
-            {isConfirming ? <Trash2 size={12} /> : (
+            {confirming ? "Eliminar" : (
               <IconWell size="sm">
                 <Trash2 size={12} />
               </IconWell>
@@ -283,30 +342,5 @@ function SubscriptionRow({
         </>
       }
     />
-  );
-}
-
-function SummaryCard({
-  label, amountARS, amountUSD, nextRenewal, nextName, icon, className,
-}: {
-  label:        string;
-  amountARS?:   number;
-  amountUSD?:   number;
-  nextRenewal?: Date;
-  nextName?:    string;
-  icon:         React.ReactNode;
-  className?:   string;
-}) {
-  return (
-    <Card className={className} title={label} action={<IconWell size="sm">{icon}</IconWell>}>
-      {nextRenewal ? (
-        <Stat label={nextName ?? "Próxima"} value={format(nextRenewal, "d 'de' MMMM", { locale: es })} size="md" />
-      ) : (
-        <div className="space-y-1">
-          {(amountARS ?? 0) > 0 ? <Amount value={Math.round(amountARS!)} tone="expense" /> : null}
-          {(amountUSD ?? 0) > 0 ? <div className="mt-1"><Amount value={amountUSD!} currency="USD" /></div> : null}
-        </div>
-      )}
-    </Card>
   );
 }

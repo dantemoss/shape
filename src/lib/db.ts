@@ -75,6 +75,14 @@ function optionalStr(row: Row, key: string): string | undefined {
   return value ? value : undefined;
 }
 
+function optionalDay(row: Row, key: string): number | undefined {
+  const value = row[key];
+  if (value === null || value === undefined || value === "") return undefined;
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 31) return undefined;
+  return parsed;
+}
+
 function mapProfile(row: Row | null): UserProfile | null {
   if (!row) return null;
   const name = str(row, "name").trim();
@@ -202,6 +210,8 @@ function mapCard(row: Row): CreditCard {
     usedAmount: num(row, "used_amount"),
     lastFourDigits: optionalStr(row, "last_four_digits"),
     color: optionalStr(row, "color"),
+    closingDay: optionalDay(row, "closing_day"),
+    dueDay: optionalDay(row, "due_day"),
     createdAt: str(row, "created_at"),
   };
 }
@@ -545,6 +555,8 @@ export async function insertCreditCard(userId: string, card: CreditCard): Promis
     last_four_digits: card.lastFourDigits ?? null,
     color: card.color ?? null,
     created_at: card.createdAt,
+    ...(card.closingDay ? { closing_day: card.closingDay } : {}),
+    ...(card.dueDay ? { due_day: card.dueDay } : {}),
   });
   assertNoError(error);
 }
@@ -556,8 +568,12 @@ export async function updateCreditCard(userId: string, id: string, updates: Part
   if (updates.issuerKey !== undefined) patch.issuer_key = updates.issuerKey;
   if (updates.creditLimit !== undefined) patch.credit_limit = updates.creditLimit;
   if (updates.usedAmount !== undefined) patch.used_amount = updates.usedAmount;
-  if (updates.lastFourDigits !== undefined) patch.last_four_digits = updates.lastFourDigits;
+  if (updates.lastFourDigits !== undefined) patch.last_four_digits = updates.lastFourDigits || null;
   if (updates.color !== undefined) patch.color = updates.color;
+  if (updates.closingDay) patch.closing_day = updates.closingDay;
+  else if (updates.closingDay === null) patch.closing_day = null;
+  if (updates.dueDay) patch.due_day = updates.dueDay;
+  else if (updates.dueDay === null) patch.due_day = null;
   const { error } = await getSupabase().from("credit_cards").update(patch).eq("id", id).eq("user_id", userId);
   assertNoError(error);
 }
@@ -663,6 +679,8 @@ export async function importSnapshot(userId: string, snapshot: LegacySnapshot): 
       last_four_digits: card.lastFourDigits ?? null,
       color: card.color ?? null,
       created_at: card.createdAt,
+      ...(card.closingDay ? { closing_day: card.closingDay } : {}),
+      ...(card.dueDay ? { due_day: card.dueDay } : {}),
     })),
     "user_id,legacy_id"
   );

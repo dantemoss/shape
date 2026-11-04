@@ -7,11 +7,12 @@ import {
   POPULAR_SERVICES, SUB_PERIOD_LABELS,
   type SubPeriod, type SubCurrency, type SubCategory, type PopularService,
 } from "@/lib/types";
-import { logoUrl } from "@/lib/logodev";
+import { ServiceMark } from "@/components/service-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { IconWell } from "@/components/primitives";
 import { Search, Plus, ChevronLeft } from "lucide-react";
 import { todayISO } from "@/lib/dates";
 
@@ -112,17 +113,7 @@ export function SubscriptionForm({ onSuccess }: Props) {
                   onClick={() => pickService(svc)}
                   className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:border-foreground/30 hover:bg-muted/40 transition-all text-center"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center overflow-hidden">
-                    {svc.domain ? (
-                      <img
-                        src={logoUrl(svc.domain, 64)}
-                        alt={svc.name}
-                        className="w-7 h-7 object-contain"
-                      />
-                    ) : (
-                      <span className="text-sm font-medium">{svc.name[0]}</span>
-                    )}
-                  </div>
+                  <ServiceMark name={svc.name} domain={svc.domain} />
                   <span className="text-[11px] text-muted-foreground leading-tight line-clamp-2">
                     {svc.name}
                   </span>
@@ -134,11 +125,11 @@ export function SubscriptionForm({ onSuccess }: Props) {
             <button
               type="button"
               onClick={pickCustom}
-              className="w-full flex items-center gap-2 p-3 rounded-xl border border-dashed border-border hover:border-foreground/40 hover:bg-muted/30 transition-all text-sm text-muted-foreground"
+              className="flex w-full items-center gap-2 rounded-xl border border-border p-3 text-sm text-[#6d7480] transition-colors duration-200 ease-out hover:bg-[#f6f7f9]"
             >
-              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0">
+              <IconWell size="sm">
                 <Plus size={13} />
-              </div>
+              </IconWell>
               Agregar servicio personalizado
             </button>
           </motion.div>
@@ -150,15 +141,7 @@ export function SubscriptionForm({ onSuccess }: Props) {
                 <button type="button" onClick={back} className="text-muted-foreground hover:text-foreground">
                   <ChevronLeft size={16} />
                 </button>
-                {(selectedService?.domain) ? (
-                  <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center overflow-hidden shrink-0">
-                    <img src={logoUrl(selectedService.domain, 48)} alt="" className="w-6 h-6 object-contain" />
-                  </div>
-                ) : (
-                  <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center shrink-0">
-                    <span className="text-background text-xs font-medium">{activeName[0]}</span>
-                  </div>
-                )}
+                <ServiceMark name={activeName} domain={selectedService?.domain ?? ""} />
                 <span className="text-sm font-medium">{activeName}</span>
               </div>
 
@@ -186,7 +169,7 @@ export function SubscriptionForm({ onSuccess }: Props) {
                         type="button"
                         onClick={() => setCurrency(c)}
                         className={cn(
-                          "px-3 py-2 text-xs font-mono font-medium transition-colors",
+                          "px-3 py-2 text-[13px] font-medium transition-colors duration-200 ease-out",
                           currency === c
                             ? "bg-foreground text-background"
                             : "text-muted-foreground hover:text-foreground"

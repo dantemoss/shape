@@ -12,7 +12,7 @@ const CATEGORIES: ExpenseCategory[] = [
   "savings",
 ];
 
-const MERCHANTS = ["Carrefour", "YPF", "Farmacity", "Netflix", "Mercado Libre", "Coto", ""];
+const MERCHANTS = ["Carrefour", "YPF", "Farmacity", "Mercado Libre", "Coto", "Farmacia", ""];
 
 function wave(index: number): number {
   const base = 14000 + (index % 5) * 6200 + ((index * 3) % 7) * 2800;
@@ -94,6 +94,59 @@ export function buildPreviewData(today = todayISO()): ShapeData {
     merchant: "Spotify",
   });
 
+  push({
+    type: "expense",
+    amount: 4_999,
+    description: "Spotify",
+    category: "subscriptions",
+    date: addMonthsISO(today, -2),
+    merchant: "Spotify",
+  });
+  push({
+    type: "expense",
+    amount: 6_499,
+    description: "Spotify",
+    category: "subscriptions",
+    date: addMonthsISO(today, -1),
+    merchant: "Spotify",
+  });
+  for (const monthsAgo of [3, 2, 1]) {
+    push({
+      type: "expense",
+      amount: monthsAgo === 1 ? 10_990 : 8_990,
+      description: "Disney+",
+      category: "subscriptions",
+      date: addMonthsISO(today, -monthsAgo),
+      merchant: "Disney+",
+    });
+    push({
+      type: "expense",
+      amount: 3_999,
+      description: "YouTube Premium",
+      category: "subscriptions",
+      date: addMonthsISO(today, -monthsAgo),
+      merchant: "YouTube Premium",
+    });
+  }
+  push({
+    type: "expense",
+    amount: 9.99,
+    description: "iCloud",
+    category: "subscriptions",
+    date: addMonthsISO(today, -2),
+    currency: "USD",
+    merchant: "iCloud",
+  });
+  push({
+    type: "expense",
+    amount: 9.99,
+    description: "iCloud",
+    category: "subscriptions",
+    date: addMonthsISO(today, -1),
+    currency: "USD",
+    merchant: "iCloud",
+  });
+
   const salaryIncome = transactions.find((transaction) => transaction.kind === "salary" && transaction.date === periodStart);
 
   return {
@@ -142,7 +195,33 @@ export function buildPreviewData(today = todayISO()): ShapeData {
         creditLimit: 2_000_000,
         usedAmount: 460_000,
         lastFourDigits: "4412",
+        closingDay: 25,
+        dueDay: 10,
         createdAt: addMonthsISO(today, -6),
+      },
+      {
+        id: "card-mc",
+        label: "Mastercard Macro",
+        network: "mastercard",
+        issuerKey: "macro",
+        creditLimit: 1_200_000,
+        usedAmount: 310_000,
+        lastFourDigits: "7721",
+        closingDay: 12,
+        dueDay: 28,
+        createdAt: addMonthsISO(today, -3),
+      },
+      {
+        id: "card-amex",
+        label: "Amex Santander",
+        network: "amex",
+        issuerKey: "santander",
+        creditLimit: 3_500_000,
+        usedAmount: 890_000,
+        lastFourDigits: "1008",
+        closingDay: 3,
+        dueDay: 18,
+        createdAt: addMonthsISO(today, -2),
       },
     ],
     cardInstallments: [
@@ -155,6 +234,24 @@ export function buildPreviewData(today = todayISO()): ShapeData {
         paidInstallments: 2,
         startDate: addMonthsISO(today, -2),
       },
+      {
+        id: "inst-2",
+        cardId: "card-visa",
+        description: "Monitor",
+        totalAmount: 240_000,
+        totalInstallments: 3,
+        paidInstallments: 1,
+        startDate: addMonthsISO(today, -1),
+      },
+      {
+        id: "inst-3",
+        cardId: "card-visa",
+        description: "Silla",
+        totalAmount: 160_000,
+        totalInstallments: 4,
+        paidInstallments: 0,
+        startDate: addMonthsISO(today, 1),
+      },
     ],
     subscriptions: [
       {
@@ -164,10 +261,10 @@ export function buildPreviewData(today = todayISO()): ShapeData {
         price: 12_999,
         currency: "ARS",
         period: "monthly",
-        startDate: addMonthsISO(today, -3),
+        startDate: addMonthsISO(addDaysISO(today, 1), -4),
         active: true,
         category: "streaming",
-        createdAt: addMonthsISO(today, -3),
+        createdAt: addMonthsISO(today, -4),
       },
       {
         id: "sub-spotify",
@@ -176,10 +273,22 @@ export function buildPreviewData(today = todayISO()): ShapeData {
         price: 4_999,
         currency: "ARS",
         period: "monthly",
-        startDate: addMonthsISO(today, -8),
+        startDate: addMonthsISO(addDaysISO(today, 5), -6),
         active: true,
         category: "music",
         createdAt: addMonthsISO(today, -8),
+      },
+      {
+        id: "sub-cursor",
+        name: "Cursor",
+        domain: "cursor.com",
+        price: 20,
+        currency: "USD",
+        period: "monthly",
+        startDate: addMonthsISO(addDaysISO(today, 12), -2),
+        active: true,
+        category: "productivity",
+        createdAt: addMonthsISO(today, -2),
       },
     ],
     account: {

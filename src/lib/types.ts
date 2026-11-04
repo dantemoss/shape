@@ -136,6 +136,10 @@ export interface CreditCard {
   usedAmount: number;      // saldo actual
   lastFourDigits?: string;
   color?: string;          // color de card (overrides issuer default)
+  /** Día del mes en que cierra el resumen. Vacío si todavía no se cargó. */
+  closingDay?: number | null;
+  /** Día del mes en que vence el pago. Vacío si todavía no se cargó. */
+  dueDay?: number | null;
   createdAt: string;
 }
 
