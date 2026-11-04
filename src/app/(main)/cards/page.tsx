@@ -28,6 +28,7 @@ import { cardGlance, cuotaLine } from "@/lib/card-cycle";
 import { formatIso } from "@/lib/format-date";
 import { ISSUERS, type CardInstallment, type CreditCard } from "@/lib/types";
 import { todayISO } from "@/lib/dates";
+import { cn } from "@/lib/utils";
 import { CheckCircle2, CreditCard as CardIcon, Plus, Trash2 } from "lucide-react";
 
 export default function CardsPage() {
@@ -102,8 +103,14 @@ export default function CardsPage() {
             Cargá el cierre, el vencimiento y el límite para ver el próximo resumen.
           </EmptyState>
         ) : (
-          <div className="space-y-4 xl:max-w-[824px]">
-            <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:flex-wrap">
+          <div className={cn("space-y-4", creditCards.length === 1 && "max-w-md")}>
+            <div
+              className={cn(
+                "grid items-stretch gap-4",
+                creditCards.length >= 3 && "grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+                creditCards.length === 2 && "grid-cols-1 md:grid-cols-2"
+              )}
+            >
               {creditCards.map((card) => (
                 <WalletCard
                   key={card.id}
@@ -263,7 +270,7 @@ function WalletCard({
         : "No hay cuotas en este cierre. El número es el saldo usado.";
 
   return (
-    <Card className="h-full w-full max-w-[404px] xl:w-[404px] xl:shrink-0">
+    <Card className="h-full">
       <div className="flex h-full min-w-0 flex-col">
         <MetalCardFace card={card} />
         <div className="mt-4 flex items-start justify-between gap-3">

@@ -314,7 +314,7 @@ Pares que tienen que quedar parejos:
 | Inicio | Día por día / Comercios |
 | Higiene | Saldo / Este período y el anterior |
 | Higiene | Para mirar / Se repiten |
-| Tarjetas | Cada tarjeta con la de al lado, desde `xl`. Una sola usa `max-w-xl` |
+| Tarjetas | 1 columna; 2 desde `md`; 3 desde `xl`. Una sola queda en `max-w-md`. Cuotas usa el mismo ancho |
 | Suscripciones | Este mes / Próximos cobros |
 
 Nav inferior, solo `< md`, cinco ítems: Inicio, Movimientos, Sueldo, Higiene, Más. El contenido reserva `pb-[calc(4.6rem+env(safe-area-inset-bottom))]`. Sidebar `md:w-56`, contenido `md:ml-56`.
@@ -355,7 +355,7 @@ Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C1
 | `src/components/subscription-form.tsx` | Alta de suscripción |
 | `src/components/service-mark.tsx` | Isotipo de un servicio en `IconWell`. El color de la marca queda en el trazo; el pozo sigue neutro. Si no hay marca, monograma. Las siluetas CC0 están en `src/components/marks/` |
 | `src/components/card-form.tsx` / `installment-form.tsx` | Tarjeta y cuotas. La tarjeta guarda día de cierre y de vencimiento, opcionales |
-| `src/components/credit-card-visual.tsx` | Cara (`MetalCardFace`), hasta ~360px, radio 12px. Vidrio satinado según la red, wordmark grande recortado, chip gris, últimos 4 abajo a la izquierda y el logo chico abajo a la derecha. El alias y el `···` van en la info, no sobre la cara. El monto va afuera, con `Amount` neutro |
+| `src/components/credit-card-visual.tsx` | Cara (`MetalCardFace`) al ancho de su celda, radio 12px. Vidrio satinado según la red, wordmark grande recortado, chip gris, últimos 4 abajo a la izquierda y el logo chico abajo a la derecha. El alias y el `···` van en la info, no sobre la cara. El monto va afuera, con `Amount` neutro |
 | `src/components/network-mark.tsx` | Visa (silueta CC0, blanca sobre el metal), Mastercard (geometría propia, colores de la marca) y Amex (wordmark blanco de dos líneas, sin pastilla) |
 | `src/components/login-form.tsx` | Entrar y crear cuenta |
 | `src/components/status-banners.tsx` | Error de sync e importación |

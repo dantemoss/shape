@@ -87,7 +87,7 @@ export function MetalCardFace({ card }: { card: CreditCard }) {
     <div
       ref={ref}
       className={cn(
-        "card-face relative aspect-[1.586/1] w-full max-w-[360px] overflow-hidden text-white",
+        "card-face relative aspect-[1.586/1] w-full overflow-hidden text-white",
         card.network === "mastercard" ? "card-face-mastercard" : card.network === "amex" ? "card-face-amex" : "card-face-visa"
       )}
       onPointerMove={onPointerMove}
