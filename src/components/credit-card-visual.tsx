@@ -20,10 +20,11 @@ function LogoImg({
   fallback?: React.ReactNode;
 }) {
   const [errored, setErrored] = useState(false);
-  if (!domain || errored) return <>{fallback}</>;
+  const src = logoUrl(domain, size);
+  if (!domain || errored || !src) return <>{fallback}</>;
   return (
     <img
-      src={logoUrl(domain, size)}
+      src={src}
       alt={alt}
       width={size}
       height={size}

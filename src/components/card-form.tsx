@@ -142,9 +142,9 @@ export function CardForm({ onSuccess, card }: CardFormProps) {
                   issuerKey === key ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/30 text-muted-foreground"
                 )}
               >
-                {info.domain ? (
+                {info.domain && logoUrl(info.domain, 32) ? (
                   <img
-                    src={logoUrl(info.domain, 32)}
+                    src={logoUrl(info.domain, 32) ?? ""}
                     alt={info.name}
                     className="w-5 h-5 object-contain shrink-0 logo-light"
                   />
@@ -170,9 +170,9 @@ export function CardForm({ onSuccess, card }: CardFormProps) {
                   issuerKey === key ? "border-foreground bg-foreground/5 font-medium" : "border-border hover:border-foreground/30 text-muted-foreground"
                 )}
               >
-                {info.domain ? (
+                {info.domain && logoUrl(info.domain, 32) ? (
                   <img
-                    src={logoUrl(info.domain, 32)}
+                    src={logoUrl(info.domain, 32) ?? ""}
                     alt={info.name}
                     className="w-5 h-5 object-contain shrink-0 logo-light"
                   />

@@ -18,8 +18,18 @@ El ingreso de la app pide email y contraseña. El nombre y la foto siguen en el 
    - `supabase/migrations/20261022160000_init_schema.sql`
    - `supabase/migrations/20261022180000_expense_source_shortcut.sql`
    - `supabase/migrations/20261023140000_real_balance_and_salary_links.sql`
+   - `supabase/migrations/20261104160000_card_statement_days.sql`
+   - `supabase/migrations/20261104200000_rls_owner_lock.sql`
 
-   Si ya habías corrido las dos primeras, alcanza con la tercera. Esa deja el saldo inicial, los ajustes y el vínculo entre un cobro de sueldo y su ingreso. No borra movimientos. Después, en la app, cargá el saldo inicial de Mercado Pago.
+   Si ya habías corrido las primeras, corré solo las que faltan, en ese orden. Ninguna borra movimientos. La última vuelve a afirmar RLS (una política por operación) y, si hay una sola cuenta en `auth.users`, le asigna las filas que hayan quedado sin `user_id`. No pisa filas que ya tienen dueño.
+
+   Si hay más de un usuario, esa migración no elige. Después de ver `select id, email from auth.users`, y solo para filas sin dueño:
+
+   ```sql
+   select * from public.claim_orphan_rows('<uuid de tu usuario>');
+   ```
+
+   Cuando tu cuenta ya existe, en **Authentication → Sign In / Providers → Email** desactivá los registros públicos (**Disable sign ups**). Crear cuenta desde la app deja de funcionar; el ingreso sigue. Dejá **Confirm email** como te convenga. **Site URL** `https://shape-coral.vercel.app` y, si probás local, `http://localhost:3000` en **Redirect URLs**.
 4. En **Project Settings → API** copiá:
    - Project URL
    - `anon` `public` key

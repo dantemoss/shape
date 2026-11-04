@@ -10,6 +10,7 @@ import {
   type ExpenseInsert,
   type IngestEnv,
 } from "./ingest-expense";
+import { clearRateLimits } from "./rate-limit";
 
 const userId = "11111111-1111-4111-8111-111111111111";
 
@@ -35,6 +36,17 @@ test("lee montos en formato argentino y de Wallet", () => {
   assert.equal(parseAmount("0"), null);
   assert.equal(parseAmount("-12,00"), null);
   assert.equal(parseAmount("no es un monto"), null);
+});
+
+test("ignora un user_id que venga en el cuerpo", () => {
+  const built = buildExpenseInsert(
+    { merchant: "X", amount: 10, user_id: "22222222-2222-4222-8222-222222222222" },
+    userId,
+    now
+  );
+  assert.equal(built.ok, true);
+  if (!built.ok) return;
+  assert.equal(built.row.user_id, userId);
 });
 
 test("arma el gasto con defaults de atajo", () => {
@@ -146,6 +158,26 @@ test("GET /api/categorias devuelve las secciones reales con el mismo token", asy
 
   const unconfigured = await handleCategories(get("/api/categorias"), { env: { ...env, token: null } });
   assert.equal(unconfigured.status, 500);
+});
+
+test("corta ráfagas en el atajo", async () => {
+  clearRateLimits();
+  const tight = { limit: 1, windowMs: 60_000 };
+  const first = await handleIngest(post({ amount: 10, merchant: "X" }), {
+    env,
+    now,
+    rateLimit: tight,
+    insert: async () => ({ ok: true, id: "uno" }),
+  });
+  assert.equal(first.status, 201);
+  const second = await handleIngest(post({ amount: 10, merchant: "Y" }), {
+    env,
+    now,
+    rateLimit: tight,
+    insert: async () => ({ ok: true, id: "dos" }),
+  });
+  assert.equal(second.status, 429);
+  clearRateLimits();
 });
 
 test("el endpoint exige el token y devuelve JSON", async () => {

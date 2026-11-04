@@ -1,7 +1,8 @@
-const TOKEN = process.env.NEXT_PUBLIC_LOGODEV_TOKEN ?? "pk_Aej5BOTfQO2QuDrf-E2S2w";
+const TOKEN = process.env.NEXT_PUBLIC_LOGODEV_TOKEN?.trim() ?? "";
 
-export function logoUrl(domain: string, size = 64): string {
-  return `https://img.logo.dev/${domain}?token=${TOKEN}&size=${size}&format=webp`;
+export function logoUrl(domain: string, size = 64): string | null {
+  if (!domain || !TOKEN) return null;
+  return `https://img.logo.dev/${encodeURIComponent(domain)}?token=${encodeURIComponent(TOKEN)}&size=${size}&format=webp`;
 }
 
 export const NETWORK_DOMAINS: Record<string, string> = {

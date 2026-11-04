@@ -12,6 +12,7 @@ export async function POST(request: Request) {
       insertExpense(row, {
         supabaseUrl: env.supabaseUrl ?? "",
         serviceRoleKey: env.serviceRoleKey ?? "",
+        ownerUserId: env.userId ?? "",
       }),
   });
 }
