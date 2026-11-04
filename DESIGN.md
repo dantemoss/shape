@@ -92,7 +92,7 @@ box-shadow:
 
 Popover y menú: `0 12px 32px rgba(15, 23, 42, 0.12)` más `ring-1 ring-black/[0.06]`.
 
-El modo `.dark` existe y no está activo. No diseñes pantallas oscuras salvo que el cambio lo pida.
+El modo `.dark` existe y no está activo. No diseñes pantallas oscuras salvo que el cambio lo pida. La excepción es la ficha de Mi perfil en escritorio: tinta sobre el fondo claro de la app, con una banda índigo.
 
 ## 1. Principios
 
@@ -367,5 +367,19 @@ Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C1
 `transaction-list.tsx`, `transaction-form.tsx` y `money-agreement.tsx` también los usa Movimientos. Si les cambiás la firma, anotalo en el PR.
 
 Pantallas: `src/app/(main)/page.tsx` (Inicio), `transactions`, `salary`, `health` (Higiene), `cards`, `subscriptions`, `goals`, `profile`, y `src/app/login/page.tsx`.
+
+### Mi perfil
+
+`src/app/(main)/profile/page.tsx`. Sigue el shell: sidebar desde `md`, barra inferior en el teléfono. Foto, nombre, guardar y cerrar sesión quedan.
+
+Escritorio: el fondo de la página es el de la app. La ficha, de hasta 680px y alineada arriba como el resto de las pantallas, lleva el título «Mi perfil». La banda es un cielo índigo en CSS (sin foto de stock) con corte neto. No pinta el resto de la página. El isotipo o la foto se sienta sobre la banda, con una chapita para cambiar la foto. El nombre, el email si la cuenta lo tiene, y un chip «Confirmado» solo cuando el email está confirmado. La fila usa datos reales: desde (alta de la cuenta o el primer dato), movimientos de este mes, tarjetas y suscripciones activas. Nombre editable y email de solo lectura, con divisor fino. Abajo a la derecha, Cancelar y Guardar cambios. Cerrar sesión queda debajo de la ficha.
+
+Móvil: fondo blanco con un tinte mínimo. Título «Perfil», marca o foto grande, «Hola, {nombre}». Dos atajos, Tarjetas y Suscripciones, con el conteo real. «Tu cuenta» agrupa nombre y foto. «General» tiene cerrar sesión, texto de gasto, pozo blanco e ícono oscuro. No hay notificaciones ni ayuda: la app no las tiene. Si hay datos viejos en el navegador, aparece la fila para importarlos.
+
+La ficha entra en 220 ms, ease-out, y no se mueve con `prefers-reduced-motion`.
+
+### Puntero
+
+Solo con `@media (hover: hover) and (pointer: fine)`. En táctil no se aplica. Flecha en `public/cursors/arrow.png` (y `.svg`), mano en links, botones y `.cursor-pointer`, I-beam nativo en campos de texto. Tinta `#1c1f26` al 85% y filete blanco. El PNG va primero para que no caiga en la mano del sistema. Son originales.
 
 El porcentaje del sueldo vive en Del sueldo, no en el saldo.
