@@ -200,6 +200,18 @@ export function buildPreviewData(today = todayISO()): ShapeData {
         createdAt: addMonthsISO(today, -6),
       },
       {
+        id: "card-mc",
+        label: "Mastercard Macro",
+        network: "mastercard",
+        issuerKey: "macro",
+        creditLimit: 1_200_000,
+        usedAmount: 310_000,
+        lastFourDigits: "7721",
+        closingDay: 12,
+        dueDay: 28,
+        createdAt: addMonthsISO(today, -3),
+      },
+      {
         id: "card-amex",
         label: "Amex Santander",
         network: "amex",

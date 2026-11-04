@@ -139,7 +139,7 @@ import { GeistMono } from "geist/font/mono";
 
 El monto no se parte ni se trunca. `whitespace-nowrap` y cifras tabulares. En 360 y 390, `StatRow` de tres queda en dos columnas: los dos primeros lado a lado y el tercero en la fila de abajo, a la izquierda. Solo pasa a una columna si, al medir, el monto no entra en la celda.
 
-El signo y los decimales van al 62% del entero, más livianos (`opacity-80`), en la misma línea de base. Si los centavos son cero, no se muestran. El entero queda en es-AR (`12.072.199`). Ingreso en `text-income`, gasto en `text-expense`, el resto en `#1c1f26`.
+El signo y los decimales van al 62% del entero, más livianos (`opacity-80`), en la misma línea de base. Si los centavos son cero, no se muestran. El entero queda en es-AR (`12.072.199`). Ingreso en `text-income`. El resto, incluido lo que se debe y todavía no venció, va en `#1c1f26`. `text-expense` queda para un vencimiento ya pasado o un saldo por encima del límite. Un resumen, una cuota, una suscripción o un total no se pintan de rojo solo porque son una salida.
 
 Prohibido en UI nueva: `font-mono` para etiquetas, fechas o montos, y `uppercase tracking-wider` en micro-etiquetas. Los montos pasan por el helper del parámetro de locale.
 
@@ -240,7 +240,7 @@ Sutil y nunca forzado.
 - Sin bounce ni spring que se pase del destino.
 - Respetá `prefers-reduced-motion`. NumberFlow lleva `respectMotionPreference`.
 - Una aparición o un cambio de número. No una escena.
-- La cara metálica de una tarjeta puede tener un brillo lento de varios segundos, solo con `transform`, y un reflejo que sigue al puntero en 220 ms. No es una transición de interfaz. Con `prefers-reduced-motion` el brillo queda quieto.
+- La cara de una tarjeta es vidrio satinado: azul para Visa, grafito para Mastercard, acero para Amex. Una banda diagonal de luz, solo con `transform`, se corre con el puntero en 220 ms. Con `prefers-reduced-motion` queda quieta.
 
 ## 10. Checklist antes de abrir un PR
 
@@ -355,8 +355,8 @@ Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C1
 | `src/components/subscription-form.tsx` | Alta de suscripción |
 | `src/components/service-mark.tsx` | Isotipo de un servicio en `IconWell`. El color de la marca queda en el trazo; el pozo sigue neutro. Si no hay marca, monograma. Las siluetas CC0 están en `src/components/marks/` |
 | `src/components/card-form.tsx` / `installment-form.tsx` | Tarjeta y cuotas. La tarjeta guarda día de cierre y de vencimiento, opcionales |
-| `src/components/credit-card-visual.tsx` | Cara metálica (`MetalCardFace`). Lleva alias, últimos 4 con tracking y el logo de la red. El monto del resumen va afuera, con `Amount` |
-| `src/components/network-mark.tsx` | Visa y Amex (silueta CC0) y Mastercard (geometría propia, colores de la marca) |
+| `src/components/credit-card-visual.tsx` | Cara (`MetalCardFace`), hasta ~360px, radio 12px. Vidrio satinado según la red, wordmark grande recortado, chip gris, últimos 4 abajo a la izquierda y el logo chico abajo a la derecha. El alias y el `···` van en la info, no sobre la cara. El monto va afuera, con `Amount` neutro |
+| `src/components/network-mark.tsx` | Visa (silueta CC0, blanca sobre el metal), Mastercard (geometría propia, colores de la marca) y Amex (wordmark blanco de dos líneas, sin pastilla) |
 | `src/components/login-form.tsx` | Entrar y crear cuenta |
 | `src/components/status-banners.tsx` | Error de sync e importación |
 | `src/components/shape-provider.tsx` | Sesión. `NEXT_PUBLIC_SHAPE_PREVIEW=1` carga datos locales |

@@ -63,16 +63,51 @@ test("el resumen suma las cuotas que entran antes del cierre", () => {
   ];
 
   const glance = cardGlance(card, installments, today);
+  assert.equal(glance.phase, "payment");
   assert.equal(glance.closeISO, "2026-11-25");
   assert.equal(glance.dueISO, "2026-11-10");
   assert.equal(glance.closeLabel, "Cierra en 21 días");
   assert.equal(glance.dueLabel, "Vence en 6 días");
-  assert.equal(glance.statementFromInstallments, true);
-  assert.equal(glance.statement, 30_000);
+  assert.equal(glance.statementFromInstallments, false);
+  assert.equal(glance.statement, 460_000);
   assert.equal(glance.thisMonth, 1);
   assert.equal(glance.later, 6);
   assert.equal(glance.available, 1_540_000);
+  assert.equal(glance.overLimit, false);
   assert.equal(cuotaLine(glance.thisMonth, glance.later), "1 este mes · 6 después");
+});
+
+test("si el cierre es antes que el vencimiento, el monto es el de ese resumen", () => {
+  const card: CreditCard = {
+    id: "card-visa",
+    label: "Visa Galicia",
+    network: "visa",
+    issuerKey: "galicia",
+    creditLimit: 2_000_000,
+    usedAmount: 460_000,
+    closingDay: 25,
+    dueDay: 10,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  };
+  const installments: CardInstallment[] = [
+    {
+      id: "now",
+      cardId: "card-visa",
+      description: "Auriculares",
+      totalAmount: 180_000,
+      totalInstallments: 6,
+      paidInstallments: 2,
+      startDate: "2026-09-20",
+    },
+  ];
+  const glance = cardGlance(card, installments, "2026-11-20");
+  assert.equal(glance.phase, "open");
+  assert.equal(glance.closeISO, "2026-11-25");
+  assert.equal(glance.dueISO, "2026-12-10");
+  assert.equal(glance.statementFromInstallments, true);
+  assert.equal(glance.statement, 30_000);
+  assert.equal(glance.dueLabel, "Vence en 20 días");
+  assert.equal(glance.closeLabel, "Cierra en 5 días");
 });
 
 test("sin cuotas, el resumen es el saldo usado y sin límite no hay barra", () => {

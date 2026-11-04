@@ -289,68 +289,86 @@ svg text {
   filter: brightness(0) invert(1);
 }
 
-/* Cara metálica. El brillo es transform; el puntero mueve --px/--py. */
+/* Cara satinado. La banda es transform; el puntero la corre. */
 @property --px {
   syntax: "<percentage>";
   inherits: false;
-  initial-value: 72%;
+  initial-value: 62%;
 }
 
-@property --py {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 18%;
-}
-
-.metal-face {
-  --px: 72%;
-  --py: 18%;
-  background-color: #12151b;
-  background-image:
-    radial-gradient(58% 70% at var(--px) var(--py), rgba(255, 255, 255, 0.32), transparent 42%),
-    linear-gradient(118deg, rgba(255, 255, 255, 0.14), transparent 28%),
-    radial-gradient(72% 64% at 100% 0%, color-mix(in srgb, var(--tint, #9aa3b2) 34%, transparent), transparent 56%),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px),
-    linear-gradient(165deg, #4c5566 0%, #222733 40%, #313846 68%, #101318 100%);
+.card-face {
+  --px: 62%;
+  border-radius: 12px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    0 12px 28px rgba(15, 23, 42, 0.16);
-  transition: --px 220ms ease-out, --py 220ms ease-out;
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 10px 22px rgba(15, 23, 42, 0.12);
 }
 
-.metal-sheen {
+.card-face-visa {
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(148deg, #31478f 0%, #1b2d78 46%, #14245f 100%);
+}
+
+.card-face-mastercard {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.28), transparent 48%),
+    linear-gradient(155deg, #7b838e 0%, #4e555f 44%, #343a43 100%);
+}
+
+.card-face-amex {
+  background:
+    linear-gradient(158deg, rgba(255, 255, 255, 0.22), transparent 46%),
+    linear-gradient(150deg, #6e849c 0%, #41566f 48%, #2c4156 100%);
+}
+
+.card-chip {
   position: absolute;
-  inset: -30% -55%;
-  background: linear-gradient(
-    102deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.2) 48%,
-    rgba(190, 214, 255, 0.16) 52%,
-    transparent 62%
-  );
-  transform: translate3d(-38%, 0, 0);
-  animation: metal-sheen 8s ease-in-out infinite;
+  top: 50%;
+  left: 16px;
+  z-index: 2;
+  width: 36px;
+  height: 28px;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #f3f4f6 0%, #c5c9d1 52%, #9aa1ab 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  transform: translateY(-50%);
+}
+
+.card-sheen {
+  position: absolute;
+  z-index: 1;
+  top: -45%;
+  left: -20%;
+  width: 48%;
+  height: 190%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translate3d(-30%, 0, 0) rotate(24deg);
+  animation: card-sheen 8s ease-in-out infinite;
   pointer-events: none;
 }
 
-@keyframes metal-sheen {
+.card-face:hover .card-sheen {
+  animation: none;
+  transform: translate3d(calc(var(--px) - 40%), 0, 0) rotate(24deg);
+  transition: transform 220ms ease-out;
+}
+
+@keyframes card-sheen {
   0%,
   100% {
-    transform: translate3d(-38%, 0, 0);
+    transform: translate3d(-30%, 0, 0) rotate(24deg);
   }
   50% {
-    transform: translate3d(38%, 0, 0);
+    transform: translate3d(70%, 0, 0) rotate(24deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .metal-face {
-    transition: none;
-  }
-  .metal-sheen {
+  .card-sheen,
+  .card-face:hover .card-sheen {
     animation: none;
-    opacity: 0.45;
-    transform: translate3d(0, 0, 0);
+    transition: none;
+    transform: translate3d(10%, 0, 0) rotate(24deg);
   }
 }

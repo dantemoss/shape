@@ -54,10 +54,17 @@ export function installmentSlices(
   });
 }
 
+export type StatementPhase = "payment" | "open" | "undated";
+
 export interface CardGlance {
   statement: number;
-  /** El resumen sale de cuotas. Si no, es el saldo usado. */
+  /** El número sale de cuotas del cierre que viene. Si no, es el saldo usado. */
   statementFromInstallments: boolean;
+  /**
+   * `payment`: el próximo vencimiento es de un resumen que ya cerró.
+   * `open`: el cierre que viene y el vencimiento son el mismo resumen.
+   */
+  phase: StatementPhase;
   closeISO: string | null;
   dueISO: string | null;
   closeLabel: string | null;
@@ -66,32 +73,40 @@ export interface CardGlance {
   later: number;
   available: number | null;
   usedPct: number | null;
+  overLimit: boolean;
 }
 
 export function cardGlance(card: CreditCard, installments: CardInstallment[], today: string): CardGlance {
   const closeISO = card.closingDay ? nextDayOfMonth(today, card.closingDay) : null;
   const dueISO = card.dueDay ? nextDayOfMonth(today, card.dueDay) : null;
+  const phase: StatementPhase =
+    closeISO && dueISO ? (dueISO < closeISO ? "payment" : "open") : dueISO ? "payment" : closeISO ? "open" : "undated";
   const slices = installmentSlices(
     installments.filter((installment) => installment.cardId === card.id),
     today,
     closeISO
   );
   const dueNow = slices.filter((slice) => slice.inStatement);
-  const statementFromInstallments = dueNow.length > 0;
+  // En la ventana de pago el saldo es el resumen que ya cerró.
+  // Las cuotas que entran antes del próximo cierre son el resumen que todavía se arma.
+  const statementFromInstallments = phase === "open" && dueNow.length > 0;
   const hasLimit = card.creditLimit > 0;
+  const available = hasLimit ? card.creditLimit - card.usedAmount : null;
   return {
     statement: statementFromInstallments
       ? dueNow.reduce((sum, slice) => sum + slice.monthly, 0)
       : card.usedAmount,
     statementFromInstallments,
+    phase,
     closeISO,
     dueISO,
     closeLabel: closeISO ? cyclePhrase("cierra", daysBetween(today, closeISO)) : null,
     dueLabel: dueISO ? cyclePhrase("vence", daysBetween(today, dueISO)) : null,
     thisMonth: dueNow.length,
     later: slices.reduce((sum, slice) => sum + slice.remaining - (slice.inStatement ? 1 : 0), 0),
-    available: hasLimit ? card.creditLimit - card.usedAmount : null,
+    available,
     usedPct: hasLimit ? Math.min(100, Math.max(0, (card.usedAmount / card.creditLimit) * 100)) : null,
+    overLimit: available !== null && available < 0,
   };
 }
 

@@ -28,7 +28,6 @@ import { cardGlance, cuotaLine } from "@/lib/card-cycle";
 import { formatIso } from "@/lib/format-date";
 import { ISSUERS, type CardInstallment, type CreditCard } from "@/lib/types";
 import { todayISO } from "@/lib/dates";
-import { cn } from "@/lib/utils";
 import { CheckCircle2, CreditCard as CardIcon, Plus, Trash2 } from "lucide-react";
 
 export default function CardsPage() {
@@ -103,13 +102,8 @@ export default function CardsPage() {
             Cargá el cierre, el vencimiento y el límite para ver el próximo resumen.
           </EmptyState>
         ) : (
-          <div className="space-y-4">
-            <div
-              className={cn(
-                "grid items-stretch gap-4",
-                creditCards.length === 1 ? "mx-auto w-full max-w-xl grid-cols-1" : "grid-cols-1 xl:grid-cols-2"
-              )}
-            >
+          <div className="space-y-4 xl:max-w-[824px]">
+            <div className="flex flex-col items-stretch gap-4 xl:flex-row xl:flex-wrap">
               {creditCards.map((card) => (
                 <WalletCard
                   key={card.id}
@@ -136,7 +130,7 @@ export default function CardsPage() {
                         className="rounded-2xl bg-[#f6f7f9] px-3 py-2.5"
                         title={installment.description}
                         meta={`${card?.label ?? "Tarjeta"} · ${installment.paidInstallments}/${installment.totalInstallments} · quedan ${remaining}`}
-                        amount={<Amount value={monthly} size="secondary" tone="expense" />}
+                        amount={<Amount value={monthly} size="secondary" />}
                         trailing={
                           <>
                             <button
@@ -259,46 +253,53 @@ function WalletCard({
 }) {
   const glance = cardGlance(card, installments, today);
   const issuer = ISSUERS[card.issuerKey] ?? ISSUERS.otro;
-  const over = glance.available !== null && (glance.available < 0 || (glance.usedPct ?? 0) >= 80);
-  const tip = glance.statementFromInstallments
-    ? "Suma las cuotas que entran antes del próximo cierre."
-    : "No hay cuotas en este cierre. El número es el saldo usado.";
+  const heading = glance.dueLabel ?? glance.closeLabel ?? "Saldo";
+  const showClose = Boolean(glance.dueLabel && glance.closeLabel);
+  const tip =
+    glance.phase === "payment"
+      ? "Es el saldo del resumen que ya cerró. La línea de abajo es el cierre que todavía se arma."
+      : glance.statementFromInstallments
+        ? "Cuotas que entran en el cierre que viene, y vencen en la fecha de arriba."
+        : "No hay cuotas en este cierre. El número es el saldo usado.";
 
   return (
-    <Card className="relative h-full">
-      <div className="absolute top-4 right-4 z-10 sm:top-[22px] sm:right-[22px]">
-        <CardMenu
-          label={`Opciones de ${card.label || issuer.name}`}
-          items={[
-            { label: "Editar", onSelect: onEdit },
-            { label: "Agregar cuota", onSelect: onAddInstallment },
-            { label: "Eliminar", onSelect: onRemove },
-          ]}
-        />
-      </div>
+    <Card className="h-full w-full max-w-[404px] xl:w-[404px] xl:shrink-0">
       <div className="flex h-full min-w-0 flex-col">
         <MetalCardFace card={card} />
-        <div className="mt-4 min-w-0">
+        <div className="mt-4 flex items-start justify-between gap-3">
+          <p className="min-w-0 truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1c1f26]">
+            {card.label.trim() || issuer.name}
+          </p>
+          <CardMenu
+            label={`Opciones de ${card.label || issuer.name}`}
+            items={[
+              { label: "Editar", onSelect: onEdit },
+              { label: "Agregar cuota", onSelect: onAddInstallment },
+              { label: "Eliminar", onSelect: onRemove },
+            ]}
+          />
+        </div>
+        <div className="mt-3 min-w-0">
           <div className="flex items-center gap-1.5">
-            <p className="text-[13px] leading-none text-[#9aa1ab]">Próximo resumen</p>
+            <p className="text-[13px] leading-none text-[#9aa1ab]">{heading}</p>
             <InfoTip text={tip} />
           </div>
           <div className="mt-1.5">
-            <Amount value={glance.statement} size="hero" tone="expense" animate />
+            <Amount value={glance.statement} size="hero" tone={glance.overLimit ? "expense" : "neutral"} animate />
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
-          <p className="min-w-0 text-[14px] leading-snug text-[#1c1f26]">{glance.closeLabel ?? "Sin día de cierre"}</p>
-          <p className="min-w-0 text-[14px] leading-snug text-[#1c1f26]">{glance.dueLabel ?? "Sin día de vencimiento"}</p>
-          <p className="text-[12px] text-[#9aa1ab]">{glance.closeISO ? formatIso(glance.closeISO, "d MMM") : ""}</p>
-          <p className="text-[12px] text-[#9aa1ab]">{glance.dueISO ? formatIso(glance.dueISO, "d MMM") : ""}</p>
-        </div>
+        {showClose ? (
+          <p className="mt-3 text-[13px] leading-snug text-[#6d7480]">
+            {glance.closeLabel}
+            {glance.closeISO ? ` · ${formatIso(glance.closeISO, "d MMM")}` : ""}
+          </p>
+        ) : null}
         <p className="mt-3 text-[13px] leading-snug text-[#6d7480]">{cuotaLine(glance.thisMonth, glance.later)}</p>
         {glance.available !== null && glance.usedPct !== null ? (
           <div className="mt-auto pt-4">
             <div className="mb-1.5 flex items-baseline justify-between gap-3">
               <span className="text-[13px] text-[#9aa1ab]">Disponible</span>
-              <Amount value={glance.available} size="secondary" tone={glance.available < 0 ? "expense" : "neutral"} />
+              <Amount value={glance.available} size="secondary" tone={glance.overLimit ? "expense" : "neutral"} />
             </div>
             <div
               className="h-1 overflow-hidden rounded-full bg-[#e6e8ee]"
@@ -310,7 +311,7 @@ function WalletCard({
             >
               <div
                 className="h-full rounded-full motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-out"
-                style={{ width: `${glance.usedPct}%`, background: over ? "#e5484d" : "#1f9d55" }}
+                style={{ width: `${glance.usedPct}%`, background: glance.overLimit ? "#e5484d" : "#1f9d55" }}
               />
             </div>
           </div>

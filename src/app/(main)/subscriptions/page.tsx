@@ -145,21 +145,21 @@ export default function SubscriptionsPage() {
                 >
                   <div className="flex h-full min-w-0 flex-col">
                     {monthlyARS > 0 ? (
-                      <Amount value={monthlyARS} size="hero" tone="expense" animate />
+                      <Amount value={monthlyARS} size="hero" tone="neutral" animate />
                     ) : (
-                      <Amount value={monthlyUSD} size="hero" currency="USD" tone="expense" animate />
+                      <Amount value={monthlyUSD} size="hero" currency="USD" tone="neutral" animate />
                     )}
                     {monthlyARS > 0 && monthlyUSD > 0 ? (
                       <div className="mt-3">
-                        <Amount value={monthlyUSD} size="primary" currency="USD" tone="expense" />
+                        <Amount value={monthlyUSD} size="primary" currency="USD" tone="neutral" />
                       </div>
                     ) : null}
                     <p className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 pt-4 text-[14px] text-[#3a4150]">
                       <span className="text-[#9aa1ab]">Al año</span>
-                      {monthlyARS > 0 ? <Amount value={monthlyARS * 12} size="secondary" tone="expense" /> : null}
+                      {monthlyARS > 0 ? <Amount value={monthlyARS * 12} size="secondary" tone="neutral" /> : null}
                       {monthlyARS > 0 && monthlyUSD > 0 ? <span className="text-[#b0b6bf]">·</span> : null}
                       {monthlyUSD > 0 ? (
-                        <Amount value={monthlyUSD * 12} size="secondary" currency="USD" tone="expense" />
+                        <Amount value={monthlyUSD * 12} size="secondary" currency="USD" tone="neutral" />
                       ) : null}
                     </p>
                   </div>
@@ -213,7 +213,7 @@ export default function SubscriptionsPage() {
                             value={suggestion.latestAmount}
                             size="secondary"
                             currency={suggestion.currency}
-                            tone="expense"
+                            tone="neutral"
                           />
                         }
                         trailing={
@@ -312,7 +312,7 @@ function SubscriptionRow({
         </span>
       }
       amount={
-        <Amount value={subscription.price} size="secondary" currency={subscription.currency} tone="expense" />
+        <Amount value={subscription.price} size="secondary" currency={subscription.currency} tone="neutral" />
       }
       trailing={
         <>

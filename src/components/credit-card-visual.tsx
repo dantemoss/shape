@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { NetworkMark } from "@/components/network-mark";
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { EmbossedNetwork, NetworkMark } from "@/components/network-mark";
 import { ISSUERS, type CreditCard } from "@/lib/types";
 import { logoUrl } from "@/lib/logodev";
 import { cn } from "@/lib/utils";
@@ -65,29 +65,12 @@ export function IssuerAvatar({
   );
 }
 
-function CardChip({ id }: { id: string }) {
-  const shade = `chip-shade-${id.replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  return (
-    <svg width="34" height="26" viewBox="0 0 34 26" aria-hidden className="shrink-0">
-      <rect width="34" height="26" rx="4" fill="#d7c29a" />
-      <rect x="0" y="0" width="34" height="26" rx="4" fill={`url(#${shade})`} />
-      <path d="M12 0v26M22 0v26M0 9h34M0 17h34" stroke="#b89a62" strokeWidth="0.6" />
-      <rect x="12" y="9" width="10" height="8" rx="1" fill="#c6ad78" stroke="#a88b55" strokeWidth="0.4" />
-      <defs>
-        <linearGradient id={shade} x1="0" y1="0" x2="34" y2="26">
-          <stop offset="0" stopColor="#fff" stopOpacity="0.35" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
-          <stop offset="1" stopColor="#000" stopOpacity="0.12" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
+function CardChip() {
+  return <span className="card-chip" aria-hidden />;
 }
 
 export function MetalCardFace({ card }: { card: CreditCard }) {
-  const issuer = ISSUERS[card.issuerKey] ?? ISSUERS.otro;
   const ref = useRef<HTMLDivElement>(null);
-  const name = card.label.trim() || issuer.name;
   const last4 = card.lastFourDigits?.slice(-4) || "····";
 
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -97,28 +80,26 @@ export function MetalCardFace({ card }: { card: CreditCard }) {
     const box = node.getBoundingClientRect();
     if (box.width === 0 || box.height === 0) return;
     const x = ((event.clientX - box.left) / box.width) * 100;
-    const y = ((event.clientY - box.top) / box.height) * 100;
     node.style.setProperty("--px", `${x}%`);
-    node.style.setProperty("--py", `${y}%`);
   }
 
   return (
     <div
       ref={ref}
-      className="metal-face relative aspect-[1.586/1] w-full overflow-hidden rounded-[18px] text-white"
-      style={{ "--tint": card.color || issuer.color } as CSSProperties}
+      className={cn(
+        "card-face relative aspect-[1.586/1] w-full max-w-[360px] overflow-hidden text-white",
+        card.network === "mastercard" ? "card-face-mastercard" : card.network === "amex" ? "card-face-amex" : "card-face-visa"
+      )}
       onPointerMove={onPointerMove}
     >
-      <div className="metal-sheen" aria-hidden />
-      <div className="relative flex h-full min-w-0 flex-col justify-between p-4 sm:p-5">
-        <p className="min-w-0 truncate pr-11 text-[15px] font-medium leading-tight tracking-[-0.02em]">{name}</p>
-        <div className="mt-3">
-          <CardChip id={card.id} />
-        </div>
-        <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-          <p className="min-w-0 text-[15px] tracking-[0.22em] tabular-nums">{last4}</p>
+      <EmbossedNetwork network={card.network} id={card.id} />
+      <div className="card-sheen" aria-hidden />
+      <CardChip />
+      <div className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-between gap-3 px-4 pb-3.5 sm:px-5">
+        <p className="text-[12px] font-medium tracking-[0.08em] text-white/85">{`**** ${last4}`}</p>
+        <span className="flex h-7 shrink-0 items-end justify-end">
           <NetworkMark network={card.network} tone="on-dark" />
-        </div>
+        </span>
       </div>
     </div>
   );
