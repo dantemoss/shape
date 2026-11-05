@@ -380,12 +380,12 @@ La ficha entra en 220 ms, ease-out, y no se mueve con `prefers-reduced-motion`.
 
 ### Puntero
 
-El cursor del sistema queda en toda la app. Campos, texto y botones no se reemplazan. No hay imágenes en `public/cursors`.
+No hay imágenes en `public/cursors`.
 
-En escritorio, y solo si `(hover: hover) and (pointer: fine)`, entra el Pointer de Magic UI (MIT) en la variante de color. Tinta `--brand` (`#2F48A1`) y filete blanco, sin gradiente. El componente es `src/components/ui/pointer.tsx`. Sigue al mouse sobre `[data-shape-pointer]`: el dibujo de un gráfico (barras, línea, área, dona, medidor, bloques, tira, cilindro del día, spark de comercios) y la tarjeta que es un link (`Tile` en perfil, `BalanceCard` y `MetricCard` cuando tienen `href`). Entra en 200 ms y sale en 160 ms, ease-out. `pointer-events: none`: no tapa el click ni mueve el layout. Es client component y no lee `window` en el server.
+En escritorio, y solo si `(hover: hover) and (pointer: fine)`, el Pointer de Magic UI (MIT, variante de color) reemplaza el cursor en toda la app. Tinta `#171717` (el negro de Geist) y filete blanco, sin gradiente y sin `--brand`. `#171717` se lee sobre el fondo claro. El filete lo separa del botón índigo y de las barras oscuras. `#0a0a0a` queda demasiado cerrado y el filete se pierde. El componente es `src/components/ui/pointer.tsx`. Entra en 200 ms y sale en 160 ms, ease-out. La posición sigue al mouse 1:1, sin resorte. `pointer-events: none`: no tapa el click ni mueve el layout. Es client component y no lee `window` en el server.
 
-En táctil no se monta. Con `prefers-reduced-motion: reduce` tampoco. Un cursor estático igual usaría `cursor: none` y le ganaría al tamaño del cursor del sistema. Sin el componente, queda ese cursor, que ya se puede agrandar.
+En un campo de texto, un `textarea` o un `contenteditable`, el puntero se esconde y queda el I-beam nativo. En un control deshabilitado (`:disabled` o `aria-disabled`) queda `not-allowed`.
 
-Un botón, un campo o un link adentro de la zona sigue con el cursor del sistema. El cilindro de un día es el gráfico: ese botón sí lleva el puntero.
+En táctil no se monta. Con `prefers-reduced-motion: reduce` el puntero sigue, pero sin la escala de entrada ni de salida: aparece ya en su lugar y se mueve 1:1. Es el cursor de la app, no un adorno. Sacarlo dejaría el del sistema solo para quien pidió menos movimiento, y el cambio de forma se siente más que la transición. Lo que se apaga es la animación, no el seguimiento.
 
 El porcentaje del sueldo vive en Del sueldo, no en el saldo.

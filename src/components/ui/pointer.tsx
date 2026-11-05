@@ -6,8 +6,8 @@ import { AnimatePresence, motion, useMotionValue } from "framer-motion";
 /**
  * Puntero de color, adaptado de Magic UI (MIT), variante Colored Pointer:
  * https://github.com/magicuidesign/magicui/blob/main/apps/www/registry/magicui/pointer.tsx
- * El relleno es --brand. No hay gradiente.
- * Una sola instancia sigue al mouse sobre [data-shape-pointer].
+ * Tinta #171717 (negro de Geist), filete blanco. Sin gradiente.
+ * En escritorio reemplaza el cursor en toda la app.
  */
 
 const FINE_POINTER = "(hover: hover) and (pointer: fine)";
@@ -17,19 +17,20 @@ const EXIT_MS = 0.16;
 const EASE = [0.16, 1, 0.3, 1] as const;
 const CURSOR_SIZE = 24;
 
-const NATIVE_CONTROL = [
-  "button",
-  "input",
+const TEXT_ENTRY = [
+  "input:not([type])",
+  "input[type='email']",
+  "input[type='password']",
+  "input[type='text']",
+  "input[type='search']",
+  "input[type='tel']",
+  "input[type='url']",
+  "input[type='number']",
   "textarea",
-  "select",
-  "a",
-  "label",
-  "summary",
-  "[role='button']",
-  "[role='tab']",
-  "[role='menuitem']",
-  "[contenteditable='true']",
+  "[contenteditable]:not([contenteditable='false'])",
 ].join(", ");
+
+const DISABLED = ":disabled, [aria-disabled='true']";
 
 function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(false);
@@ -45,25 +46,19 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
-function zoneFromTarget(target: EventTarget | null) {
-  if (!(target instanceof Element)) return null;
-  const zone = target.closest("[data-shape-pointer]");
-  if (!zone) return null;
-  const control = target.closest(NATIVE_CONTROL);
-  if (control && zone.contains(control) && control !== zone && !control.hasAttribute("data-shape-pointer")) {
-    return null;
-  }
-  return zone;
+function keepsNativeCursor(target: EventTarget | null) {
+  if (!(target instanceof Element)) return true;
+  return Boolean(target.closest(TEXT_ENTRY) || target.closest(DISABLED));
 }
 
 export function Pointer() {
   const fine = useMediaQuery(FINE_POINTER);
   const reduce = useMediaQuery(REDUCE_MOTION);
-  if (!fine || reduce) return null;
-  return <PointerCursor />;
+  if (!fine) return null;
+  return <PointerCursor reduced={reduce} />;
 }
 
-function PointerCursor() {
+function PointerCursor({ reduced }: { reduced: boolean }) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const [active, setActive] = useState(false);
@@ -80,11 +75,11 @@ function PointerCursor() {
     };
 
     const show = (event: PointerEvent) => {
-      if (event.pointerType === "touch" || event.pointerType === "pen") {
+      if (event.pointerType === "touch") {
         setShown(false);
         return;
       }
-      if (!zoneFromTarget(event.target)) {
+      if (keepsNativeCursor(event.target)) {
         setShown(false);
         return;
       }
@@ -116,12 +111,16 @@ function PointerCursor() {
         <motion.div
           key="shape-pointer"
           aria-hidden
-          className="pointer-events-none fixed top-0 left-0 z-50"
+          className="pointer-events-none fixed top-0 left-0 z-[70]"
           style={{ x, y }}
-          initial={{ scale: 0, opacity: 0 }}
+          initial={reduced ? false : { scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0, transition: { duration: EXIT_MS, ease: EASE } }}
-          transition={{ duration: ENTER_MS, ease: EASE }}
+          exit={
+            reduced
+              ? { opacity: 0, transition: { duration: 0 } }
+              : { scale: 0, opacity: 0, transition: { duration: EXIT_MS, ease: EASE } }
+          }
+          transition={reduced ? { duration: 0 } : { duration: ENTER_MS, ease: EASE }}
         >
           <svg
             stroke="currentColor"
@@ -131,7 +130,7 @@ function PointerCursor() {
             height={CURSOR_SIZE}
             width={CURSOR_SIZE}
             xmlns="http://www.w3.org/2000/svg"
-            className="block rotate-[-70deg] fill-brand stroke-white text-brand"
+            className="block rotate-[-70deg] fill-[#171717] stroke-white text-[#171717]"
           >
             <path d="M14.082 2.182a.5.5 0 0 1 .103.557L8.528 15.467a.5.5 0 0 1-.917-.007L5.57 10.694.803 8.652a.5.5 0 0 1-.006-.916l12.728-5.657a.5.5 0 0 1 .556.103z" />
           </svg>
