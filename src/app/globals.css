@@ -444,37 +444,40 @@ svg text {
   }
 }
 
-/* La clase la pone Pointer solo con mouse fino y sin reduced motion. */
-html.shape-pointer [data-shape-pointer],
-html.shape-pointer [data-shape-pointer] * {
+/* La clase la pone Pointer solo con mouse fino. En táctil no existe. */
+html.shape-pointer,
+html.shape-pointer * {
   cursor: none !important;
 }
 
-html.shape-pointer [data-shape-pointer] :is(
-  button,
-  input,
+html.shape-pointer :is(
+  input:not([type]),
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
   textarea,
-  select,
-  a,
-  label,
-  summary,
-  [role="button"],
-  [role="tab"],
-  [role="menuitem"],
-  [contenteditable="true"]
-):not([data-shape-pointer]),
-html.shape-pointer [data-shape-pointer] :is(
-  button,
-  input,
+  [contenteditable]:not([contenteditable="false"])
+),
+html.shape-pointer :is(
+  input:not([type]),
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
   textarea,
-  select,
-  a,
-  label,
-  summary,
-  [role="button"],
-  [role="tab"],
-  [role="menuitem"],
-  [contenteditable="true"]
-):not([data-shape-pointer]) * {
-  cursor: revert !important;
+  [contenteditable]:not([contenteditable="false"])
+) * {
+  cursor: text !important;
+}
+
+html.shape-pointer :is(:disabled, [aria-disabled="true"]),
+html.shape-pointer :is(:disabled, [aria-disabled="true"]) * {
+  cursor: not-allowed !important;
 }

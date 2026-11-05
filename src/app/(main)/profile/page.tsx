@@ -350,7 +350,7 @@ function DeskField({ label, htmlFor, children }: { label: string; htmlFor: strin
 
 function Tile({ href, title, caption, icon }: { href: string; title: string; caption: string; icon: React.ReactNode }) {
   return (
-    <Link href={href} data-shape-pointer="" className="min-w-0 overflow-hidden rounded-[20px] bg-[#f3f4f6] px-3 py-3 dark:bg-muted">
+    <Link href={href} className="min-w-0 overflow-hidden rounded-[20px] bg-[#f3f4f6] px-3 py-3 dark:bg-muted">
       <span className="flex items-start justify-between gap-2">
         <span className="min-w-0 flex-1 text-[15px] font-semibold leading-tight text-[#16181d] dark:text-foreground">{title}</span>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#1c1f26] dark:bg-card dark:text-foreground">

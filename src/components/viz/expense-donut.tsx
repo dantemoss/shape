@@ -96,7 +96,7 @@ function Donut({ uid, slices, total }: { uid: string; slices: DonutSlice[]; tota
   const arcs = layoutDonut(slices, total, circumference, stroke);
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} data-shape-pointer="" className="mx-auto h-[168px] w-[168px] shrink-0" role="img" aria-label="Distribución de gastos">
+    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto h-[168px] w-[168px] shrink-0" role="img" aria-label="Distribución de gastos">
       <defs>
         <pattern id={`${uid}-hatch`} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
           <rect width="6" height="6" fill="#f6f1e6" />
