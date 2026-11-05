@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { allowRequest, clientAddress } from "./rate-limit";
 
 export const EXPENSE_SOURCES = ["manual", "mercadopago", "shortcut"] as const;
 export type ExpenseSource = (typeof EXPENSE_SOURCES)[number];
@@ -114,10 +115,16 @@ export async function handleIngest(
     env: IngestEnv;
     now?: Date;
     insert: (row: ExpenseInsert) => Promise<InsertOutcome>;
+    rateLimit?: { limit: number; windowMs: number };
   }
 ): Promise<Response> {
   if (request.method !== "POST") {
     return jsonError(405, "Este endpoint solo acepta POST.");
+  }
+
+  const limit = options.rateLimit ?? { limit: 20, windowMs: 60_000 };
+  if (!allowRequest(`ingest:${clientAddress(request)}`, limit.limit, limit.windowMs)) {
+    return jsonError(429, "Demasiados intentos. Esperá un momento.");
   }
 
   const missing = missingConfig(options.env);
@@ -340,9 +347,17 @@ function parseCategory(
   return { ok: true, value: match };
 }
 
-export function handleCategories(request: Request, options: { env: IngestEnv }): Response {
+export function handleCategories(
+  request: Request,
+  options: { env: IngestEnv; rateLimit?: { limit: number; windowMs: number } }
+): Response {
   if (request.method !== "GET") {
     return jsonError(405, "Este endpoint solo acepta GET.");
+  }
+
+  const limit = options.rateLimit ?? { limit: 30, windowMs: 60_000 };
+  if (!allowRequest(`categories:${clientAddress(request)}`, limit.limit, limit.windowMs)) {
+    return jsonError(429, "Demasiados intentos. Esperá un momento.");
   }
   if (!options.env.token) {
     return jsonError(500, "Falta configurar SHAPE_INGEST_TOKEN en el servidor.");

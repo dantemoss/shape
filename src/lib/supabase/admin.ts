@@ -1,12 +1,21 @@
 import { createClient } from "@supabase/supabase-js";
 import type { ExpenseInsert, InsertOutcome } from "@/lib/ingest-expense";
 
-export async function insertExpense(row: ExpenseInsert, env: { supabaseUrl: string; serviceRoleKey: string }): Promise<InsertOutcome> {
+if (typeof window !== "undefined") {
+  throw new Error("El cliente de servicio no se usa en el navegador.");
+}
+
+export async function insertExpense(
+  row: ExpenseInsert,
+  env: { supabaseUrl: string; serviceRoleKey: string; ownerUserId: string }
+): Promise<InsertOutcome> {
+  const owned: ExpenseInsert = { ...row, user_id: env.ownerUserId };
+
   const supabase = createClient(env.supabaseUrl, env.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data, error } = await supabase.from("expenses").insert(row).select("id").single();
+  const { data, error } = await supabase.from("expenses").insert(owned).select("id").single();
 
   if (error) {
     if (error.code === "23505") return { ok: false, duplicate: true };
