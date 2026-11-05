@@ -186,27 +186,15 @@ Prohibido: `bg-income/10 text-income` (o el equivalente de gasto, o un hex del m
 
 ## 6. Gráficos
 
-Un solo sistema de SVG propio. Sin Recharts, sin visx, sin otra librería de charts. No reescribas la lógica de los números para dibujarlos.
+Los gráficos de serie salen de Recharts, adentro de la primitiva `chart` de shadcn (`src/components/ui/chart.tsx`, MIT). Los ejemplos de partida son los de ReUI (MIT): barras agrupadas, barras punteadas, barras monocromas que se ensanchan, área con degradado, dona con total al centro y radial de una sola barra. No copies la tarjeta de demostración: sin badge, sin glow, sin trama, sin 3D y sin `max-w-md` ni `aspect-video`. El alto es fijo (`min-h-[220px]`, la dona y el radial en 220 y 200) para que las tarjetas de una fila coincidan.
 
-Dona:
+Los colores son `--chart-1` a `--chart-5`: ingreso, gasto, marca `#2F48A1`, ámbar `#F5A04C` y oro `#F2C14E`. Nada de violeta. El monto del tooltip y del centro pasa por `Amount`. El tooltip es la ficha blanca de `HoverTip` (barra, monto, pista) y no se sale de la tarjeta. En el teléfono se abre con toque.
 
-- Arcos con `stroke-dasharray` sobre un círculo. Arranque a las 12 (`rotate(-90)`).
-- `strokeLinecap="round"`. Cada cap sobresale medio grosor. El tramo sin pintar es `stroke + clearGap`. Si no, los caps se pisan.
-- Proporción real del valor. Un mínimo chico para que la categoría se vea, sin pasarse del perímetro.
-- Un solo trazo por segmento.
+La animación de Recharts dura 240 ms, ease-out. `isAnimationActive` queda en `auto`, así que con `prefers-reduced-motion` no se mueve. La barra del día ensancha en 220 ms con una transición CSS, y quieta si el sistema pide menos movimiento.
 
-Medidor:
+Bloques de presupuesto y la tira de categorías siguen en SVG propio: ReUI no tiene un equivalente.
 
-- Un path semicircular. Pista gris y arco de avance del mismo `strokeWidth` y `strokeLinecap="round"`.
-- El avance es `strokeDasharray` de `π * radio`, recortado al porcentaje. Rojo si pasa de 100.
-- El monto y el porcentaje van debajo del arco.
-- No uses marcas rotadas. Se pixelan y se montan.
-
-Barras: el período inactivo en gris, el elegido con el acento. Eje con el helper corto (`$30 mil`, `$1,2 M`).
-
-Tooltip: en móvil se abre con toque, no solo con hover. Tiene que quedar dentro de la tarjeta. Un dato por fila.
-
-El viewBox y la caja medida tienen la misma relación de aspecto. `preserveAspectRatio="none"` no deforma si el aspecto coincide. No dibujes dos veces el mismo punto.
+No reescribas la lógica de los números para dibujarlos. Sigue en `src/lib/chart-series.ts`.
 
 ## 7. Texto
 
@@ -222,7 +210,8 @@ No uses todas las librerías a la vez. Elegí por contexto. Evitá un diseño pe
 
 | Herramienta | Cuándo |
 | --- | --- |
-| [shadcn/ui](https://ui.shadcn.com/docs/components) | Base de todas las primitivas. Ya está instalado. Botón, diálogo, input, tooltip y el resto salen de `src/components/ui`. No los reescribas y no los reemplaces por otro kit. |
+| [shadcn/ui](https://ui.shadcn.com/docs/components) | Base de todas las primitivas. Ya está instalado. Botón, diálogo, input, tooltip, chart y el resto salen de `src/components/ui`. No los reescribas y no los reemplaces por otro kit. |
+| [Recharts](https://recharts.org/) + [ReUI Chart](https://reui.io/components/chart) | Solo los gráficos de `src/components/viz` que tienen equivalente en ReUI (MIT). Recharts entra por la primitiva `chart`. No sumes otra librería de charts. |
 | [Aceternity UI](https://ui.aceternity.com/) y [React Bits](https://reactbits.dev/) | Un componente copiado, solo cuando un momento puntual lo necesita. Sin fondos animados, WebGL, canvas, partículas ni shaders pesados. Antes de copiar, mirá la licencia y lo que suma al bundle. |
 | [bencho.dev](https://bencho.dev/) | Referencia visual y de componentes. Mirá la licencia antes de copiar código. |
 | [PrimeReact](https://primereact.dev/components) | No convive con shadcn por defecto: es otro sistema y pesa más. Solo un widget complejo (tabla de datos, calendario de rango) que shadcn no cubra, tematizado con estos tokens e importado por componente. |
@@ -245,7 +234,7 @@ Sutil y nunca forzado.
 ## 10. Checklist antes de abrir un PR
 
 - [ ] Leíste este archivo. El cambio respeta parámetros, tokens, tipografía e íconos.
-- [ ] No copiaste código de una referencia con licencia incompatible, ni agregaste Recharts o visx.
+- [ ] No copiaste código de una referencia con licencia incompatible. Recharts y la primitiva `chart` son las únicas librerías de gráficos.
 - [ ] No hay `font-mono` ni etiquetas en mayúsculas en lo que tocaste.
 - [ ] El ícono no es del mismo tono que su fondo. El color de categoría es un punto.
 - [ ] En el breakpoint ancho, las tarjetas de una fila tienen el mismo alto y el gráfico llena el espacio.
@@ -286,7 +275,7 @@ Están en `src/components/primitives.tsx`. shadcn sigue siendo la base de botón
 
 ### Gráficos de Shape
 
-SVG en `src/components/viz`. Los datos salen de `src/lib/chart-series.ts` y de `useMoneySnapshot`.
+En `src/components/viz`. Los de serie usan Recharts. Los datos salen de `src/lib/chart-series.ts` y de `useMoneySnapshot`.
 
 | Componente | Archivo | Props | Cuándo |
 | --- | --- | --- | --- |
@@ -301,9 +290,9 @@ SVG en `src/components/viz`. Los datos salen de `src/lib/chart-series.ts` y de `
 | `FlowAreaCard` | `src/components/viz/flow-area.tsx` | `points`, `currentLabel`, `delta` | Este período contra el anterior. `periodArea`. |
 | `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments` | Tira del mes. `categoryStrip`. |
 
-En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `TipAnchor`, `EmptyChart`, `HeroNumber`, `DeltaPill`, `useChartPlot`. Geometría en `src/components/viz/geometry.ts`.
+En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `EmptyChart`, `iconWell`. El tooltip de Recharts está en `shape-tooltip.tsx` y se ve como `HoverTip`.
 
-La dona de Shape usa grosor 18 y hueco visible 9 (`layoutDonut`). El medidor usa radio 78 y el mismo grosor (`budget-gauge.tsx`). El plot usa `chartPlotFrameClass` y `chartPlotSvgClass`.
+La dona es un `Pie` con hueco, total en el centro con `Amount` y los colores de `DONUT_COLORS`. El resto es el neutro `#F3EEE4`, sin trama. El medidor es un `RadialBar` de una sola barra, pista `#e6e8ee`, verde dentro del límite y rojo si pasa de 100. El monto y el porcentaje van debajo.
 
 Pares que tienen que quedar parejos:
 
@@ -336,7 +325,7 @@ Punto chico, nunca el relleno del ícono. `DOT` en `src/components/viz/day-cylin
 | savings | `#1f9d55` |
 | other | `#6d7480` |
 
-Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C14E`. El resto va con trama `#F3EEE4`. Tira (`STRIP_COLORS`): `#8B7CF6`, `#6B93F5`, `#F0A05A`, `#3DCA86`, `#67B7F0`, `#F0734A`. Comercios, solo el punto: `#3b82f6`, `#f97316`, `#8b5cf6`, `#14b8a6`.
+Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C14E`. El resto es `#F3EEE4` liso. Tira (`STRIP_COLORS`): `#8B7CF6`, `#6B93F5`, `#F0A05A`, `#3DCA86`, `#67B7F0`, `#F0734A`. Comercios, solo el punto: `#3b82f6`, `#f97316`, `#2F48A1`, `#14b8a6`.
 
 ### Componentes de pantalla
 

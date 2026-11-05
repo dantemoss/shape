@@ -1,41 +1,24 @@
 "use client";
 
-import { useId, useState } from "react";
-import { formatAxisPesos, formatChartPesos, niceCeiling } from "@/lib/chart-format";
-import type { AlignedDay } from "@/lib/chart-series";
-import { averageElapsedSpend, elapsedSpend } from "@/lib/chart-series";
-import { clampPercent, topRoundedBar, yAt } from "./geometry";
+import { useId } from "react";
+import { Bar, BarChart, XAxis } from "recharts";
 import { Amount } from "@/components/primitives";
-import { ChartCard, EmptyChart, HoverTip, TipAnchor, chartPlotFrameClass, chartPlotSvgClass, useChartPlot } from "./ui";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { averageElapsedSpend, elapsedSpend, type AlignedDay } from "@/lib/chart-series";
+import { ChartCard, EmptyChart } from "./ui";
+import { CHART_MS, ChartPlot, ShapeTooltipContent, chartPlotClass } from "./shape-tooltip";
 
-const W = 360;
-const PAD_L = 46;
-const PAD_R = 8;
-const PAD_T = 12;
-const PAD_B = 32;
+const chartConfig = {
+  previous: { label: "Período anterior", color: "var(--chart-1)" },
+  current: { label: "Este período", color: "var(--chart-1)" },
+};
 
 export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; periodLabel: string | null }) {
-  const uid = useId().replace(/:/g, "");
-  const elapsed = days.filter((day) => !day.future);
-  const withSpend = elapsed.reduce((found, day, index) => (day.current > 0 ? index : found), Math.max(0, elapsed.length - 1));
-  const [active, setActive] = useState(withSpend);
-  const plot = useChartPlot(W);
-  const H = plot.height;
-  const max = Math.max(1, ...days.flatMap((day) => [day.current, day.previous]));
-  const { top, ticks } = niceCeiling(max, 3);
-  const plotBottom = H - PAD_B;
-  const plotW = W - PAD_L - PAD_R;
-  const slot = days.length > 0 ? plotW / days.length : plotW;
-  const barW = Math.min(14, Math.max(4, slot * 0.42));
-  const selected = days[active];
-  const step = days.length > 18 ? 3 : days.length > 10 ? 2 : 1;
+  const patternId = useId().replace(/:/g, "");
+  const interval = days.length > 18 ? 3 : days.length > 10 ? 2 : 0;
 
   return (
-    <ChartCard
-      title="Gasto diario"
-      subtitle={periodLabel ?? "Período de cobro"}
-      href="/transactions"
-    >
+    <ChartCard title="Gasto diario" subtitle={periodLabel ?? "Período de cobro"} href="/transactions">
       {days.length === 0 ? (
         <EmptyChart>Configurá el sueldo para ver el gasto día por día.</EmptyChart>
       ) : (
@@ -43,82 +26,76 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
           <div className="mb-3 grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <p className="text-[13px] text-[#9aa1ab]">Gasto del período</p>
-              <div className="mt-1.5"><Amount value={elapsedSpend(days)} tone="expense" /></div>
+              <div className="mt-1.5">
+                <Amount value={elapsedSpend(days)} tone="expense" />
+              </div>
             </div>
             <div className="min-w-0">
               <p className="text-[13px] text-[#9aa1ab]">Promedio por día</p>
-              <div className="mt-1.5"><Amount value={averageElapsedSpend(days)} /></div>
+              <div className="mt-1.5">
+                <Amount value={averageElapsedSpend(days)} />
+              </div>
             </div>
           </div>
-          <div ref={plot.ref} className={chartPlotFrameClass}>
-            <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Gasto diario contra el período anterior">
-              <defs>
-                <linearGradient id={`${uid}-green`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#4ade80" />
-                  <stop offset="100%" stopColor="#16a34a" />
-                </linearGradient>
-              </defs>
-              {ticks.map((tick) => {
-                const y = yAt(tick, 0, top, PAD_T, plotBottom);
-                return (
-                  <g key={tick}>
-                    <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="#eef0f3" />
-                    <text x={PAD_L - 6} y={y + 4} textAnchor="end" fill="#c5cad3" fontSize="11">
-                      {formatAxisPesos(tick)}
-                    </text>
-                  </g>
-                );
-              })}
-              {days.map((day, index) => {
-                const center = PAD_L + slot * index + slot / 2;
-                const hPrev = (day.previous / top) * (plotBottom - PAD_T);
-                const hCur = (day.current / top) * (plotBottom - PAD_T);
-                const showLabel = index % step === 0 || index === days.length - 1;
-                return (
-                  <g key={day.date}>
-                    <path
-                      d={topRoundedBar(center - barW / 2 - 1, plotBottom - hPrev, barW + 2, hPrev, 5)}
-                      fill="#eceff2"
-                    />
-                    <path
-                      d={topRoundedBar(center - (barW * 0.72) / 2, plotBottom - hCur, barW * 0.72, hCur, 4)}
-                      fill={day.future ? "#e5e7eb" : `url(#${uid}-green)`}
-                      className="viz-bar"
-                      style={{ animationDelay: `${index * 18}ms` }}
-                    />
-                    {showLabel ? (
-                      <text x={center} y={H - 10} textAnchor="middle" fill={index === active ? "#1c1f26" : "#c5cad3"} fontSize="10" fontWeight={index === active ? 600 : 500}>
-                        {day.dayNumber}
-                      </text>
-                    ) : null}
-                    <rect
-                      x={PAD_L + slot * index}
-                      y={PAD_T}
-                      width={slot}
-                      height={plotBottom - PAD_T + 20}
-                      fill="transparent"
-                      className="cursor-pointer"
-                      onClick={() => setActive(index)}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
-            {selected ? (
-              <TipAnchor
-                left={`${clampPercent(((PAD_L + slot * active + slot / 2) / W) * 100, 18, 82)}%`}
-                top="18%"
-              >
-                <HoverTip
-                  rows={[
-                    { swatch: "#16a34a", value: formatChartPesos(selected.current), hint: `${selected.dayNumber} ${selected.monthLabel}` },
-                    { swatch: "#d5d8de", value: formatChartPesos(selected.previous), hint: "Período anterior" },
-                  ]}
+          <ChartPlot label="Gasto diario contra el período anterior">
+            <ChartContainer config={chartConfig} className={chartPlotClass}>
+              <BarChart accessibilityLayer data={days} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
+                <defs>
+                  <pattern id={patternId} x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
+                    <rect width="5" height="5" fill="var(--color-previous)" opacity="0.1" />
+                    <circle cx="5" cy="5" r="1.4" fill="var(--color-previous)" />
+                  </pattern>
+                </defs>
+                <XAxis
+                  dataKey="dayNumber"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  interval={interval}
                 />
-              </TipAnchor>
-            ) : null}
-          </div>
-          <p className="mt-1 text-[11px] text-[#b0b6bf]">La barra gris es el mismo día del período anterior.</p>
+                <ChartTooltip
+                  cursor={false}
+                  allowEscapeViewBox={{ x: false, y: false }}
+                  content={
+                    <ShapeTooltipContent
+                      rows={(point) => [
+                        {
+                          swatch: "var(--chart-1)",
+                          value: Number(point.current),
+                          hint: `${point.dayNumber ?? ""} ${point.monthLabel ?? ""}`.trim(),
+                          tone: "expense",
+                        },
+                        {
+                          swatch: "#d5d8de",
+                          value: Number(point.previous),
+                          hint: "Período anterior",
+                        },
+                      ]}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="previous"
+                  fill={`url(#${patternId})`}
+                  stroke="var(--color-previous)"
+                  strokeWidth={1}
+                  radius={4}
+                  animationDuration={CHART_MS}
+                  animationEasing="ease-out"
+                />
+                <Bar
+                  dataKey="current"
+                  fill="var(--color-current)"
+                  stroke="var(--color-current)"
+                  strokeWidth={1}
+                  radius={4}
+                  animationDuration={CHART_MS}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ChartContainer>
+          </ChartPlot>
+          <p className="mt-1 text-[12px] text-[#b0b6bf]">La barra punteada es el mismo día del período anterior.</p>
         </>
       )}
     </ChartCard>

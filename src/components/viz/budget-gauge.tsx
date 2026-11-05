@@ -2,15 +2,11 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { PolarAngleAxis, RadialBar, RadialBarChart } from "recharts";
 import { Amount } from "@/components/primitives";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ChartCard, EmptyChart } from "./ui";
-
-const CX = 160;
-const CY = 104;
-const RADIUS = 78;
-const STROKE = 18;
-const ARC = `M ${CX - RADIUS} ${CY} A ${RADIUS} ${RADIUS} 0 0 1 ${CX + RADIUS} ${CY}`;
-const ARC_LENGTH = Math.PI * RADIUS;
+import { CHART_MS, ShapeTooltipContent } from "./shape-tooltip";
 
 export function BudgetGaugeCard({
   spent,
@@ -27,8 +23,12 @@ export function BudgetGaugeCard({
 }) {
   const clamped = Math.min(Math.max(pct, 0), 100);
   const shownPct = Math.round(pct);
-  const progress = (clamped / 100) * ARC_LENGTH;
-  const progressColor = shownPct >= 100 ? "#e5484d" : "#1f9d55";
+  const over = shownPct >= 100;
+  const color = over ? "var(--chart-2)" : "var(--chart-1)";
+  const chartConfig = {
+    score: { label: "Del sueldo", color },
+  };
+  const chartData = [{ name: "sueldo", score: clamped, fill: color }];
 
   return (
     <ChartCard title="Del sueldo" subtitle="Cuánto del cobro esperado ya se fue" href="/salary">
@@ -44,37 +44,52 @@ export function BudgetGaugeCard({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="mb-3 flex shrink-0 flex-wrap items-end justify-between gap-4">
-            <Stat dash="#1f9d55" label={left >= 0 ? "Te queda" : "De más"} value={<Amount value={Math.abs(left)} tone={left >= 0 ? "income" : "expense"} />} />
+            <Stat
+              dash={over ? "var(--chart-2)" : "var(--chart-1)"}
+              label={left >= 0 ? "Te queda" : "De más"}
+              value={<Amount value={Math.abs(left)} tone={left >= 0 ? "income" : "expense"} />}
+            />
             <Stat dash="#c5cad3" label="Sueldo esperado" value={<Amount value={expected} />} align="right" />
           </div>
           <p className="mb-2 shrink-0 text-[12px] text-[#9aa1ab]">{periodLabel}</p>
-          <div className="flex flex-1 flex-col justify-end">
-          <svg viewBox="0 0 320 124" className="mx-auto block h-[118px] w-full max-w-[340px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
-            <path
-              d={ARC}
-              fill="none"
-              stroke="#e6e8ee"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-            />
-            {progress > 0 ? (
-              <path
-                d={ARC}
-                fill="none"
-                stroke={progressColor}
-                strokeWidth={STROKE}
-                strokeLinecap="round"
-                strokeDasharray={`${progress} ${ARC_LENGTH}`}
-              />
-            ) : null}
-          </svg>
-          <div className="mt-1 shrink-0 text-center">
-            <p className="text-[13px] text-[#9aa1ab]">Gastado del sueldo</p>
-            <div className="mt-1.5"><Amount value={spent} size="hero" tone={shownPct >= 100 ? "expense" : "neutral"} /></div>
-            <p className={shownPct >= 100 ? "mt-1 text-[13px] font-medium text-[#e5484d]" : "mt-1 text-[13px] font-medium text-[#1f9d55]"}>
-              {shownPct.toLocaleString("es-AR")}% del esperado
-            </p>
-          </div>
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="h-[200px] w-[200px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
+              <ChartContainer config={chartConfig} className="aspect-auto h-[200px] w-[200px] max-w-none">
+                <RadialBarChart data={chartData} innerRadius={72} outerRadius={96} barSize={16} startAngle={90} endAngle={-270}>
+                  <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                  <ChartTooltip
+                    content={
+                      <ShapeTooltipContent
+                        rows={() => [
+                          {
+                            swatch: color,
+                            value: spent,
+                            hint: `${shownPct.toLocaleString("es-AR")}% del esperado`,
+                            tone: over ? "expense" : "neutral",
+                          },
+                        ]}
+                      />
+                    }
+                  />
+                  <RadialBar
+                    dataKey="score"
+                    background={{ fill: "#e6e8ee" }}
+                    cornerRadius={10}
+                    animationDuration={CHART_MS}
+                    animationEasing="ease-out"
+                  />
+                </RadialBarChart>
+              </ChartContainer>
+            </div>
+            <div className="mt-1 shrink-0 text-center">
+              <p className="text-[13px] text-[#9aa1ab]">Gastado del sueldo</p>
+              <div className="mt-1.5">
+                <Amount value={spent} size="hero" tone={over ? "expense" : "neutral"} />
+              </div>
+              <p className={over ? "mt-1 text-[13px] font-medium text-expense" : "mt-1 text-[13px] font-medium text-income"}>
+                {shownPct.toLocaleString("es-AR")}% del esperado
+              </p>
+            </div>
           </div>
         </div>
       )}
