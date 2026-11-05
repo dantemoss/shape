@@ -103,6 +103,7 @@ export function DayCylindersCard({
                 <button
                   key={day.date}
                   type="button"
+                  data-shape-pointer=""
                   onClick={() => setActiveDate(day.date)}
                   className={cn("flex flex-col items-center gap-2", shown.length > 8 ? "w-11 shrink-0" : "min-w-0 flex-1")}
                   aria-pressed={on}

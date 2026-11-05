@@ -46,7 +46,7 @@ export function BudgetBlocksCard({
           Tope: <span className="font-semibold text-[#1c1f26]">{formatChartPesos(expected)}</span>
         </p>
       </div>
-      <div className="mt-3 flex gap-[3px]" aria-hidden>
+      <div className="mt-3 flex gap-[3px]" data-shape-pointer="" aria-hidden>
         {Array.from({ length: BLOCKS }, (_, index) => (
           <span
             key={index}

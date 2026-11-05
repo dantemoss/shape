@@ -444,60 +444,37 @@ svg text {
   }
 }
 
-/* Puntero de escritorio. PNG primero: el SVG a veces cae en la mano del sistema. En táctil no existe. */
-@media (hover: hover) and (pointer: fine) {
-  html {
-    cursor: url("/cursors/arrow.png") 5 3, url("/cursors/arrow.svg") 5 3, auto;
-  }
-
-  a[href],
-  button,
-  summary,
-  select,
-  label[for],
-  [role="button"],
-  [role="link"],
-  [role="tab"],
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"],
-  input[type="checkbox"],
-  input[type="radio"],
-  input[type="file"],
-  input[type="range"] {
-    cursor: url("/cursors/pointer.png") 22 4, url("/cursors/pointer.svg") 22 4, pointer;
-  }
-
-  input[type="email"],
-  input[type="password"],
-  input[type="text"],
-  input[type="search"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="number"],
-  input:not([type]),
-  textarea,
-  [contenteditable="true"] {
-    cursor: text;
-  }
-
-  input:disabled,
-  textarea:disabled,
-  button:disabled,
-  select:disabled,
-  [aria-disabled="true"] {
-    cursor: not-allowed;
-  }
+/* La clase la pone Pointer solo con mouse fino y sin reduced motion. */
+html.shape-pointer [data-shape-pointer],
+html.shape-pointer [data-shape-pointer] * {
+  cursor: none !important;
 }
 
-@layer utilities {
-  @media (hover: hover) and (pointer: fine) {
-    .cursor-pointer {
-      cursor: url("/cursors/pointer.png") 22 4, url("/cursors/pointer.svg") 22 4, pointer;
-    }
-
-    .cursor-default {
-      cursor: url("/cursors/arrow.png") 5 3, url("/cursors/arrow.svg") 5 3, auto;
-    }
-  }
+html.shape-pointer [data-shape-pointer] :is(
+  button,
+  input,
+  textarea,
+  select,
+  a,
+  label,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [contenteditable="true"]
+):not([data-shape-pointer]),
+html.shape-pointer [data-shape-pointer] :is(
+  button,
+  input,
+  textarea,
+  select,
+  a,
+  label,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [contenteditable="true"]
+):not([data-shape-pointer]) * {
+  cursor: revert !important;
 }

@@ -57,7 +57,7 @@ export function BalanceLineCard({ points }: { points: BalancePoint[] }) {
               </p>
             ) : null}
           </div>
-          <div ref={plot.ref} className={chartPlotFrameClass}>
+          <div ref={plot.ref} data-shape-pointer="" className={chartPlotFrameClass}>
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Saldo en el tiempo">
               <defs>
                 <linearGradient id={`${uid}-band`} x1="0" y1="0" x2="0" y2="1">

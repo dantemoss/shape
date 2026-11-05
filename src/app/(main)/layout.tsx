@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/sidebar";
 import { StatusBanners } from "@/components/status-banners";
+import { Pointer } from "@/components/ui/pointer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { UserGuard } from "@/components/user-guard";
 
@@ -13,6 +14,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <StatusBanners />
             {children}
           </div>
+          <Pointer />
         </div>
       </UserGuard>
     </TooltipProvider>

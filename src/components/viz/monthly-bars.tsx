@@ -48,7 +48,7 @@ export function MonthlyBarsCard({ points }: { points: MonthFlowPoint[] }) {
               </div>
             </div>
           ) : null}
-          <div ref={plot.ref} className={chartPlotFrameClass}>
+          <div ref={plot.ref} data-shape-pointer="" className={chartPlotFrameClass}>
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Ingresos y gastos por mes">
             <defs>
               <linearGradient id={`${uid}-grey`} x1="0" y1="0" x2="0" y2="1">

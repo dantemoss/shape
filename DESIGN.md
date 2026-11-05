@@ -380,6 +380,12 @@ La ficha entra en 220 ms, ease-out, y no se mueve con `prefers-reduced-motion`.
 
 ### Puntero
 
-Solo con `@media (hover: hover) and (pointer: fine)`. En táctil no se aplica. Flecha en `public/cursors/arrow.png` (y `.svg`), mano en links, botones y `.cursor-pointer`, I-beam nativo en campos de texto. Tinta `#1c1f26` al 85% y filete blanco. El PNG va primero para que no caiga en la mano del sistema. Son originales.
+El cursor del sistema queda en toda la app. Campos, texto y botones no se reemplazan. No hay imágenes en `public/cursors`.
+
+En escritorio, y solo si `(hover: hover) and (pointer: fine)`, entra el Pointer de Magic UI (MIT) en la variante de color. Tinta `--brand` (`#2F48A1`) y filete blanco, sin gradiente. El componente es `src/components/ui/pointer.tsx`. Sigue al mouse sobre `[data-shape-pointer]`: el dibujo de un gráfico (barras, línea, área, dona, medidor, bloques, tira, cilindro del día, spark de comercios) y la tarjeta que es un link (`Tile` en perfil, `BalanceCard` y `MetricCard` cuando tienen `href`). Entra en 200 ms y sale en 160 ms, ease-out. `pointer-events: none`: no tapa el click ni mueve el layout. Es client component y no lee `window` en el server.
+
+En táctil no se monta. Con `prefers-reduced-motion: reduce` tampoco. Un cursor estático igual usaría `cursor: none` y le ganaría al tamaño del cursor del sistema. Sin el componente, queda ese cursor, que ya se puede agrandar.
+
+Un botón, un campo o un link adentro de la zona sigue con el cursor del sistema. El cilindro de un día es el gráfico: ese botón sí lleva el puntero.
 
 El porcentaje del sueldo vive en Del sueldo, no en el saldo.

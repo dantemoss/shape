@@ -52,7 +52,7 @@ export function CategoryStripCard({
               </div>
             ))}
           </div>
-          <div className="flex h-11 gap-[3px]" aria-hidden>
+          <div className="flex h-11 gap-[3px]" data-shape-pointer="" aria-hidden>
             {Array.from({ length: BARS }, (_, index) => {
               const at = ((index + 0.5) / BARS) * 100;
               const segmentIndex = Math.max(0, cuts.findIndex((cut) => at <= cut));

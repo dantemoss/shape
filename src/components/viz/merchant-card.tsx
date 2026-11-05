@@ -59,7 +59,7 @@ export function MerchantCard({ model }: { model: MerchantCardModel }) {
       </div>
       {model.total > 0 ? (
         <div className="mt-auto pt-4">
-          <svg viewBox={`0 0 ${width} ${height}`} className="h-[92px] w-full" aria-hidden>
+          <svg viewBox={`0 0 ${width} ${height}`} data-shape-pointer="" className="h-[92px] w-full" aria-hidden>
             <defs>
               <linearGradient id={`${uid}-spark`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.35" />
