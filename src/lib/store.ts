@@ -65,6 +65,7 @@ interface ShapeStore extends ShapeData {
   importingLegacy: boolean;
   beginSession: (userId: string) => void;
   applyRemote: (data: ShapeData, notice: ImportNotice | null, legacyPending: boolean) => void;
+  replaceRemote: (data: ShapeData) => void;
   failSession: (message: string) => void;
   resetSession: () => void;
   dismissImportNotice: () => void;
@@ -114,6 +115,19 @@ function createId(): string {
   return crypto.randomUUID();
 }
 
+let pendingWrites = 0;
+
+export function pendingWriteCount(): number {
+  return pendingWrites;
+}
+
+function trackWrite(write: Promise<unknown>): void {
+  pendingWrites += 1;
+  void write.finally(() => {
+    pendingWrites = Math.max(0, pendingWrites - 1);
+  });
+}
+
 function snapshotData(state: ShapeStore): ShapeData {
   return {
     userProfile: state.userProfile,
@@ -144,7 +158,7 @@ function commit(
   }
   set({ ...optimistic, syncError: null });
   if (get().localOnly) return;
-  void write(userId).catch(async () => {
+  const job = write(userId).catch(async () => {
     try {
       const fresh = await loadAll(userId);
       set({ ...fresh, syncError: SYNC_ERROR });
@@ -152,6 +166,7 @@ function commit(
       set({ ...before, syncError: SYNC_ERROR });
     }
   });
+  trackWrite(job);
 }
 
 export const useShapeStore = create<ShapeStore>()((set, get) => ({
@@ -177,6 +192,8 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
       importingLegacy: false,
       syncError: null,
     }),
+
+  replaceRemote: (data) => set({ ...data }),
 
   failSession: (message) =>
     set({
@@ -210,12 +227,12 @@ export const useShapeStore = create<ShapeStore>()((set, get) => ({
       throw new Error("No hay una sesión activa.");
     }
     set({ userProfile: profile, syncError: null });
-    try {
-      await updateProfile(userId, profile);
-    } catch {
+    const job = updateProfile(userId, profile).catch(() => {
       set({ ...before, syncError: SYNC_ERROR });
       throw new Error(SYNC_ERROR);
-    }
+    });
+    trackWrite(job);
+    await job;
   },
 
   addCreditCard: (card) => {
