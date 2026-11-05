@@ -50,7 +50,7 @@ export function DailyBarsCard({ days, periodLabel }: { days: AlignedDay[]; perio
               <div className="mt-1.5"><Amount value={averageElapsedSpend(days)} /></div>
             </div>
           </div>
-          <div ref={plot.ref} className={chartPlotFrameClass}>
+          <div ref={plot.ref} data-shape-pointer="" className={chartPlotFrameClass}>
             <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={chartPlotSvgClass} role="img" aria-label="Gasto diario contra el período anterior">
               <defs>
                 <linearGradient id={`${uid}-green`} x1="0" y1="0" x2="0" y2="1">
