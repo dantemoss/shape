@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Amount, Stat, StatRow } from "@/components/primitives";
 import type { StripSegment } from "@/lib/chart-series";
 import { cn } from "@/lib/utils";
 import { ChartCard, EmptyChart } from "./ui";
@@ -9,17 +8,9 @@ import { ChartCard, EmptyChart } from "./ui";
 const BARS = 52;
 
 export function CategoryStripCard({
-  income,
-  expense,
-  incomeCount,
-  expenseCount,
   segments,
   className,
 }: {
-  income: number;
-  expense: number;
-  incomeCount: number;
-  expenseCount: number;
   segments: StripSegment[];
   className?: string;
 }) {
@@ -40,10 +31,6 @@ export function CategoryStripCard({
         </Link>
       }
     >
-      <StatRow columns={2} className="mb-4">
-        <Stat label="Ingresos del mes" value={<Amount value={income} tone="income" />} hint={`+${incomeCount} este mes`} />
-        <Stat label="Gastos del mes" value={<Amount value={expense} tone="expense" />} hint={`+${expenseCount} este mes`} />
-      </StatRow>
       {segments.length === 0 ? (
         <EmptyChart>Sin gastos en pesos este mes.</EmptyChart>
       ) : (

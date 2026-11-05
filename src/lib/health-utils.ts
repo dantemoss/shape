@@ -115,6 +115,51 @@ export function getMonthComparison(transactions: Transaction[], today = todayISO
   return { current, previous, change, changePercent };
 }
 
+/** Misma escala que las tarjetas de Higiene. 65% del sueldo da 70, «Buena». */
+export function scoreFor(spendPct: number): number {
+  if (spendPct >= 100) return 10;
+  if (spendPct >= 90) return 20;
+  if (spendPct >= 80) return 40;
+  if (spendPct >= 70) return 55;
+  if (spendPct >= 60) return 70;
+  if (spendPct >= 50) return 80;
+  return 95;
+}
+
+export function scoreLabel(score: number): string {
+  if (score >= 85) return "Excelente";
+  if (score >= 65) return "Buena";
+  if (score >= 45) return "Regular";
+  return "Crítica";
+}
+
+/** El mismo `Math.round(changePercent)`, con signo. 187,4 → "+187%". */
+export function signedWholePercent(changePercent: number): string {
+  const rounded = Math.round(changePercent);
+  const abs = Math.abs(rounded).toLocaleString("es-AR");
+  if (rounded > 0) return `+${abs}%`;
+  if (rounded < 0) return `−${abs}%`;
+  return "0%";
+}
+
+/**
+ * Lectura corta de la misma comparación. No cambia el porcentaje.
+ * Un +187% (2,87 veces) se lee «casi 3 veces más».
+ */
+export function expensePaceHint(current: number, previous: number): string {
+  if (!(previous > 0)) return "Mes calendario";
+  const times = current / previous;
+  if (Math.abs(times - 1) < 0.02) return "igual que el mes anterior";
+  if (times >= 1.75) {
+    const nearest = Math.max(2, Math.round(times));
+    const almost = Math.abs(times - nearest) >= 0.08;
+    const unit = nearest === 1 ? "vez" : "veces";
+    return `${almost ? "casi " : ""}${nearest.toLocaleString("es-AR")} ${unit} más`;
+  }
+  if (times > 1) return "más que el mes anterior";
+  return "menos que el mes anterior";
+}
+
 export function generateInsights(
   transactions: Transaction[],
   salaryAmount: number,
