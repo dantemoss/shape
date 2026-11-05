@@ -100,6 +100,7 @@ Calmo, preciso, con aire. Tarjetas claras, números grandes, un solo acento por 
 
 No hagas "AI slop":
 
+- La cabecera y la barra inferior no son vidrio: superficie sólida y filete, sin `backdrop-filter`.
 - No pongas un ícono del mismo tono que su contenedor.
 - No uses fondos shader, partículas, WebGL, canvas ni gradientes de demostración.
 - No uses tipografía mono en la interfaz.
@@ -169,6 +170,12 @@ Móvil:
 - `viewportFit: "cover"`. La barra inferior reserva `env(safe-area-inset-bottom)` y no tapa el contenido.
 - El ítem activo es texto oscuro sobre superficie gris.
 
+Cromo fijo:
+
+- `.page-head` usa `background: var(--background)` y un filete inferior `var(--border)`.
+- La barra de abajo, solo en `< md`, es `bg-card` con filete `border-border` arriba.
+- Ninguna de las dos lleva `backdrop-filter`. Lo que scrollea no se ve a través.
+
 ## 5. Íconos
 
 Pozo neutro, borde sutil, ícono oscuro:
@@ -192,7 +199,7 @@ Los colores son `--chart-1` a `--chart-5`: ingreso, gasto, marca `#2F48A1`, ámb
 
 La animación de Recharts dura 240 ms, ease-out. `isAnimationActive` queda en `auto`, así que con `prefers-reduced-motion` no se mueve. La barra del día ensancha en 220 ms con una transición CSS, y quieta si el sistema pide menos movimiento.
 
-Bloques de presupuesto y la tira de categorías siguen en SVG propio: ReUI no tiene un equivalente.
+Bloques de presupuesto y la tira de categorías siguen en SVG propio: ReUI no tiene un equivalente. La tira no es un gráfico de serie: va en su propia fila, a ancho completo, y la tarjeta mide el contenido (`h-auto`). No comparte celda con una fila más alta, porque eso dejaba un blanco adentro. Para mirar y Se repiten siguen igualadas entre sí.
 
 No reescribas la lógica de los números para dibujarlos. Sigue en `src/lib/chart-series.ts`.
 
@@ -288,7 +295,7 @@ En `src/components/viz`. Los de serie usan Recharts. Los datos salen de `src/lib
 | `MerchantCard` | `src/components/viz/merchant-card.tsx` | `model: MerchantCardModel` | Comercios. `merchantCard`. |
 | `BalanceLineCard` | `src/components/viz/balance-line.tsx` | `points: BalancePoint[]` | Saldo al cierre de cada mes. `balanceSeries`. |
 | `FlowAreaCard` | `src/components/viz/flow-area.tsx` | `points`, `currentLabel`, `delta` | Este período contra el anterior. `periodArea`. |
-| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments` | Tira del mes. `categoryStrip`. |
+| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments`, `className?` | Tira del mes. `categoryStrip`. Alto del contenido, no del vecino. |
 
 En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `EmptyChart`, `iconWell`. El tooltip de Recharts está en `shape-tooltip.tsx` y se ve como `HoverTip`.
 

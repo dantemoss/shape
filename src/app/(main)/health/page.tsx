@@ -152,8 +152,8 @@ export default function HealthPage() {
           currentLabel={snapshot.payPeriod ? "Nivel de este período" : "Nivel de este mes"}
           delta={areaDelta}
         />
-        <div className="space-y-4 xl:col-span-2">
         <CategoryStripCard
+          className="xl:col-span-2"
           income={snapshot.calendarMonth.income}
           expense={snapshot.calendarMonth.expense}
           incomeCount={incomeCount}
@@ -161,7 +161,7 @@ export default function HealthPage() {
           segments={strip}
         />
 
-        <div className="grid items-stretch gap-4 lg:grid-cols-2">
+        <div className="grid items-stretch gap-4 lg:grid-cols-2 xl:col-span-2">
           <Card title="Para mirar" className="h-full">
             <div className="space-y-2">
               {insights.slice(0, 4).map((insight, index) => {
@@ -213,7 +213,6 @@ export default function HealthPage() {
               </p>
             ) : null}
           </Card>
-        </div>
         </div>
       </div>
     </div>

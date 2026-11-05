@@ -87,7 +87,7 @@ export function Sidebar() {
       </aside>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-black/[0.06] bg-white/95 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] shadow-[0_-10px_30px_rgba(15,23,42,0.05)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="grid grid-cols-5">

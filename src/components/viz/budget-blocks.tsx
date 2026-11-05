@@ -71,7 +71,7 @@ export function BudgetBlocksCard({
         </div>
         <Link
           href="/transactions"
-          className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#ff7a1a] px-5 text-[14px] font-semibold text-white shadow-[0_8px_18px_rgba(255,122,26,0.28)]"
+          className="inline-flex h-10 shrink-0 items-center rounded-full bg-[#ff7a1a] px-5 text-[14px] font-semibold text-white"
         >
           Detalle
         </Link>
