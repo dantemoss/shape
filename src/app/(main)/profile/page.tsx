@@ -38,11 +38,17 @@ export default function ProfilePage() {
   const [confirmed, setConfirmed] = useState(false);
   const [accountSince, setAccountSince] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const serverProfile = useRef<{ name: string; avatar: string | null } | null>(null);
 
   useEffect(() => {
-    setName(userProfile?.name ?? "");
-    setAvatar(userProfile?.avatar ?? null);
-  }, [userProfile?.name, userProfile?.avatar]);
+    const next = { name: userProfile?.name ?? "", avatar: userProfile?.avatar ?? null };
+    const previous = serverProfile.current;
+    const dirtyDraft = previous ? name !== previous.name || avatar !== previous.avatar : false;
+    serverProfile.current = next;
+    if (dirtyDraft) return;
+    setName(next.name);
+    setAvatar(next.avatar);
+  }, [userProfile?.name, userProfile?.avatar, name, avatar]);
 
   useEffect(() => {
     if (!previewMode) return;

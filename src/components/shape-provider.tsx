@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { buildPreviewData } from "@/lib/preview-data";
 import { previewMode } from "@/lib/preview";
-import { bootstrap, invalidateSession } from "@/lib/session";
+import { acceptSession, bootstrap, invalidateSession, startLiveSync, stopLiveSync } from "@/lib/session";
 import { useShapeStore } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
@@ -32,20 +32,35 @@ export function ShapeProvider({ children }: { children: React.ReactNode }) {
     }
 
     const supabase = getSupabase();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        if (event === "INITIAL_SESSION" || event === "SIGNED_OUT") invalidateSession();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      const userId = session?.user.id ?? null;
+      const decision = acceptSession(event, userId);
+      if (decision === "signout") {
+        invalidateSession();
+        return;
+      }
+      if (!userId) return;
+      if (decision === "bootstrap") {
+        // Fuera del callback: GoTrue espera a que vuelva antes de soltar la sesión.
+        setTimeout(() => {
+          void bootstrap(userId);
+        }, 0);
         return;
       }
       if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
-        const userId = session.user.id;
         setTimeout(() => {
-          void bootstrap(userId);
+          const state = useShapeStore.getState();
+          if (state.ready && state.userId === userId) startLiveSync(userId);
         }, 0);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      stopLiveSync();
+    };
   }, []);
 
   return <>{children}</>;

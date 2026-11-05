@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/*.test.ts"
+    "test": "tsx --test src/lib/*.test.ts src/lib/supabase/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
