@@ -100,9 +100,12 @@
   --brand-foreground: #ffffff;
   --chart-income: oklch(0.55 0.15 162);
   --chart-expense: oklch(0.577 0.245 27.325);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Ingreso, gasto, marca, ámbar y oro de la dona. Sin violeta. */
+  --chart-1: oklch(0.55 0.15 162);
+  --chart-2: oklch(0.577 0.245 27.325);
+  --chart-3: #2f48a1;
+  --chart-4: #f5a04c;
+  --chart-5: #f2c14e;
   --radius: 1rem;
   --sidebar: oklch(0.97 0 0);
   --sidebar-foreground: oklch(0.13 0 0);
@@ -112,14 +115,12 @@
   --sidebar-accent-foreground: oklch(0.17 0 0);
   --sidebar-border: oklch(0.90 0 0);
   --sidebar-ring: oklch(0.65 0 0);
-  --chart-1: oklch(0.32 0 none);
-  --chart-2: oklch(0.41 0 none);
   --chart-background: oklch(1 0 0);
   --chart-foreground: oklch(0.145 0.004 285);
   --chart-foreground-muted: oklch(0.55 0.014 260);
   --chart-line-primary: var(--chart-1);
   --chart-line-secondary: var(--chart-2);
-  --chart-crosshair: oklch(0.4 0.1828 274.34);
+  --chart-crosshair: var(--brand);
   --chart-grid: oklch(0.9 0 0);
   --chart-brush-border: var(--chart-grid);
   --chart-tooltip-background: oklch(0.21 0.006 285 / 0.8);
@@ -155,8 +156,13 @@
   --income-foreground: oklch(0.15 0.03 162);
   --expense: oklch(0.704 0.191 22.216);
   --expense-foreground: oklch(0.15 0.03 27);
-  --chart-income: oklch(0.65 0.15 162);
-  --chart-expense: oklch(0.704 0.191 22.216);
+  --chart-income: oklch(0.72 0.14 162);
+  --chart-expense: oklch(0.72 0.17 22);
+  --chart-1: oklch(0.72 0.14 162);
+  --chart-2: oklch(0.72 0.17 22);
+  --chart-3: #9bb0ef;
+  --chart-4: #f6b56a;
+  --chart-5: #f5d56e;
   --sidebar: oklch(0.16 0 0);
   --sidebar-foreground: oklch(0.98 0 0);
   --sidebar-primary: oklch(0.92 0 0);
@@ -165,11 +171,6 @@
   --sidebar-accent-foreground: oklch(0.98 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.50 0 0);
-  --chart-1: oklch(1 0 none);
-  --chart-2: oklch(0.73 0 none);
-  --chart-3: oklch(0.51 0 none);
-  --chart-4: oklch(0.39 0 none);
-  --chart-5: oklch(0.32 0 none);
   --chart-background: oklch(0.145 0 0);
   --chart-foreground: oklch(0.45 0 0);
   --chart-foreground-muted: oklch(0.65 0.01 260);
@@ -269,14 +270,14 @@ svg text {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .viz-bar { animation: viz-rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .viz-block { animation: viz-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .viz-segment { animation: viz-fade 0.45s ease both; }
-  .viz-donut { animation: viz-fade 0.6s ease both; }
+  .viz-bar { animation: viz-rise 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .viz-block { animation: viz-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .viz-segment { animation: viz-fade 0.22s ease both; }
+  .viz-donut { animation: viz-fade 0.22s ease both; }
   .viz-line {
     stroke-dasharray: 900;
     stroke-dashoffset: 900;
-    animation: viz-draw 1.15s ease forwards;
+    animation: viz-draw 0.28s ease forwards;
   }
 }
 
