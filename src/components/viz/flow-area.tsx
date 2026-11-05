@@ -105,7 +105,8 @@ export function FlowAreaCard({
                   stroke="var(--color-current)"
                   strokeWidth={2}
                   connectNulls={false}
-                  dot={points.filter((point) => point.current != null).length < 3 ? { r: 3.5, fill: "var(--color-current)", stroke: "#fff", strokeWidth: 1.5 } : false}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "var(--chart-3)", stroke: "#fff", strokeWidth: 2 }}
                   animationDuration={CHART_MS}
                   animationEasing="ease-out"
                 />

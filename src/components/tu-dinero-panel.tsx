@@ -283,7 +283,7 @@ export function TuDineroPanel({ className }: { className?: string }) {
         </Select>
       </div>
 
-      <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-6 px-5 pt-5 pb-5 @min-[720px]:grid-cols-[200px_auto_minmax(0,1fr)] @min-[720px]:gap-x-10 @min-[720px]:px-7 @min-[720px]:pt-4 @min-[720px]:pb-7">
+      <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-5 pt-5 pb-5 @min-[720px]:grid-cols-[200px_auto_minmax(0,1fr)] @min-[720px]:gap-x-10 @min-[720px]:gap-y-6 @min-[720px]:px-7 @min-[720px]:pt-4 @min-[720px]:pb-7">
         <div className="order-2 flex flex-col items-center @min-[720px]:order-1">
           <HealthRing score={score} />
           <p className="mt-2 text-center text-[13px] text-muted-foreground @min-[720px]:mt-3">
@@ -314,6 +314,11 @@ export function TuDineroPanel({ className }: { className?: string }) {
               </p>
             )}
           </div>
+          {usd ? (
+            <p className="mt-2 hidden text-[13px] leading-snug text-[#6d7480] tabular-nums @min-[720px]:block">
+              USD aparte {formatUsd(snapshot.usd.income, snapshot.usd.expense)}. No entra al saldo.
+            </p>
+          ) : null}
           <SplitBar
             className="mt-6 hidden @min-[720px]:block"
             income={snapshot.calendarMonth.income}
@@ -321,18 +326,17 @@ export function TuDineroPanel({ className }: { className?: string }) {
           />
         </div>
 
+        {usd ? (
+          <p className="order-3 col-span-2 text-[13px] leading-snug text-[#6d7480] tabular-nums @min-[720px]:hidden">
+            USD aparte {formatUsd(snapshot.usd.income, snapshot.usd.expense)}. No entra al saldo.
+          </p>
+        ) : null}
         <SplitBar
           className="order-3 col-span-2 @min-[720px]:hidden"
           income={snapshot.calendarMonth.income}
           expense={snapshot.calendarMonth.expense}
         />
       </div>
-
-      {usd ? (
-        <p className="relative -mt-1 px-5 pb-4 text-[13px] text-[#6d7480] @min-[720px]:px-7">
-          USD aparte {formatUsd(snapshot.usd.income, snapshot.usd.expense)}. No entra al saldo.
-        </p>
-      ) : null}
 
       <div className="relative grid divide-y divide-border border-t border-border @min-[720px]:grid-cols-3 @min-[720px]:divide-x @min-[720px]:divide-y-0">
         <div className="flex items-center justify-between gap-4 px-5 py-3.5 @min-[720px]:block @min-[720px]:px-7 @min-[720px]:py-5">

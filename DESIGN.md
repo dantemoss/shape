@@ -297,7 +297,7 @@ En `src/components/viz`. Los de serie usan Recharts. Los datos salen de `src/lib
 | `MerchantCard` | `src/components/viz/merchant-card.tsx` | `model: MerchantCardModel` | Comercios. `merchantCard`. |
 | `BalanceLineCard` | `src/components/viz/balance-line.tsx` | `points: BalancePoint[]` | Saldo al cierre de cada mes. `balanceSeries`. |
 | `FlowAreaCard` | `src/components/viz/flow-area.tsx` | `points`, `currentLabel`, `delta` | Este período contra el anterior. `periodArea`. |
-| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `income`, `expense`, `incomeCount`, `expenseCount`, `segments`, `className?` | Tira del mes. `categoryStrip`. Alto del contenido, no del vecino. |
+| `CategoryStripCard` | `src/components/viz/category-strip.tsx` | `segments`, `className?` | Tira del mes. `categoryStrip`. Sin los totales de ingreso y gasto: ya están en Tu dinero. Alto del contenido. |
 
 En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`, `EmptyChart`, `iconWell`. El tooltip de Recharts está en `shape-tooltip.tsx` y se ve como `HoverTip`.
 
@@ -307,7 +307,11 @@ El anillo de Tu dinero es el mismo `RadialBar` de una barra (ReUI c-chart-25), t
 
 ### Higiene · Tu dinero
 
-Reemplaza el acuerdo de tres montos y las cuatro tarjetas (Salud, Gastos del mes, Del sueldo, Recurrentes). El gasto del mes queda una sola vez, en la barra. Por categoría, Saldo, Este período, Para mirar y Se repiten no cambian.
+Reemplaza el acuerdo de tres montos y las cuatro tarjetas (Salud, Gastos del mes, Del sueldo, Recurrentes). El gasto del mes queda una sola vez, en la barra. Por categoría no repite ingresos ni gastos: título, «Ver movimientos» y la tira. Saldo, Este período, Para mirar y Se repiten siguen.
+
+Si hay dólares, la línea «USD aparte… No entra al saldo.» va pegada debajo del saldo, a 13px y en `#6d7480`. No ocupa una fila propia.
+
+Este período no dibuja un punto en reposo. Con un solo día (el período recién empieza) ese punto quedaba suelto arriba a la izquierda. Al pasar el mouse, el punto activo sigue apareciendo.
 
 Los números salen de los mismos cálculos: `getMonthComparison`, `scoreFor`, `spendPct` del período de cobro si hay sueldo, y la suma redondeada de `avgAmount` de los recurrentes. Un +187% se muestra `+187%` y, abajo, «casi 3 veces más». Si no hay mes anterior, la pista es «Mes calendario» y el valor es «—».
 

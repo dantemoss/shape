@@ -15,7 +15,6 @@ import {
   periodArea,
 } from "@/lib/chart-series";
 import { getCategoryBreakdown, getRecurringExpenses, generateInsights } from "@/lib/health-utils";
-import { isArsTransaction } from "@/lib/money";
 import { useShapeStore } from "@/lib/store";
 import { CATEGORY_LABELS } from "@/lib/types";
 import { useMoneySnapshot } from "@/lib/use-money";
@@ -74,10 +73,6 @@ export default function HealthPage() {
     () => categoryStrip(allTx, `${snapshot.calendarMonth.key}-01`, snapshot.today),
     [allTx, snapshot.calendarMonth.key, snapshot.today]
   );
-  const counted = monthTx.filter((transaction) => isArsTransaction(transaction));
-  const incomeCount = counted.filter((transaction) => transaction.type === "income").length;
-  const expenseCount = counted.filter((transaction) => transaction.type === "expense").length;
-
   if (allTx.length === 0) {
     return (
       <div className="min-w-0">
@@ -113,14 +108,7 @@ export default function HealthPage() {
           currentLabel={snapshot.payPeriod ? "Nivel de este período" : "Nivel de este mes"}
           delta={areaDelta}
         />
-        <CategoryStripCard
-          className="xl:col-span-2"
-          income={snapshot.calendarMonth.income}
-          expense={snapshot.calendarMonth.expense}
-          incomeCount={incomeCount}
-          expenseCount={expenseCount}
-          segments={strip}
-        />
+        <CategoryStripCard className="xl:col-span-2" segments={strip} />
 
         <div className="grid items-stretch gap-4 lg:grid-cols-2 xl:col-span-2">
           <Card title="Para mirar" className="h-full">
