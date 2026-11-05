@@ -132,6 +132,6 @@ export function BalanceCard({
     </div>
   );
 
-  if (href) return <Link href={href} data-shape-pointer="">{content}</Link>;
+  if (href) return <Link href={href}>{content}</Link>;
   return content;
 }

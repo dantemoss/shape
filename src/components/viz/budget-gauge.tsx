@@ -49,7 +49,7 @@ export function BudgetGaugeCard({
           </div>
           <p className="mb-2 shrink-0 text-[12px] text-[#9aa1ab]">{periodLabel}</p>
           <div className="flex flex-1 flex-col justify-end">
-          <svg viewBox="0 0 320 124" data-shape-pointer="" className="mx-auto block h-[118px] w-full max-w-[340px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
+          <svg viewBox="0 0 320 124" className="mx-auto block h-[118px] w-full max-w-[340px]" role="img" aria-label={`${shownPct} por ciento del sueldo`}>
             <path
               d={ARC}
               fill="none"
