@@ -2,12 +2,13 @@
 
 import { useRef, useState } from "react";
 import { Transaction, CATEGORY_LABELS, RECURRENCE_LABELS } from "@/lib/types";
-import { Badge } from "@/components/ui/badge";
-import { Trash2, ArrowDownLeft, ArrowUpRight, CreditCard } from "lucide-react";
+import { Trash2, ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CreditCard } from "lucide-react";
 import { iconWell } from "@/components/viz/ui";
+import { Amount, EmptyState, IconWell, SegmentedControl } from "@/components/primitives";
 import { cn } from "@/lib/utils";
 import { dayHeading } from "@/lib/format-date";
-import { formatMoney, isArs } from "@/lib/money";
+import { isArs } from "@/lib/money";
+import type { ReactNode } from "react";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -18,6 +19,38 @@ type Filter = "all" | "income" | "expense";
 
 function formatDayLabel(dateStr: string): string {
   return dayHeading(dateStr);
+}
+
+function MovementMeta({ tx }: { tx: Transaction }) {
+  const bits: ReactNode[] = [CATEGORY_LABELS[tx.category]];
+  if (tx.kind === "salary") bits.push("Sueldo");
+  if (tx.countsInBalance === false) bits.push("no suma");
+  if (tx.currency === "USD") bits.push("USD");
+  if (tx.merchant && tx.merchant !== tx.description) bits.push(tx.merchant);
+  if (tx.recurrence !== "once") bits.push(RECURRENCE_LABELS[tx.recurrence]);
+  if (tx.hasInstallments) {
+    bits.push(
+      <span className="inline-flex items-center gap-1">
+        <CreditCard size={11} aria-hidden />
+        {tx.currentInstallment}/{tx.totalInstallments}
+      </span>
+    );
+  }
+
+  return (
+    <p className="mt-0.5 flex min-w-0 flex-wrap items-center text-xs text-muted-foreground">
+      {bits.map((bit, index) => (
+        <span key={index} className="inline-flex min-w-0 items-center">
+          {index > 0 ? (
+            <span className="px-1 text-[#b0b6bf]" aria-hidden>
+              ·
+            </span>
+          ) : null}
+          {bit}
+        </span>
+      ))}
+    </p>
+  );
 }
 
 export function TransactionList({ transactions, onRemove }: TransactionListProps) {
@@ -62,35 +95,24 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
 
   return (
     <div className="space-y-6">
-      {/* ── Filtros ── */}
-      <div className="flex gap-1.5 border border-border rounded-xl p-1 w-fit bg-muted/40">
-        {FILTER_OPTIONS.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setFilter(value)}
-            className={cn(
-              "px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 whitespace-nowrap",
-              filter === value
-                ? value === "income"
-                  ? "bg-income text-income-foreground shadow-sm"
-                  : value === "expense"
-                  ? "bg-expense text-white shadow-sm"
-                  : "bg-foreground text-background shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="Filtrar movimientos"
+        value={filter}
+        onChange={setFilter}
+        options={FILTER_OPTIONS}
+      />
 
-      {/* ── Lista ── */}
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground border border-dashed border-border rounded-2xl">
-          <p className="text-3xl mb-3">💸</p>
-          <p className="text-sm font-medium">Sin movimientos</p>
-          <p className="text-xs mt-1">Agregá uno con el botón de arriba</p>
-        </div>
+        <EmptyState
+          icon={
+            <IconWell size="lg" className="size-12">
+              <ArrowLeftRight size={20} strokeWidth={1.75} />
+            </IconWell>
+          }
+          title="Sin movimientos"
+        >
+          Agregá uno con el botón de arriba
+        </EmptyState>
       ) : (
         <div className="space-y-8">
           {sortedDays.map((day) => {
@@ -139,50 +161,17 @@ export function TransactionList({ transactions, onRemove }: TransactionListProps
                           <p className="text-sm font-medium leading-snug truncate">
                             {tx.description}
                           </p>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            <span className="text-xs text-muted-foreground">
-                              {CATEGORY_LABELS[tx.category]}
-                            </span>
-                            {tx.kind === "salary" && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                                Sueldo
-                              </Badge>
-                            )}
-                            {tx.countsInBalance === false && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                                no suma
-                              </Badge>
-                            )}
-                            {tx.currency === "USD" && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                                USD
-                              </Badge>
-                            )}
-                            {tx.merchant && tx.merchant !== tx.description && (
-                              <span className="text-xs text-muted-foreground truncate">{tx.merchant}</span>
-                            )}
-                            {tx.recurrence !== "once" && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                                {RECURRENCE_LABELS[tx.recurrence]}
-                              </Badge>
-                            )}
-                            {tx.hasInstallments && (
-                              <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0 h-4">
-                                <CreditCard size={9} />
-                                {tx.currentInstallment}/{tx.totalInstallments}
-                              </Badge>
-                            )}
-                          </div>
+                          <MovementMeta tx={tx} />
                         </div>
 
-                        {/* Monto */}
-                        <span className={cn(
-                          "text-sm font-mono font-medium shrink-0",
-                          tx.type === "income" ? "text-income" : "text-expense"
-                        )}>
-                          {tx.type === "expense" ? "−" : "+"}
-                          {formatMoney(Math.abs(tx.amount), tx.currency)}
-                        </span>
+                        <Amount
+                          className="shrink-0"
+                          value={tx.amount}
+                          currency={tx.currency}
+                          size="secondary"
+                          signed
+                          tone={tx.type === "income" ? "income" : "expense"}
+                        />
 
                         {isConfirming ? (
                           <button

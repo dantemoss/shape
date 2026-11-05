@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Amount, Stat, StatRow } from "@/components/primitives";
 import type { StripSegment } from "@/lib/chart-series";
+import { cn } from "@/lib/utils";
 import { ChartCard, EmptyChart } from "./ui";
 
 const BARS = 52;
@@ -13,12 +14,14 @@ export function CategoryStripCard({
   incomeCount,
   expenseCount,
   segments,
+  className,
 }: {
   income: number;
   expense: number;
   incomeCount: number;
   expenseCount: number;
   segments: StripSegment[];
+  className?: string;
 }) {
   const cuts = segments.map((_, index) =>
     segments.slice(0, index + 1).reduce((sum, segment) => sum + segment.pct, 0)
@@ -26,6 +29,7 @@ export function CategoryStripCard({
 
   return (
     <ChartCard
+      className={cn("h-auto self-start", className)}
       title="Por categoría"
       action={
         <Link
@@ -44,11 +48,20 @@ export function CategoryStripCard({
         <EmptyChart>Sin gastos en pesos este mes.</EmptyChart>
       ) : (
         <>
-          <div className="mb-2 flex">
+          <div className="mb-3 flex flex-wrap gap-x-3 gap-y-1.5 sm:hidden">
+            {segments.map((segment) => (
+              <p key={segment.key} className="flex items-center gap-1.5 text-[13px] leading-none">
+                <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: segment.color }} />
+                <span className="font-medium text-[#1c1f26]">{segment.label}</span>
+                <span className="text-[#9aa1ab] tabular-nums">{segment.pct}%</span>
+              </p>
+            ))}
+          </div>
+          <div className="mb-2 hidden sm:flex">
             {segments.map((segment) => (
               <div key={segment.key} style={{ width: `${segment.pct}%` }} className="min-w-0 px-0.5">
                 <p className="truncate text-center text-[12px] font-medium text-[#1c1f26]">{segment.label}</p>
-                <p className="text-center text-[12px] text-[#9aa1ab]">{segment.pct}%</p>
+                <p className="text-center text-[12px] tabular-nums text-[#9aa1ab]">{segment.pct}%</p>
               </div>
             ))}
           </div>

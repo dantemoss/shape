@@ -380,7 +380,7 @@ function ProfileMark({
     >
       <span
         className={cn(
-          "flex size-full items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_10px_28px_rgba(47,72,161,0.18)]",
+          "flex size-full items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_10px_24px_rgba(15,23,42,0.12)]",
           !large && "ring-4 ring-[#14161c] shadow-[0_10px_24px_rgba(0,0,0,0.35)]"
         )}
       >

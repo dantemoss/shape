@@ -395,7 +395,7 @@ export function SegmentedControl<T extends string>({
             aria-selected={selected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "min-h-8 rounded-full px-3 text-[13px] font-medium transition-all",
+              "min-h-8 rounded-full px-3 text-[13px] font-medium motion-safe:transition-colors motion-safe:duration-200 motion-safe:ease-out",
               selected ? "bg-white text-[#1c1f26] shadow-[0_1px_2px_rgba(15,23,42,0.08)]" : "text-[#8d949e]"
             )}
           >
