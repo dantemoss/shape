@@ -3,19 +3,18 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Lightbulb, RefreshCw } from "lucide-react";
-import { MoneyAgreement } from "@/components/money-agreement";
-import { Amount, Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader, Stat } from "@/components/primitives";
+import { Amount, Card, CategoryDot, EmptyState, IconWell, ListRow, PageHeader } from "@/components/primitives";
+import { TuDineroPanel } from "@/components/tu-dinero-panel";
 import { BalanceLineCard } from "@/components/viz/balance-line";
 import { CategoryStripCard } from "@/components/viz/category-strip";
 import { FlowAreaCard } from "@/components/viz/flow-area";
 import { addMonthsISO } from "@/lib/dates";
-import { formatChartPesos } from "@/lib/chart-format";
 import {
   balanceSeries,
   categoryStrip,
   periodArea,
 } from "@/lib/chart-series";
-import { getCategoryBreakdown, getMonthComparison, getRecurringExpenses, generateInsights } from "@/lib/health-utils";
+import { getCategoryBreakdown, getRecurringExpenses, generateInsights } from "@/lib/health-utils";
 import { isArsTransaction } from "@/lib/money";
 import { useShapeStore } from "@/lib/store";
 import { CATEGORY_LABELS } from "@/lib/types";
@@ -27,16 +26,6 @@ const INSIGHT = {
   tip: { icon: Lightbulb, box: "bg-[#f6f7f9]", dot: "#6d7480" },
   positive: { icon: CheckCircle2, box: "bg-[#f6f7f9]", dot: "#1f9d55" },
 } as const;
-
-function scoreFor(spendPct: number): number {
-  if (spendPct >= 100) return 10;
-  if (spendPct >= 90) return 20;
-  if (spendPct >= 80) return 40;
-  if (spendPct >= 70) return 55;
-  if (spendPct >= 60) return 70;
-  if (spendPct >= 50) return 80;
-  return 95;
-}
 
 export default function HealthPage() {
   const allTx = useShapeStore((s) => s.transactions);
@@ -50,7 +39,6 @@ export default function HealthPage() {
     [account]
   );
 
-  const monthComp = useMemo(() => getMonthComparison(allTx, snapshot.today), [allTx, snapshot.today]);
   const monthTx = useMemo(
     () => allTx.filter((transaction) => transaction.date.slice(0, 7) === snapshot.calendarMonth.key),
     [allTx, snapshot.calendarMonth.key]
@@ -90,15 +78,6 @@ export default function HealthPage() {
   const incomeCount = counted.filter((transaction) => transaction.type === "income").length;
   const expenseCount = counted.filter((transaction) => transaction.type === "expense").length;
 
-  const spendPct = snapshot.payPeriod
-    ? Math.round(snapshot.payPeriod.spendPct)
-    : salary > 0
-      ? Math.round((snapshot.calendarMonth.expense / salary) * 100)
-      : 0;
-  const score = allTx.length > 0 ? scoreFor(spendPct) : 0;
-  const scoreText = score >= 85 ? "Excelente" : score >= 65 ? "Buena" : score >= 45 ? "Regular" : "Crítica";
-  const scoreTone = score >= 65 ? "text-[#1f9d55]" : score >= 45 ? "text-[#d97706]" : "text-[#e5484d]";
-
   if (allTx.length === 0) {
     return (
       <div className="min-w-0">
@@ -126,25 +105,7 @@ export default function HealthPage() {
       <PageHeader title="Higiene" subtitle="Saldo, ritmo y hábitos" />
 
       <div className="mx-auto grid w-full min-w-0 max-w-6xl grid-cols-1 items-stretch gap-4 px-4 py-4 sm:px-6 sm:py-6 xl:grid-cols-2">
-        <div className="viz-card xl:col-span-2">
-          <MoneyAgreement />
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:col-span-2">
-          <Kpi label="Salud" value={String(score)} hint={scoreText} tone={scoreTone} />
-          <Kpi label="Gastos del mes" value={<Amount value={snapshot.calendarMonth.expense} tone={monthComp.change > 0 ? "expense" : "income"} />} hint={monthComp.previous > 0 ? `${Math.abs(Math.round(monthComp.changePercent))}% vs el mes anterior` : "Mes calendario"} />
-          <Kpi
-            label={snapshot.payPeriod ? "Del sueldo" : "Mes anterior"}
-            value={salary > 0 ? `${spendPct}%` : <Amount value={monthComp.previous} tone={spendPct >= 80 ? "expense" : "income"} />}
-            hint={salary > 0 ? "de lo esperado" : "en gastos"}
-            tone={salary > 0 ? (spendPct >= 80 ? "text-[#e5484d]" : "text-[#1f9d55]") : undefined}
-          />
-          <Kpi
-            label="Recurrentes"
-            value={String(recurring.length)}
-            hint={recurring.length > 0 ? formatChartPesos(Math.round(recurring.reduce((sum, item) => sum + item.avgAmount, 0))) : "Sin patrón"}
-          />
-        </div>
+        <TuDineroPanel className="xl:col-span-2" />
 
         <BalanceLineCard points={points} />
         <FlowAreaCard
@@ -215,14 +176,6 @@ export default function HealthPage() {
           </Card>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Kpi({ label, value, hint, tone }: { label: string; value: React.ReactNode; hint: string; tone?: string }) {
-  return (
-    <div className="viz-card !p-4">
-      <Stat label={label} value={value} hint={hint} tone={tone} size="md" />
     </div>
   );
 }

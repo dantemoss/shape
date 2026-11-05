@@ -90,6 +90,8 @@ box-shadow:
   0 18px 40px rgba(15, 23, 42, 0.045);
 ```
 
+El panel Tu dinero de Higiene no usa esa sombra. Fondo `#fff`, filete de 1px (`border-border`) y el radio de tarjeta (26px, 28px desde `sm`). El grano es un filtro SVG estático, alpha `0.08`, solo dentro del panel. No oscurece el blanco. Detrás del saldo baja a 0.45 de esa alpha.
+
 Popover y menú: `0 12px 32px rgba(15, 23, 42, 0.12)` más `ring-1 ring-black/[0.06]`.
 
 El modo `.dark` existe y no está activo. No diseñes pantallas oscuras salvo que el cambio lo pida. La excepción es la ficha de Mi perfil en escritorio: tinta sobre el fondo claro de la app, con una banda índigo.
@@ -197,7 +199,7 @@ Los gráficos de serie salen de Recharts, adentro de la primitiva `chart` de sha
 
 Los colores son `--chart-1` a `--chart-5`: ingreso, gasto, marca `#2F48A1`, ámbar `#F5A04C` y oro `#F2C14E`. Nada de violeta. El monto del tooltip y del centro pasa por `Amount`. El tooltip es la ficha blanca de `HoverTip` (barra, monto, pista) y no se sale de la tarjeta. En el teléfono se abre con toque.
 
-La animación de Recharts dura 240 ms, ease-out. `isAnimationActive` queda en `auto`, así que con `prefers-reduced-motion` no se mueve. La barra del día ensancha en 220 ms con una transición CSS, y quieta si el sistema pide menos movimiento.
+La animación de Recharts dura 240 ms, ease-out. `isAnimationActive` queda en `auto`, así que con `prefers-reduced-motion` no se mueve. La barra del día ensancha en 220 ms con una transición CSS, y quieta si el sistema pide menos movimiento. El anillo de Tu dinero y su barra partida crecen en 250 ms, ease-out, y también quedan quietos si el sistema pide menos movimiento.
 
 Bloques de presupuesto y la tira de categorías siguen en SVG propio: ReUI no tiene un equivalente. La tira no es un gráfico de serie: va en su propia fila, a ancho completo, y la tarjeta mide el contenido (`h-auto`). No comparte celda con una fila más alta, porque eso dejaba un blanco adentro. Para mirar y Se repiten siguen igualadas entre sí.
 
@@ -301,6 +303,22 @@ En `src/components/viz/ui.tsx`: `ChartCard`, `DotLink`, `Segmented`, `HoverTip`,
 
 La dona es un `Pie` con hueco, total en el centro con `Amount` y los colores de `DONUT_COLORS`. El resto es el neutro `#F3EEE4`, sin trama. El medidor es un `RadialBar` de una sola barra, pista `#e6e8ee`, verde dentro del límite y rojo si pasa de 100. El monto y el porcentaje van debajo.
 
+El anillo de Tu dinero es el mismo `RadialBar` de una barra (ReUI c-chart-25), tinta `#171717`, pista `oklch(0.94 0.004 260)`, 250 ms. El número va al centro. «Buena» y «Excelente» van en `text-income`. «Regular» queda `#d97706` y «Crítica», `#e5484d`. La barra no cambia de color.
+
+### Higiene · Tu dinero
+
+Reemplaza el acuerdo de tres montos y las cuatro tarjetas (Salud, Gastos del mes, Del sueldo, Recurrentes). El gasto del mes queda una sola vez, en la barra. Por categoría, Saldo, Este período, Para mirar y Se repiten no cambian.
+
+Los números salen de los mismos cálculos: `getMonthComparison`, `scoreFor`, `spendPct` del período de cobro si hay sueldo, y la suma redondeada de `avgAmount` de los recurrentes. Un +187% se muestra `+187%` y, abajo, «casi 3 veces más». Si no hay mes anterior, la pista es «Mes calendario» y el valor es «—».
+
+Escritorio, cuando el panel mide 720px o más (en el viewport cabe desde que la columna, ya sin el sidebar, entra el anillo y el saldo): anillo a la izquierda, `Separator` vertical, saldo con `Amount` a la derecha, barra partida abajo del saldo. Abajo, tres celdas con divisores, sin íconos ni pastillas.
+
+En 390 el saldo queda a la izquierda y el anillo chico a la derecha. La barra ocupa el ancho. Las tres celdas son filas etiqueta / valor.
+
+La barra partida es ingreso (`--income`) contra gasto suave `oklch(0.72 0.09 25)`. El punto y el monto de Gastos usan `--expense`. Al pasar el mouse, el otro tramo y su leyenda bajan juntos a opacidad 0.35 en 250 ms, sin rebote. El selector de mes es el `Select` chico y muestra el mes calendario actual. No cambia de período: la pantalla no tiene otro.
+
+Del sueldo es el porcentaje y una `Progress` de 4px en tinta `#171717`. Sin sueldo, el porcentaje es 0 y dice «Sin sueldo».
+
 Pares que tienen que quedar parejos:
 
 | Pantalla | Fila |
@@ -339,7 +357,8 @@ Dona (`DONUT_COLORS` en `src/lib/chart-series.ts`): `#F5A04C`, `#3CB87A`, `#F2C1
 | Archivo | Para qué |
 | --- | --- |
 | `src/components/real-balance-panel.tsx` | Tarjeta de saldo en Inicio. Diálogos de ajustar y corregir |
-| `src/components/money-agreement.tsx` | Los tres números en Movimientos e Higiene. No lo dupliques en el saldo |
+| `src/components/money-agreement.tsx` | Los tres números en Movimientos. En Higiene el saldo está en Tu dinero. No lo dupliques en el saldo de Inicio |
+| `src/components/tu-dinero-panel.tsx` | Arriba de Higiene. Un solo panel: mes, anillo, saldo, barra partida y tres datos |
 | `src/components/sidebar.tsx` | Nav de escritorio y barra inferior |
 | `src/components/transaction-list.tsx` | Lista de movimientos |
 | `src/components/transaction-form.tsx` | Alta de movimiento |
